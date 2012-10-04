@@ -29,4 +29,4 @@ See [https://github.com/pierrejoye/curl/blob/master/winbuild/BUILD.WINDOWS.txt
 Example release build command line:
 
     
-    nmake /f Makefile.vc mode=static VC=9 WITH_DEVEL=D:\repo\curl_deps WITH_SSL=static WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=no GEN_PDB=yes DEBUG=no
+    nmake /f Makefile.vc mode=static VC=9 WITH_DEVEL=D:\repo\curl_deps WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=no GEN_PDB=yes DEBUG=no
