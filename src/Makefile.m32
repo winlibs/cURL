@@ -22,7 +22,7 @@ OPENSSL_PATH = ../../openssl-0.9.8x
 endif
 # Edit the path below to point to the base of your LibSSH2 package.
 ifndef LIBSSH2_PATH
-LIBSSH2_PATH = ../../libssh2-1.4.2
+LIBSSH2_PATH = ../../libssh2-1.4.3
 endif
 # Edit the path below to point to the base of your librtmp package.
 ifndef LIBRTMP_PATH
@@ -30,7 +30,15 @@ LIBRTMP_PATH = ../../librtmp-2.3
 endif
 # Edit the path below to point to the base of your libmetalink package.
 ifndef LIBMETALINK_PATH
-LIBMETALINK_PATH = ../../libmetalink-0.0.3
+LIBMETALINK_PATH = ../../libmetalink-0.1.2
+endif
+# Edit the path below to point to the base of your libexpat package.
+ifndef LIBEXPAT_PATH
+LIBEXPAT_PATH = ../../expat-2.1.0
+endif
+# Edit the path below to point to the base of your libxml2 package.
+ifndef LIBXML2_PATH
+LIBXML2_PATH = ../../libxml2-2.9.0
 endif
 # Edit the path below to point to the base of your libidn package.
 ifndef LIBIDN_PATH
@@ -67,6 +75,7 @@ CFLAGS	+= -D_AMD64_
 endif
 # comment LDFLAGS below to keep debug info
 LDFLAGS	= -s
+AR	= $(CROSSPREFIX)ar
 RC	= $(CROSSPREFIX)windres
 RCFLAGS	= --include-dir=$(PROOT)/include -O COFF -i
 
@@ -180,6 +189,17 @@ ifdef SSH2
   curl_LDADD += -L"$(LIBSSH2_PATH)/win32" -lssh2
 endif
 ifdef SSL
+  ifndef OPENSSL_INCLUDE
+    ifeq "$(wildcard $(OPENSSL_PATH)/outinc)" "$(OPENSSL_PATH)/outinc"
+      OPENSSL_INCLUDE = $(OPENSSL_PATH)/outinc
+    endif
+    ifeq "$(wildcard $(OPENSSL_PATH)/include)" "$(OPENSSL_PATH)/include"
+      OPENSSL_INCLUDE = $(OPENSSL_PATH)/include
+    endif
+  endif
+  ifneq "$(wildcard $(OPENSSL_INCLUDE)/openssl/opensslv.h)" "$(OPENSSL_INCLUDE)/openssl/opensslv.h"
+  $(error Invalid path to OpenSSL package: $(OPENSSL_PATH))
+  endif
   ifndef OPENSSL_LIBPATH
     OPENSSL_LIBS = -lssl -lcrypto
     ifeq "$(wildcard $(OPENSSL_PATH)/out)" "$(OPENSSL_PATH)/out"
@@ -195,7 +215,8 @@ ifdef SSL
   ifndef DYN
     OPENSSL_LIBS += -lgdi32 -lcrypt32
   endif
-  CFLAGS += -DUSE_SSLEAY
+  INCLUDES += -I"$(OPENSSL_INCLUDE)"
+  CFLAGS += -DUSE_SSLEAY -DUSE_OPENSSL
   curl_LDADD += -L"$(OPENSSL_LIBPATH)" $(OPENSSL_LIBS)
 endif
 ifdef ZLIB
@@ -216,6 +237,13 @@ ifdef METALINK
   INCLUDES += -I"$(LIBMETALINK_PATH)/include"
   CFLAGS += -DUSE_METALINK
   curl_LDADD += -L"$(LIBMETALINK_PATH)/lib" -lmetalink
+  ifndef DYN
+    ifeq ($(findstring libexpat_metalink_parser.o,$(shell $(AR) t "$(LIBMETALINK_PATH)/lib/libmetalink.a")),libexpat_metalink_parser.o)
+      curl_LDADD += -L"$(LIBEXPAT_PATH)/lib" -lexpat
+    else
+      curl_LDADD += -L"$(LIBXML2_PATH)/lib" -lxml2
+    endif
+  endif
 endif
 ifdef SSPI
   CFLAGS += -DUSE_WINDOWS_SSPI
@@ -268,11 +296,11 @@ curl.exe: $(RESOURCE) $(curl_OBJECTS) $(curl_DEPENDENCIES)
 	$(CC) $(LDFLAGS) -o $@ $< $(curl_OBJECTS) $(curl_LDADD)
 
 # We don't have nroff normally under win32
-# hugehelp.c: $(PROOT)/docs/MANUAL $(PROOT)/docs/curl.1 mkhelp.pl
-#	@$(call DEL, hugehelp.c)
-# 	$(NROFF) -man $(PROOT)/docs/curl.1 | $(PERL) mkhelp.pl $(PROOT)/docs/MANUAL > hugehelp.c
+# tool_hugehelp.c: $(PROOT)/docs/MANUAL $(PROOT)/docs/curl.1 mkhelp.pl
+#	@$(call DEL, tool_hugehelp.c)
+# 	$(NROFF) -man $(PROOT)/docs/curl.1 | $(PERL) mkhelp.pl $(PROOT)/docs/MANUAL > tool_hugehelp.c
 
-hugehelp.c:
+tool_hugehelp.c:
 	@echo Creating $@
 	@$(call COPY, $@.cvs, $@)
 
@@ -283,8 +311,8 @@ hugehelp.c:
 	$(RC) $(RCFLAGS) $< -o $@
 
 clean:
-ifeq "$(wildcard hugehelp.c.cvs)" "hugehelp.c.cvs"
-	@$(call DEL, hugehelp.c)
+ifeq "$(wildcard tool_hugehelp.c.cvs)" "tool_hugehelp.c.cvs"
+	@$(call DEL, tool_hugehelp.c)
 endif
 	@$(call DEL, $(curl_OBJECTS) $(curlx_OBJECTS) $(RESOURCE))
 

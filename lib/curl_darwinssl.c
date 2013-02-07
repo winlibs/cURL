@@ -5,8 +5,8 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2012, Nick Zitzmann, <nickzman@gmail.com>.
- * Copyright (C) 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012-2013, Nick Zitzmann, <nickzman@gmail.com>.
+ * Copyright (C) 2012-2013, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -26,21 +26,21 @@
  * TLS/SSL layer. No code but sslgen.c should ever call or use these functions.
  */
 
-#include "setup.h"
+#include "curl_setup.h"
 
 #ifdef USE_DARWINSSL
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
 
 #include <Security/Security.h>
 #include <Security/SecureTransport.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <CommonCrypto/CommonDigest.h>
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
+#include <sys/sysctl.h>
+#endif
 
 #include "urldata.h"
 #include "sendf.h"
@@ -60,6 +60,16 @@
 /* From MacTypes.h (which we can't include because it isn't present in iOS: */
 #define ioErr -36
 
+/* In Mountain Lion and iOS 5, Apple made some changes to the API. They
+   added TLS 1.1 and 1.2 support, and deprecated and replaced some
+   functions. You need to build against the Mountain Lion or iOS 5 SDK
+   or later to get TLS 1.1 or 1.2 support working in cURL. We'll weak-link
+   to the newer functions and use them if present in the user's OS.
+
+   Builders: If you want TLS 1.1 and 1.2 but still want to retain support
+   for older cats, don't forget to set the MACOSX_DEPLOYMENT_TARGET
+   environmental variable prior to building cURL. */
+
 /* The following two functions were ripped from Apple sample code,
  * with some modifications: */
 static OSStatus SocketRead(SSLConnectionRef connection,
@@ -68,15 +78,15 @@ static OSStatus SocketRead(SSLConnectionRef connection,
                                                  * RETURNED */
                            size_t *dataLength)  /* IN/OUT */
 {
-  UInt32 bytesToGo = *dataLength;
-  UInt32 initLen = bytesToGo;
+  size_t bytesToGo = *dataLength;
+  size_t initLen = bytesToGo;
   UInt8 *currData = (UInt8 *)data;
   /*int sock = *(int *)connection;*/
   struct ssl_connect_data *connssl = (struct ssl_connect_data *)connection;
   int sock = connssl->ssl_sockfd;
   OSStatus rtn = noErr;
-  UInt32 bytesRead;
-  int rrtn;
+  size_t bytesRead;
+  ssize_t rrtn;
   int theErr;
 
   *dataLength = 0;
@@ -130,12 +140,12 @@ static OSStatus SocketWrite(SSLConnectionRef connection,
                             const void *data,
                             size_t *dataLength)  /* IN/OUT */
 {
-  UInt32 bytesSent = 0;
+  size_t bytesSent = 0;
   /*int sock = *(int *)connection;*/
   struct ssl_connect_data *connssl = (struct ssl_connect_data *)connection;
   int sock = connssl->ssl_sockfd;
-  int length;
-  UInt32 dataLen = *dataLength;
+  ssize_t length;
+  size_t dataLen = *dataLength;
   const UInt8 *dataPtr = (UInt8 *)data;
   OSStatus ortn;
   int theErr;
@@ -166,8 +176,9 @@ static OSStatus SocketWrite(SSLConnectionRef connection,
   return ortn;
 }
 
-CF_INLINE const char *CipherNameForNumber(SSLCipherSuite cipher) {
+CF_INLINE const char *SSLCipherNameForNumber(SSLCipherSuite cipher) {
   switch (cipher) {
+    /* SSL version 3.0 */
     case SSL_RSA_WITH_NULL_MD5:
       return "SSL_RSA_WITH_NULL_MD5";
       break;
@@ -255,6 +266,8 @@ CF_INLINE const char *CipherNameForNumber(SSLCipherSuite cipher) {
     case SSL_FORTEZZA_DMS_WITH_FORTEZZA_CBC_SHA:
       return "SSL_FORTEZZA_DMS_WITH_FORTEZZA_CBC_SHA";
       break;
+    /* TLS 1.0 with AES (RFC 3268)
+       (Apparently these are used in SSLv3 implementations as well.) */
     case TLS_RSA_WITH_AES_128_CBC_SHA:
       return "TLS_RSA_WITH_AES_128_CBC_SHA";
       break;
@@ -291,6 +304,63 @@ CF_INLINE const char *CipherNameForNumber(SSLCipherSuite cipher) {
     case TLS_DH_anon_WITH_AES_256_CBC_SHA:
       return "TLS_DH_anon_WITH_AES_256_CBC_SHA";
       break;
+    /* SSL version 2.0 */
+    case SSL_RSA_WITH_RC2_CBC_MD5:
+      return "SSL_RSA_WITH_RC2_CBC_MD5";
+      break;
+    case SSL_RSA_WITH_IDEA_CBC_MD5:
+      return "SSL_RSA_WITH_IDEA_CBC_MD5";
+      break;
+    case SSL_RSA_WITH_DES_CBC_MD5:
+      return "SSL_RSA_WITH_DES_CBC_MD5";
+      break;
+    case SSL_RSA_WITH_3DES_EDE_CBC_MD5:
+      return "SSL_RSA_WITH_3DES_EDE_CBC_MD5";
+      break;
+  }
+  return "SSL_NULL_WITH_NULL_NULL";
+}
+
+CF_INLINE const char *TLSCipherNameForNumber(SSLCipherSuite cipher) {
+  switch(cipher) {
+    /* TLS 1.0 with AES (RFC 3268) */
+    case TLS_RSA_WITH_AES_128_CBC_SHA:
+      return "TLS_RSA_WITH_AES_128_CBC_SHA";
+      break;
+    case TLS_DH_DSS_WITH_AES_128_CBC_SHA:
+      return "TLS_DH_DSS_WITH_AES_128_CBC_SHA";
+      break;
+    case TLS_DH_RSA_WITH_AES_128_CBC_SHA:
+      return "TLS_DH_RSA_WITH_AES_128_CBC_SHA";
+      break;
+    case TLS_DHE_DSS_WITH_AES_128_CBC_SHA:
+      return "TLS_DHE_DSS_WITH_AES_128_CBC_SHA";
+      break;
+    case TLS_DHE_RSA_WITH_AES_128_CBC_SHA:
+      return "TLS_DHE_RSA_WITH_AES_128_CBC_SHA";
+      break;
+    case TLS_DH_anon_WITH_AES_128_CBC_SHA:
+      return "TLS_DH_anon_WITH_AES_128_CBC_SHA";
+      break;
+    case TLS_RSA_WITH_AES_256_CBC_SHA:
+      return "TLS_RSA_WITH_AES_256_CBC_SHA";
+      break;
+    case TLS_DH_DSS_WITH_AES_256_CBC_SHA:
+      return "TLS_DH_DSS_WITH_AES_256_CBC_SHA";
+      break;
+    case TLS_DH_RSA_WITH_AES_256_CBC_SHA:
+      return "TLS_DH_RSA_WITH_AES_256_CBC_SHA";
+      break;
+    case TLS_DHE_DSS_WITH_AES_256_CBC_SHA:
+      return "TLS_DHE_DSS_WITH_AES_256_CBC_SHA";
+      break;
+    case TLS_DHE_RSA_WITH_AES_256_CBC_SHA:
+      return "TLS_DHE_RSA_WITH_AES_256_CBC_SHA";
+      break;
+    case TLS_DH_anon_WITH_AES_256_CBC_SHA:
+      return "TLS_DH_anon_WITH_AES_256_CBC_SHA";
+      break;
+    /* TLS 1.0 with ECDSA (RFC 4492) */
     case TLS_ECDH_ECDSA_WITH_NULL_SHA:
       return "TLS_ECDH_ECDSA_WITH_NULL_SHA";
       break;
@@ -366,20 +436,229 @@ CF_INLINE const char *CipherNameForNumber(SSLCipherSuite cipher) {
     case TLS_ECDH_anon_WITH_AES_256_CBC_SHA:
       return "TLS_ECDH_anon_WITH_AES_256_CBC_SHA";
       break;
-    case SSL_RSA_WITH_RC2_CBC_MD5:
-      return "SSL_RSA_WITH_RC2_CBC_MD5";
+#if defined(__MAC_10_8) || defined(__IPHONE_5_0)
+    /* TLS 1.2 (RFC 5246) */
+    case TLS_RSA_WITH_NULL_MD5:
+      return "TLS_RSA_WITH_NULL_MD5";
       break;
-    case SSL_RSA_WITH_IDEA_CBC_MD5:
-      return "SSL_RSA_WITH_IDEA_CBC_MD5";
+    case TLS_RSA_WITH_NULL_SHA:
+      return "TLS_RSA_WITH_NULL_SHA";
       break;
-    case SSL_RSA_WITH_DES_CBC_MD5:
-      return "SSL_RSA_WITH_DES_CBC_MD5";
+    case TLS_RSA_WITH_RC4_128_MD5:
+      return "TLS_RSA_WITH_RC4_128_MD5";
       break;
-    case SSL_RSA_WITH_3DES_EDE_CBC_MD5:
-      return "SSL_RSA_WITH_3DES_EDE_CBC_MD5";
+    case TLS_RSA_WITH_RC4_128_SHA:
+      return "TLS_RSA_WITH_RC4_128_SHA";
       break;
+    case TLS_RSA_WITH_3DES_EDE_CBC_SHA:
+      return "TLS_RSA_WITH_3DES_EDE_CBC_SHA";
+      break;
+    case TLS_RSA_WITH_NULL_SHA256:
+      return "TLS_RSA_WITH_NULL_SHA256";
+      break;
+    case TLS_RSA_WITH_AES_128_CBC_SHA256:
+      return "TLS_RSA_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_RSA_WITH_AES_256_CBC_SHA256:
+      return "TLS_RSA_WITH_AES_256_CBC_SHA256";
+      break;
+    case TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
+      return "TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA";
+      break;
+    case TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA:
+      return "TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA";
+      break;
+    case TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA:
+      return "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA";
+      break;
+    case TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA:
+      return "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA";
+      break;
+    case TLS_DH_DSS_WITH_AES_128_CBC_SHA256:
+      return "TLS_DH_DSS_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_DH_RSA_WITH_AES_128_CBC_SHA256:
+      return "TLS_DH_RSA_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_DHE_DSS_WITH_AES_128_CBC_SHA256:
+      return "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_DHE_RSA_WITH_AES_128_CBC_SHA256:
+      return "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_DH_DSS_WITH_AES_256_CBC_SHA256:
+      return "TLS_DH_DSS_WITH_AES_256_CBC_SHA256";
+      break;
+    case TLS_DH_RSA_WITH_AES_256_CBC_SHA256:
+      return "TLS_DH_RSA_WITH_AES_256_CBC_SHA256";
+      break;
+    case TLS_DHE_DSS_WITH_AES_256_CBC_SHA256:
+      return "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256";
+      break;
+    case TLS_DHE_RSA_WITH_AES_256_CBC_SHA256:
+      return "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256";
+      break;
+    case TLS_DH_anon_WITH_RC4_128_MD5:
+      return "TLS_DH_anon_WITH_RC4_128_MD5";
+      break;
+    case TLS_DH_anon_WITH_3DES_EDE_CBC_SHA:
+      return "TLS_DH_anon_WITH_3DES_EDE_CBC_SHA";
+      break;
+    case TLS_DH_anon_WITH_AES_128_CBC_SHA256:
+      return "TLS_DH_anon_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_DH_anon_WITH_AES_256_CBC_SHA256:
+      return "TLS_DH_anon_WITH_AES_256_CBC_SHA256";
+      break;
+    /* TLS 1.2 with AES GCM (RFC 5288) */
+    case TLS_RSA_WITH_AES_128_GCM_SHA256:
+      return "TLS_RSA_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_RSA_WITH_AES_256_GCM_SHA384:
+      return "TLS_RSA_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:
+      return "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:
+      return "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_DH_RSA_WITH_AES_128_GCM_SHA256:
+      return "TLS_DH_RSA_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_DH_RSA_WITH_AES_256_GCM_SHA384:
+      return "TLS_DH_RSA_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_DHE_DSS_WITH_AES_128_GCM_SHA256:
+      return "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
+      return "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_DH_DSS_WITH_AES_128_GCM_SHA256:
+      return "TLS_DH_DSS_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
+      return "TLS_DH_DSS_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_DH_anon_WITH_AES_128_GCM_SHA256:
+      return "TLS_DH_anon_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_DH_anon_WITH_AES_256_GCM_SHA384:
+      return "TLS_DH_anon_WITH_AES_256_GCM_SHA384";
+      break;
+    /* TLS 1.2 with elliptic curve ciphers (RFC 5289) */
+    case TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
+      return "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
+      return "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384";
+      break;
+    case TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
+      return "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384:
+      return "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384";
+      break;
+    case TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256:
+      return "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:
+      return "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384";
+      break;
+    case TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256:
+      return "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256";
+      break;
+    case TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384:
+      return "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384";
+      break;
+    case TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
+      return "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
+      return "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256:
+      return "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384:
+      return "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
+      return "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
+      return "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256:
+      return "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256";
+      break;
+    case TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384:
+      return "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384";
+      break;
+    case TLS_EMPTY_RENEGOTIATION_INFO_SCSV:
+      return "TLS_EMPTY_RENEGOTIATION_INFO_SCSV";
+      break;
+#else
+    case SSL_RSA_WITH_NULL_MD5:
+      return "TLS_RSA_WITH_NULL_MD5";
+      break;
+    case SSL_RSA_WITH_NULL_SHA:
+      return "TLS_RSA_WITH_NULL_SHA";
+      break;
+    case SSL_RSA_WITH_RC4_128_MD5:
+      return "TLS_RSA_WITH_RC4_128_MD5";
+      break;
+    case SSL_RSA_WITH_RC4_128_SHA:
+      return "TLS_RSA_WITH_RC4_128_SHA";
+      break;
+    case SSL_RSA_WITH_3DES_EDE_CBC_SHA:
+      return "TLS_RSA_WITH_3DES_EDE_CBC_SHA";
+      break;
+    case SSL_DH_anon_WITH_RC4_128_MD5:
+      return "TLS_DH_anon_WITH_RC4_128_MD5";
+      break;
+    case SSL_DH_anon_WITH_3DES_EDE_CBC_SHA:
+      return "TLS_DH_anon_WITH_3DES_EDE_CBC_SHA";
+      break;
+#endif /* defined(__MAC_10_8) || defined(__IPHONE_5_0) */
   }
-  return "(NONE)";
+  return "TLS_NULL_WITH_NULL_NULL";
+}
+
+CF_INLINE bool IsRunningMountainLionOrLater(void)
+{
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
+  int mib[2];
+  char *os_version;
+  size_t os_version_len;
+  char *os_version_major/*, *os_version_minor, *os_version_point*/;
+  int os_version_major_int;
+
+  /* Get the Darwin kernel version from the kernel using sysctl(): */
+  mib[0] = CTL_KERN;
+  mib[1] = KERN_OSRELEASE;
+  if(sysctl(mib, 2, NULL, &os_version_len, NULL, 0) == -1)
+    return false;
+  os_version = malloc(os_version_len*sizeof(char));
+  if(!os_version)
+    return false;
+  if(sysctl(mib, 2, os_version, &os_version_len, NULL, 0) == -1) {
+    free(os_version);
+    return false;
+  }
+
+  /* Parse the version. If it's version 12.0.0 or later, then this user is
+     using Mountain Lion. */
+  os_version_major = strtok(os_version, ".");
+  /*os_version_minor = strtok(NULL, ".");
+  os_version_point = strtok(NULL, ".");*/
+  os_version_major_int = atoi(os_version_major);
+  free(os_version);
+  return os_version_major_int >= 12;
+#else
+  return true;  /* iOS users: this doesn't concern you */
+#endif
 }
 
 static CURLcode darwinssl_connect_step1(struct connectdata *conn,
@@ -388,7 +667,6 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
   struct SessionHandle *data = conn->data;
   curl_socket_t sockfd = conn->sock[sockindex];
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
-  bool sni = true;
 #ifdef ENABLE_IPV6
   struct in6_addr addr;
 #else
@@ -397,6 +675,29 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
   /*SSLConnectionRef ssl_connection;*/
   OSStatus err = noErr;
 
+#if defined(__MAC_10_8) || defined(__IPHONE_5_0)
+  if(SSLCreateContext != NULL) {  /* use the newer API if avaialble */
+    if(connssl->ssl_ctx)
+      CFRelease(connssl->ssl_ctx);
+    connssl->ssl_ctx = SSLCreateContext(NULL, kSSLClientSide, kSSLStreamType);
+    if(!connssl->ssl_ctx) {
+      failf(data, "SSL: couldn't create a context!");
+      return CURLE_OUT_OF_MEMORY;
+    }
+  }
+  else {
+  /* The old ST API does not exist under iOS, so don't compile it: */
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
+    if(connssl->ssl_ctx)
+      (void)SSLDisposeContext(connssl->ssl_ctx);
+    err = SSLNewContext(false, &(connssl->ssl_ctx));
+    if(err != noErr) {
+      failf(data, "SSL: couldn't create a context: OSStatus %d", err);
+      return CURLE_OUT_OF_MEMORY;
+    }
+#endif /* (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE)) */
+  }
+#else
   if(connssl->ssl_ctx)
     (void)SSLDisposeContext(connssl->ssl_ctx);
   err = SSLNewContext(false, &(connssl->ssl_ctx));
@@ -404,8 +705,74 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
     failf(data, "SSL: couldn't create a context: OSStatus %d", err);
     return CURLE_OUT_OF_MEMORY;
   }
+#endif /* defined(__MAC_10_8) || defined(__IPHONE_5_0) */
 
   /* check to see if we've been told to use an explicit SSL/TLS version */
+#if defined(__MAC_10_8) || defined(__IPHONE_5_0)
+  if(SSLSetProtocolVersionMax != NULL) {
+    switch(data->set.ssl.version) {
+      case CURL_SSLVERSION_DEFAULT: default:
+        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kSSLProtocol3);
+        (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol12);
+        break;
+      case CURL_SSLVERSION_TLSv1:
+        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kTLSProtocol1);
+        (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol12);
+        break;
+      case CURL_SSLVERSION_SSLv3:
+        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kSSLProtocol3);
+        (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kSSLProtocol3);
+        break;
+      case CURL_SSLVERSION_SSLv2:
+        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kSSLProtocol2);
+        (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kSSLProtocol2);
+    }
+  }
+  else {
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
+    (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                       kSSLProtocolAll,
+                                       false);
+    switch (data->set.ssl.version) {
+      case CURL_SSLVERSION_DEFAULT: default:
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kSSLProtocol3,
+                                           true);
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol1,
+                                           true);
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol11,
+                                           true);
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol12,
+                                           true);
+        break;
+      case CURL_SSLVERSION_TLSv1:
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol1,
+                                           true);
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol11,
+                                           true);
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol12,
+                                           true);
+        break;
+      case CURL_SSLVERSION_SSLv3:
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kSSLProtocol3,
+                                           true);
+        break;
+      case CURL_SSLVERSION_SSLv2:
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kSSLProtocol2,
+                                           true);
+        break;
+    }
+#endif  /* (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE)) */
+  }
+#else
   (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx, kSSLProtocolAll, false);
   switch(data->set.ssl.version) {
     default:
@@ -433,6 +800,7 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
                                          true);
       break;
   }
+#endif /* defined(__MAC_10_8) || defined(__IPHONE_5_0) */
 
   /* No need to load certificates here. SecureTransport uses the Keychain
    * (which is also part of the Security framework) to evaluate trust. */
@@ -441,19 +809,50 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
    * fail to connect if the verification fails, or if it should continue
    * anyway. In the latter case the result of the verification is checked with
    * SSL_get_verify_result() below. */
+#if defined(__MAC_10_6) || defined(__IPHONE_5_0)
+  /* Snow Leopard introduced the SSLSetSessionOption() function, but due to
+     a library bug with the way the kSSLSessionOptionBreakOnServerAuth flag
+     works, it doesn't work as expected under Snow Leopard or Lion.
+     So we need to call SSLSetEnableCertVerify() on those older cats in order
+     to disable certificate validation if the user turned that off.
+     (SecureTransport will always validate the certificate chain by
+     default.) */
+  if(SSLSetSessionOption != NULL && IsRunningMountainLionOrLater()) {
+    err = SSLSetSessionOption(connssl->ssl_ctx,
+                              kSSLSessionOptionBreakOnServerAuth,
+                              data->set.ssl.verifypeer?false:true);
+    if(err != noErr) {
+      failf(data, "SSL: SSLSetSessionOption() failed: OSStatus %d", err);
+      return CURLE_SSL_CONNECT_ERROR;
+    }
+  }
+  else {
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
+    err = SSLSetEnableCertVerify(connssl->ssl_ctx,
+                                 data->set.ssl.verifypeer?true:false);
+    if(err != noErr) {
+      failf(data, "SSL: SSLSetEnableCertVerify() failed: OSStatus %d", err);
+      return CURLE_SSL_CONNECT_ERROR;
+    }
+#endif /* (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE)) */
+  }
+#else
   err = SSLSetEnableCertVerify(connssl->ssl_ctx,
                                data->set.ssl.verifypeer?true:false);
   if(err != noErr) {
     failf(data, "SSL: SSLSetEnableCertVerify() failed: OSStatus %d", err);
     return CURLE_SSL_CONNECT_ERROR;
   }
+#endif /* defined(__MAC_10_6) || defined(__IPHONE_5_0) */
 
+  /* If this is a domain name and not an IP address, then configure SNI.
+   * Also: the verifyhost setting influences SNI usage */
   /* If this is a domain name and not an IP address, then configure SNI: */
   if((0 == Curl_inet_pton(AF_INET, conn->host.name, &addr)) &&
 #ifdef ENABLE_IPV6
      (0 == Curl_inet_pton(AF_INET6, conn->host.name, &addr)) &&
 #endif
-     sni) {
+     data->set.ssl.verifyhost) {
     err = SSLSetPeerDomainName(connssl->ssl_ctx, conn->host.name,
                                strlen(conn->host.name));
     if(err != noErr) {
@@ -492,6 +891,7 @@ darwinssl_connect_step2(struct connectdata *conn, int sockindex)
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   OSStatus err;
   SSLCipherSuite cipher;
+  SSLProtocol protocol = 0;
 
   DEBUGASSERT(ssl_connect_2 == connssl->connecting_state
               || ssl_connect_2_reading == connssl->connecting_state
@@ -506,7 +906,6 @@ darwinssl_connect_step2(struct connectdata *conn, int sockindex)
         connssl->connecting_state = connssl->ssl_direction ?
             ssl_connect_2_writing : ssl_connect_2_reading;
         return CURLE_OK;
-        break;
 
       case errSSLServerAuthCompleted:
         /* the documentation says we need to call SSLHandshake() again */
@@ -518,13 +917,16 @@ darwinssl_connect_step2(struct connectdata *conn, int sockindex)
       case errSSLCertExpired:
         failf(data, "SSL certificate problem: OSStatus %d", err);
         return CURLE_SSL_CACERT;
-        break;
+
+      case errSSLHostNameMismatch:
+        failf(data, "SSL certificate peer verification failed, the "
+              "certificate did not match \"%s\"\n", conn->host.dispname);
+        return CURLE_PEER_FAILED_VERIFICATION;
 
       default:
         failf(data, "Unknown SSL protocol error in connection to %s:%d",
               conn->host.name, err);
         return CURLE_SSL_CONNECT_ERROR;
-        break;
     }
   }
   else {
@@ -533,7 +935,34 @@ darwinssl_connect_step2(struct connectdata *conn, int sockindex)
 
     /* Informational message */
     (void)SSLGetNegotiatedCipher(connssl->ssl_ctx, &cipher);
-    infof (data, "SSL connection using %s\n", CipherNameForNumber(cipher));
+    (void)SSLGetNegotiatedProtocolVersion(connssl->ssl_ctx, &protocol);
+    switch (protocol) {
+      case kSSLProtocol2:
+        infof(data, "SSL 2.0 connection using %s\n",
+              SSLCipherNameForNumber(cipher));
+        break;
+      case kSSLProtocol3:
+        infof(data, "SSL 3.0 connection using %s\n",
+              SSLCipherNameForNumber(cipher));
+        break;
+      case kTLSProtocol1:
+        infof(data, "TLS 1.0 connection using %s\n",
+              TLSCipherNameForNumber(cipher));
+        break;
+#if defined(__MAC_10_8) || defined(__IPHONE_5_0)
+      case kTLSProtocol11:
+        infof(data, "TLS 1.1 connection using %s\n",
+              TLSCipherNameForNumber(cipher));
+        break;
+      case kTLSProtocol12:
+        infof(data, "TLS 1.2 connection using %s\n",
+              TLSCipherNameForNumber(cipher));
+        break;
+#endif
+      default:
+        infof(data, "Unknown protocol connection\n");
+        break;
+    }
 
     return CURLE_OK;
   }
@@ -551,10 +980,83 @@ darwinssl_connect_step3(struct connectdata *conn,
   SecCertificateRef server_cert;
   OSStatus err;
   CFIndex i, count;
+  SecTrustRef trust;
 
   /* There is no step 3!
    * Well, okay, if verbose mode is on, let's print the details of the
    * server certificates. */
+#if defined(__MAC_10_7) || defined(__IPHONE_5_0)
+#if (TARGET_OS_EMBEDDED || TARGET_OS_IPHONE)
+#pragma unused(server_certs)
+  err = SSLCopyPeerTrust(connssl->ssl_ctx, &trust);
+  if(err == noErr) {
+    count = SecTrustGetCertificateCount(trust);
+    for(i = 0L ; i < count ; i++) {
+      server_cert = SecTrustGetCertificateAtIndex(trust, i);
+      server_cert_summary = SecCertificateCopySubjectSummary(server_cert);
+      memset(server_cert_summary_c, 0, 128);
+      if(CFStringGetCString(server_cert_summary,
+                            server_cert_summary_c,
+                            128,
+                            kCFStringEncodingUTF8)) {
+        infof(data, "Server certificate: %s\n", server_cert_summary_c);
+      }
+      CFRelease(server_cert_summary);
+    }
+    CFRelease(trust);
+  }
+#else
+  /* SSLCopyPeerCertificates() is deprecated as of Mountain Lion.
+     The function SecTrustGetCertificateAtIndex() is officially present
+     in Lion, but it is unfortunately also present in Snow Leopard as
+     private API and doesn't work as expected. So we have to look for
+     a different symbol to make sure this code is only executed under
+     Lion or later. */
+  if(SecTrustEvaluateAsync != NULL) {
+#pragma unused(server_certs)
+    err = SSLCopyPeerTrust(connssl->ssl_ctx, &trust);
+    if(err == noErr) {
+      count = SecTrustGetCertificateCount(trust);
+      for(i = 0L ; i < count ; i++) {
+        server_cert = SecTrustGetCertificateAtIndex(trust, i);
+        server_cert_summary =
+          SecCertificateCopyLongDescription(NULL, server_cert, NULL);
+        memset(server_cert_summary_c, 0, 128);
+        if(CFStringGetCString(server_cert_summary,
+                              server_cert_summary_c,
+                              128,
+                              kCFStringEncodingUTF8)) {
+          infof(data, "Server certificate: %s\n", server_cert_summary_c);
+        }
+        CFRelease(server_cert_summary);
+      }
+      CFRelease(trust);
+    }
+  }
+  else {
+    err = SSLCopyPeerCertificates(connssl->ssl_ctx, &server_certs);
+    if(err == noErr) {
+      count = CFArrayGetCount(server_certs);
+      for(i = 0L ; i < count ; i++) {
+        server_cert = (SecCertificateRef)CFArrayGetValueAtIndex(server_certs,
+                                                                i);
+
+        server_cert_summary = SecCertificateCopySubjectSummary(server_cert);
+        memset(server_cert_summary_c, 0, 128);
+        if(CFStringGetCString(server_cert_summary,
+                              server_cert_summary_c,
+                              128,
+                              kCFStringEncodingUTF8)) {
+          infof(data, "Server certificate: %s\n", server_cert_summary_c);
+        }
+        CFRelease(server_cert_summary);
+      }
+      CFRelease(server_certs);
+    }
+  }
+#endif /* (TARGET_OS_EMBEDDED || TARGET_OS_IPHONE) */
+#else
+#pragma unused(trust)
   err = SSLCopyPeerCertificates(connssl->ssl_ctx, &server_certs);
   if(err == noErr) {
     count = CFArrayGetCount(server_certs);
@@ -573,6 +1075,7 @@ darwinssl_connect_step3(struct connectdata *conn,
     }
     CFRelease(server_certs);
   }
+#endif /* defined(__MAC_10_7) || defined(__IPHONE_5_0) */
 
   connssl->connecting_state = ssl_connect_done;
   return CURLE_OK;
@@ -722,9 +1225,20 @@ void Curl_darwinssl_close(struct connectdata *conn, int sockindex)
 {
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
 
-  (void)SSLClose(connssl->ssl_ctx);
-  (void)SSLDisposeContext(connssl->ssl_ctx);
-  connssl->ssl_ctx = NULL;
+  if(connssl->ssl_ctx) {
+    (void)SSLClose(connssl->ssl_ctx);
+#if defined(__MAC_10_8) || defined(__IPHONE_5_0)
+    if(SSLCreateContext != NULL)
+      CFRelease(connssl->ssl_ctx);
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
+    else
+      (void)SSLDisposeContext(connssl->ssl_ctx);
+#endif  /* (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE)) */
+#else
+    (void)SSLDisposeContext(connssl->ssl_ctx);
+#endif /* defined(__MAC_10_8) || defined(__IPHONE_5_0) */
+    connssl->ssl_ctx = NULL;
+  }
   connssl->ssl_sockfd = 0;
 }
 
@@ -840,15 +1354,15 @@ void Curl_darwinssl_random(struct SessionHandle *data,
   /* arc4random_buf() isn't available on cats older than Lion, so let's
      do this manually for the benefit of the older cats. */
   size_t i;
-  u_int32_t random = 0;
+  u_int32_t random_number = 0;
 
   for(i = 0 ; i < length ; i++) {
     if(i % sizeof(u_int32_t) == 0)
-      random = arc4random();
-    entropy[i] = random & 0xFF;
-    random >>= 8;
+      random_number = arc4random();
+    entropy[i] = random_number & 0xFF;
+    random_number >>= 8;
   }
-  i = random = 0;
+  i = random_number = 0;
   (void)data;
 }
 
@@ -858,7 +1372,7 @@ void Curl_darwinssl_md5sum(unsigned char *tmp, /* input */
                            size_t md5len)
 {
   (void)md5len;
-  (void)CC_MD5(tmp, tmplen, md5sum);
+  (void)CC_MD5(tmp, (CC_LONG)tmplen, md5sum);
 }
 
 static ssize_t darwinssl_send(struct connectdata *conn,
@@ -869,12 +1383,14 @@ static ssize_t darwinssl_send(struct connectdata *conn,
 {
   /*struct SessionHandle *data = conn->data;*/
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
-  size_t processed;
+  size_t processed = 0UL;
   OSStatus err = SSLWrite(connssl->ssl_ctx, mem, len, &processed);
 
   if(err != noErr) {
     switch (err) {
-      case errSSLWouldBlock:  /* we're not done yet; keep sending */
+      case errSSLWouldBlock:  /* return how much we sent (if anything) */
+        if(processed)
+          return (ssize_t)processed;
         *curlcode = CURLE_AGAIN;
         return -1;
         break;
@@ -897,13 +1413,20 @@ static ssize_t darwinssl_recv(struct connectdata *conn,
 {
   /*struct SessionHandle *data = conn->data;*/
   struct ssl_connect_data *connssl = &conn->ssl[num];
-  size_t processed;
+  size_t processed = 0UL;
   OSStatus err = SSLRead(connssl->ssl_ctx, buf, buffersize, &processed);
 
   if(err != noErr) {
     switch (err) {
-      case errSSLWouldBlock:  /* we're not done yet; keep reading */
+      case errSSLWouldBlock:  /* return how much we read (if anything) */
+        if(processed)
+          return (ssize_t)processed;
         *curlcode = CURLE_AGAIN;
+        return -1;
+        break;
+
+      case errSSLClosedGraceful: /* they're done; fail gracefully */
+        *curlcode = CURLE_OK;
         return -1;
         break;
 

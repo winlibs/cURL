@@ -21,9 +21,9 @@
  *
  ***************************************************************************/
 
-#include "setup.h"
+#include "curl_setup.h"
 
-#ifdef USE_WINDOWS_SSPI
+#if defined(USE_WINDOWS_SSPI) && !defined(CURL_DISABLE_PROXY)
 
 #include "urldata.h"
 #include "sendf.h"

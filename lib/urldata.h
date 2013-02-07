@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -24,7 +24,7 @@
 
 /* This file is for lib internal stuff */
 
-#include "setup.h"
+#include "curl_setup.h"
 
 #define PORT_FTP 21
 #define PORT_FTPS 990
@@ -234,6 +234,7 @@ enum protection_level {
 struct curl_schannel_cred {
   CredHandle cred_handle;
   TimeStamp time_stamp;
+  int refcount;
 };
 
 struct curl_schannel_ctxt {
@@ -331,10 +332,9 @@ struct ssl_connect_data {
 struct ssl_config_data {
   long version;          /* what version the client wants to use */
   long certverifyresult; /* result from the certificate verification */
-  long verifypeer;       /* set TRUE if this is desired */
-  long verifyhost;       /* 0: no verify
-                            1: check that CN exists
-                            2: CN must match hostname */
+
+  bool verifypeer;       /* set TRUE if this is desired */
+  bool verifyhost;       /* set TRUE if CN/SAN must match hostname */
   char *CApath;          /* certificate dir (doesn't work on windows) */
   char *CAfile;          /* certificate to verify peer against */
   const char *CRLfile;   /* CRL to check certificate revocation */
@@ -795,8 +795,8 @@ struct connectdata {
                  consideration (== only for pipelining). */
 
   /**** Fields set when inited and not modified again */
-  long connectindex; /* what index in the connection cache connects index this
-                        particular struct has */
+  long connection_id; /* Contains a unique number to make it easier to
+                         track the connections in the log output */
 
   /* 'dns_entry' is the particular host we use. This points to an entry in the
      DNS cache and it will not get pruned while locked. It gets unlocked in
@@ -924,7 +924,6 @@ struct connectdata {
                               handle */
   bool server_supports_pipelining; /* TRUE if server supports pipelining,
                                       set after first response */
-
   struct curl_llist *send_pipe; /* List of handles waiting to
                                    send on this pipeline */
   struct curl_llist *recv_pipe; /* List of handles waiting to read
@@ -934,7 +933,6 @@ struct connectdata {
   struct curl_llist *done_pipe; /* Handles that are finished, but
                                    still reference this connectdata */
 #define MAX_PIPELINE_LENGTH 5
-
   char* master_buffer; /* The master buffer allocated on-demand;
                           used for pipelining. */
   size_t read_pos; /* Current read position in the master buffer */
@@ -993,8 +991,8 @@ struct connectdata {
   int socks5_gssapi_enctype;
 #endif
 
-  long verifypeer;
-  long verifyhost;
+  bool verifypeer;
+  bool verifyhost;
 
   /* When this connection is created, store the conditions for the local end
      bind. This is stored before the actual bind and before any connection is
@@ -1011,6 +1009,8 @@ struct connectdata {
     TUNNEL_CONNECT, /* CONNECT has been sent off */
     TUNNEL_COMPLETE /* CONNECT response received completely */
   } tunnel_state[2]; /* two separate ones to allow FTP */
+
+   struct connectbundle *bundle; /* The bundle we are member of */
 };
 
 /* The end of connectdata. */
@@ -1146,32 +1146,27 @@ struct auth {
                    be RFC compliant */
 };
 
-struct conncache {
-  /* 'connects' will be an allocated array with pointers. If the pointer is
-     set, it holds an allocated connection. */
-  struct connectdata **connects;
-  long num;           /* number of entries of the 'connects' array */
-  enum {
-    CONNCACHE_PRIVATE, /* used for an easy handle alone */
-    CONNCACHE_MULTI    /* shared within a multi handle */
-  } type;
-};
-
-
 struct UrlState {
-  enum {
-    Curl_if_none,
-    Curl_if_easy,
-    Curl_if_multi
-  } used_interface;
 
-  struct conncache *connc; /* points to the connection cache this handle
-                              uses */
+  /* Points to the connection cache */
+  struct conncache *conn_cache;
+
+  /* when curl_easy_perform() is called, the multi handle is "owned" by
+     the easy handle so curl_easy_cleanup() on such an easy handle will
+     also close the multi handle! */
+  bool multi_owned_by_easy;
 
   /* buffers to store authentication data in, as parsed from input options */
   struct timeval keeps_speed; /* for the progress meter really */
 
-  long lastconnect;  /* index of most recent connect or -1 if undefined */
+  struct connectdata *pending_conn; /* This points to the connection we want
+                                       to open when we are waiting in the
+                                       CONNECT_PEND state in the multi
+                                       interface. This to avoid recreating it
+                                       when we enter the CONNECT state again.
+                                    */
+
+  struct connectdata *lastconnect; /* The last connection, NULL if undefined */
 
   char *headerbuff; /* allocated buffer to store headers in */
   size_t headersize;   /* size of the allocation */
@@ -1250,14 +1245,6 @@ struct UrlState {
   /* for FTP downloads: how many CRLFs did we converted to LFs? */
   curl_off_t crlf_conversions;
 #endif
-  /* If set to non-NULL, there's a connection in a shared connection cache
-     that uses this handle so we can't kill this SessionHandle just yet but
-     must keep it around and add it to the list of handles to kill once all
-     its connections are gone */
-  void *shared_conn;
-  bool closed; /* set to TRUE when curl_easy_cleanup() has been called on this
-                  handle, but it is kept around as mentioned for
-                  shared_conn */
   char *pathbuffer;/* allocated buffer to store the URL's path part in */
   char *path;      /* path to use, points to somewhere within the pathbuffer
                       area */
@@ -1593,13 +1580,14 @@ struct UserDefined {
   bool tcp_keepalive;    /* use TCP keepalives */
   long tcp_keepidle;     /* seconds in idle before sending keepalive probe */
   long tcp_keepintvl;    /* seconds between TCP keepalive probes */
+
+  size_t maxconnects;  /* Max idle connections in the connection cache */
 };
 
 struct Names {
   struct curl_hash *hostcache;
   enum {
     HCACHE_NONE,    /* not pointing to anything */
-    HCACHE_PRIVATE, /* points to our own */
     HCACHE_GLOBAL,  /* points to the (shrug) global one */
     HCACHE_MULTI,   /* points to a shared one in the multi handle */
     HCACHE_SHARED   /* points to a shared one in a shared object */
@@ -1619,7 +1607,11 @@ struct Names {
 struct SessionHandle {
   struct Names dns;
   struct Curl_multi *multi;    /* if non-NULL, points to the multi handle
-                                  struct to which this "belongs" */
+                                  struct to which this "belongs" when used by
+                                  the multi interface */
+  struct Curl_multi *multi_easy; /* if non-NULL, points to the multi handle
+                                    struct to which this "belongs" when used
+                                    by the easy interface */
   struct Curl_one_easy *multi_pos; /* if non-NULL, points to its position
                                       in multi controlling structure to assist
                                       in removal. */

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -30,13 +30,10 @@
  * Sampo Kellomaki 1998.
  */
 
-#include "setup.h"
+#include "curl_setup.h"
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
 #endif
 
 #include "urldata.h"
@@ -50,6 +47,7 @@
 #include "select.h"
 #include "sslgen.h"
 #include "rawstr.h"
+#include "hostcheck.h"
 
 #define _MPRINTF_REPLACE /* use the internal *printf() functions */
 #include <curl/mprintf.h>
@@ -66,6 +64,7 @@
 #else
 #include <rand.h>
 #include <x509v3.h>
+#include <md5.h>
 #endif
 
 #include "warnless.h"
@@ -1038,71 +1037,6 @@ static int asn1_output(const ASN1_UTCTIME *tm,
 
 /* ====================================================== */
 
-/*
- * Match a hostname against a wildcard pattern.
- * E.g.
- *  "foo.host.com" matches "*.host.com".
- *
- * We use the matching rule described in RFC6125, section 6.4.3.
- * http://tools.ietf.org/html/rfc6125#section-6.4.3
- */
-#define HOST_NOMATCH 0
-#define HOST_MATCH   1
-
-static int hostmatch(const char *hostname, const char *pattern)
-{
-  const char *pattern_label_end, *pattern_wildcard, *hostname_label_end;
-  int wildcard_enabled;
-  size_t prefixlen, suffixlen;
-  pattern_wildcard = strchr(pattern, '*');
-  if(pattern_wildcard == NULL) {
-    return Curl_raw_equal(pattern, hostname) ? HOST_MATCH : HOST_NOMATCH;
-  }
-  /* We require at least 2 dots in pattern to avoid too wide wildcard
-     match. */
-  wildcard_enabled = 1;
-  pattern_label_end = strchr(pattern, '.');
-  if(pattern_label_end == NULL || strchr(pattern_label_end+1, '.') == NULL ||
-     pattern_wildcard > pattern_label_end ||
-     Curl_raw_nequal(pattern, "xn--", 4)) {
-    wildcard_enabled = 0;
-  }
-  if(!wildcard_enabled) {
-    return Curl_raw_equal(pattern, hostname) ? HOST_MATCH : HOST_NOMATCH;
-  }
-  hostname_label_end = strchr(hostname, '.');
-  if(hostname_label_end == NULL ||
-     !Curl_raw_equal(pattern_label_end, hostname_label_end)) {
-    return HOST_NOMATCH;
-  }
-  /* The wildcard must match at least one character, so the left-most
-     label of the hostname is at least as large as the left-most label
-     of the pattern. */
-  if(hostname_label_end - hostname < pattern_label_end - pattern) {
-    return HOST_NOMATCH;
-  }
-  prefixlen = pattern_wildcard - pattern;
-  suffixlen = pattern_label_end - (pattern_wildcard+1);
-  return Curl_raw_nequal(pattern, hostname, prefixlen) &&
-    Curl_raw_nequal(pattern_wildcard+1, hostname_label_end - suffixlen,
-                    suffixlen) ?
-    HOST_MATCH : HOST_NOMATCH;
-}
-
-static int
-cert_hostcheck(const char *match_pattern, const char *hostname)
-{
-  if(!match_pattern || !*match_pattern ||
-      !hostname || !*hostname) /* sanity check */
-    return 0;
-
-  if(Curl_raw_equal(hostname, match_pattern)) /* trivial case */
-    return 1;
-
-  if(hostmatch(hostname,match_pattern) == HOST_MATCH)
-    return 1;
-  return 0;
-}
 
 /* Quote from RFC2818 section 3.1 "Server Identity"
 
@@ -1191,7 +1125,7 @@ static CURLcode verifyhost(struct connectdata *conn,
           if((altlen == strlen(altptr)) &&
              /* if this isn't true, there was an embedded zero in the name
                 string and we cannot match it. */
-             cert_hostcheck(altptr, conn->host.name))
+             Curl_cert_hostcheck(altptr, conn->host.name))
             matched = 1;
           else
             matched = 0;
@@ -1290,15 +1224,10 @@ static CURLcode verifyhost(struct connectdata *conn,
             "SSL: unable to obtain common name from peer certificate");
       res = CURLE_PEER_FAILED_VERIFICATION;
     }
-    else if(!cert_hostcheck((const char *)peer_CN, conn->host.name)) {
-      if(data->set.ssl.verifyhost > 1) {
-        failf(data, "SSL: certificate subject name '%s' does not match "
-              "target host name '%s'", peer_CN, conn->host.dispname);
-        res = CURLE_PEER_FAILED_VERIFICATION;
-      }
-      else
-        infof(data, "\t common name: %s (does not match '%s')\n",
-              peer_CN, conn->host.dispname);
+    else if(!Curl_cert_hostcheck((const char *)peer_CN, conn->host.name)) {
+      failf(data, "SSL: certificate subject name '%s' does not match "
+            "target host name '%s'", peer_CN, conn->host.dispname);
+      res = CURLE_PEER_FAILED_VERIFICATION;
     }
     else {
       infof(data, "\t common name: %s (matched)\n", peer_CN);
@@ -1569,6 +1498,10 @@ ossl_connect_step1(struct connectdata *conn,
   ctx_options |= SSL_OP_NO_TICKET;
 #endif
 
+#ifdef SSL_OP_NO_COMPRESSION
+  ctx_options |= SSL_OP_NO_COMPRESSION;
+#endif
+
 #ifdef SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG
   /* mitigate CVE-2010-4180 */
   ctx_options &= ~SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG;
@@ -1586,16 +1519,6 @@ ossl_connect_step1(struct connectdata *conn,
     ctx_options |= SSL_OP_NO_SSLv2;
 
   SSL_CTX_set_options(connssl->ctx, ctx_options);
-
-#if 0
-  /*
-   * Not sure it's needed to tell SSL_connect() that socket is
-   * non-blocking. It doesn't seem to care, but just return with
-   * SSL_ERROR_WANT_x.
-   */
-  if(data->state.used_interface == Curl_if_multi)
-    SSL_CTX_ctrl(connssl->ctx, BIO_C_SET_NBIO, 1, NULL);
-#endif
 
   if(data->set.str[STRING_CERT] || data->set.str[STRING_CERT_TYPE]) {
     if(!cert_stuff(conn,
@@ -2307,11 +2230,11 @@ static CURLcode servercert(struct connectdata *conn,
   infof(data, "\t subject: %s\n", buffer);
 
   certdate = X509_get_notBefore(connssl->server_cert);
-  asn1_output(certdate, buffer, sizeof(buffer));
+  asn1_output(certdate, buffer, BUFSIZE);
   infof(data, "\t start date: %s\n", buffer);
 
   certdate = X509_get_notAfter(connssl->server_cert);
-  asn1_output(certdate, buffer, sizeof(buffer));
+  asn1_output(certdate, buffer, BUFSIZE);
   infof(data, "\t expire date: %s\n", buffer);
 
   if(data->set.ssl.verifyhost) {
@@ -2324,7 +2247,7 @@ static CURLcode servercert(struct connectdata *conn,
   }
 
   rc = x509_name_oneline(X509_get_issuer_name(connssl->server_cert),
-                         buffer, sizeof(buffer));
+                         buffer, BUFSIZE);
   if(rc) {
     if(strict)
       failf(data, "SSL: couldn't get X509-issuer name!");

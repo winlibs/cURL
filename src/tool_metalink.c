@@ -23,10 +23,6 @@
 
 #ifdef USE_METALINK
 
-#ifdef HAVE_UNISTD_H
-#  include <unistd.h>
-#endif
-
 #include <sys/stat.h>
 
 #ifdef HAVE_FCNTL_H
@@ -52,6 +48,43 @@
 #  define MD5_CTX    gcry_md_hd_t
 #  define SHA_CTX    gcry_md_hd_t
 #  define SHA256_CTX gcry_md_hd_t
+#elif defined(USE_NSS)
+#  include <nss.h>
+#  include <pk11pub.h>
+#  define MD5_CTX    void *
+#  define SHA_CTX    void *
+#  define SHA256_CTX void *
+#  ifdef HAVE_NSS_INITCONTEXT
+     static NSSInitContext *nss_context;
+#  endif
+#elif defined(__MAC_10_4) || defined(__IPHONE_5_0)
+/* For Apple operating systems: CommonCrypto has the functions we need.
+   The library's headers are even backward-compatible with OpenSSL's
+   headers as long as we define COMMON_DIGEST_FOR_OPENSSL first.
+
+   These functions are available on Tiger and later, as well as iOS 5.0
+   and later. If you're building for an older cat, well, sorry. */
+#  define COMMON_DIGEST_FOR_OPENSSL
+#  include <CommonCrypto/CommonDigest.h>
+#elif defined(_WIN32)
+/* For Windows: If no other crypto library is provided, we fallback
+   to the hash functions provided within the Microsoft Windows CryptoAPI */
+#  include <wincrypt.h>
+/* Custom structure in order to store the required provider and hash handle */
+struct win32_crypto_hash {
+  HCRYPTPROV hCryptProv;
+  HCRYPTHASH hHash;
+};
+/* Custom Microsoft AES Cryptographic Provider defines required for MinGW */
+#  ifndef ALG_SID_SHA_256
+#    define ALG_SID_SHA_256  12
+#  endif
+#  ifndef CALG_SHA_256
+#    define CALG_SHA_256 (ALG_CLASS_HASH | ALG_TYPE_ANY | ALG_SID_SHA_256)
+#  endif
+#  define MD5_CTX    struct win32_crypto_hash
+#  define SHA_CTX    struct win32_crypto_hash
+#  define SHA256_CTX struct win32_crypto_hash
 #else
 #  error "Can't compile METALINK support without a crypto library."
 #endif
@@ -81,6 +114,291 @@
   if(!(val)) \
     return PARAM_NO_MEM; \
 } WHILE_FALSE
+
+#ifdef USE_GNUTLS_NETTLE
+
+static int MD5_Init(MD5_CTX *ctx)
+{
+  md5_init(ctx);
+  return 1;
+}
+
+static void MD5_Update(MD5_CTX *ctx,
+                       const unsigned char *input,
+                       unsigned int inputLen)
+{
+  md5_update(ctx, inputLen, input);
+}
+
+static void MD5_Final(unsigned char digest[16], MD5_CTX *ctx)
+{
+  md5_digest(ctx, 16, digest);
+}
+
+static int SHA1_Init(SHA_CTX *ctx)
+{
+  sha1_init(ctx);
+  return 1;
+}
+
+static void SHA1_Update(SHA_CTX *ctx,
+                        const unsigned char *input,
+                        unsigned int inputLen)
+{
+  sha1_update(ctx, inputLen, input);
+}
+
+static void SHA1_Final(unsigned char digest[20], SHA_CTX *ctx)
+{
+  sha1_digest(ctx, 20, digest);
+}
+
+static int SHA256_Init(SHA256_CTX *ctx)
+{
+  sha256_init(ctx);
+  return 1;
+}
+
+static void SHA256_Update(SHA256_CTX *ctx,
+                          const unsigned char *input,
+                          unsigned int inputLen)
+{
+  sha256_update(ctx, inputLen, input);
+}
+
+static void SHA256_Final(unsigned char digest[32], SHA256_CTX *ctx)
+{
+  sha256_digest(ctx, 32, digest);
+}
+
+#elif defined(USE_GNUTLS)
+
+static int MD5_Init(MD5_CTX *ctx)
+{
+  gcry_md_open(ctx, GCRY_MD_MD5, 0);
+  return 1;
+}
+
+static void MD5_Update(MD5_CTX *ctx,
+                       const unsigned char *input,
+                       unsigned int inputLen)
+{
+  gcry_md_write(*ctx, input, inputLen);
+}
+
+static void MD5_Final(unsigned char digest[16], MD5_CTX *ctx)
+{
+  memcpy(digest, gcry_md_read(*ctx, 0), 16);
+  gcry_md_close(*ctx);
+}
+
+static int SHA1_Init(SHA_CTX *ctx)
+{
+  gcry_md_open(ctx, GCRY_MD_SHA1, 0);
+  return 1;
+}
+
+static void SHA1_Update(SHA_CTX *ctx,
+                        const unsigned char *input,
+                        unsigned int inputLen)
+{
+  gcry_md_write(*ctx, input, inputLen);
+}
+
+static void SHA1_Final(unsigned char digest[20], SHA_CTX *ctx)
+{
+  memcpy(digest, gcry_md_read(*ctx, 0), 20);
+  gcry_md_close(*ctx);
+}
+
+static int SHA256_Init(SHA256_CTX *ctx)
+{
+  gcry_md_open(ctx, GCRY_MD_SHA256, 0);
+  return 1;
+}
+
+static void SHA256_Update(SHA256_CTX *ctx,
+                          const unsigned char *input,
+                          unsigned int inputLen)
+{
+  gcry_md_write(*ctx, input, inputLen);
+}
+
+static void SHA256_Final(unsigned char digest[32], SHA256_CTX *ctx)
+{
+  memcpy(digest, gcry_md_read(*ctx, 0), 32);
+  gcry_md_close(*ctx);
+}
+
+#elif defined(USE_NSS)
+
+static int nss_hash_init(void **pctx, SECOidTag hash_alg)
+{
+  PK11Context *ctx;
+
+  /* we have to initialize NSS if not initialized alraedy */
+#ifdef HAVE_NSS_INITCONTEXT
+  if(!NSS_IsInitialized() && !nss_context) {
+    static NSSInitParameters params;
+    params.length = sizeof params;
+    nss_context = NSS_InitContext("", "", "", "", &params, NSS_INIT_READONLY
+        | NSS_INIT_NOCERTDB   | NSS_INIT_NOMODDB       | NSS_INIT_FORCEOPEN
+        | NSS_INIT_NOROOTINIT | NSS_INIT_OPTIMIZESPACE | NSS_INIT_PK11RELOAD);
+  }
+#endif
+
+  ctx = PK11_CreateDigestContext(hash_alg);
+  if(!ctx)
+    return /* failure */ 0;
+
+  if(PK11_DigestBegin(ctx) != SECSuccess) {
+    PK11_DestroyContext(ctx, PR_TRUE);
+    return /* failure */ 0;
+  }
+
+  *pctx = ctx;
+  return /* success */ 1;
+}
+
+static void nss_hash_final(void **pctx, unsigned char *out, unsigned int len)
+{
+  PK11Context *ctx = *pctx;
+  unsigned int outlen;
+  PK11_DigestFinal(ctx, out, &outlen, len);
+  PK11_DestroyContext(ctx, PR_TRUE);
+}
+
+static int MD5_Init(MD5_CTX *pctx)
+{
+  return nss_hash_init(pctx, SEC_OID_MD5);
+}
+
+static void MD5_Update(MD5_CTX *pctx,
+                       const unsigned char *input,
+                       unsigned int input_len)
+{
+  PK11_DigestOp(*pctx, input, input_len);
+}
+
+static void MD5_Final(unsigned char digest[16], MD5_CTX *pctx)
+{
+  nss_hash_final(pctx, digest, 16);
+}
+
+static int SHA1_Init(SHA_CTX *pctx)
+{
+  return nss_hash_init(pctx, SEC_OID_SHA1);
+}
+
+static void SHA1_Update(SHA_CTX *pctx,
+                        const unsigned char *input,
+                        unsigned int input_len)
+{
+  PK11_DigestOp(*pctx, input, input_len);
+}
+
+static void SHA1_Final(unsigned char digest[20], SHA_CTX *pctx)
+{
+  nss_hash_final(pctx, digest, 20);
+}
+
+static int SHA256_Init(SHA256_CTX *pctx)
+{
+  return nss_hash_init(pctx, SEC_OID_SHA256);
+}
+
+static void SHA256_Update(SHA256_CTX *pctx,
+                          const unsigned char *input,
+                          unsigned int input_len)
+{
+  PK11_DigestOp(*pctx, input, input_len);
+}
+
+static void SHA256_Final(unsigned char digest[32], SHA256_CTX *pctx)
+{
+  nss_hash_final(pctx, digest, 32);
+}
+
+#elif defined(_WIN32) && !defined(USE_SSLEAY)
+
+static void win32_crypto_final(struct win32_crypto_hash *ctx,
+                               unsigned char *digest,
+                               unsigned int digestLen)
+{
+  unsigned long length;
+  CryptGetHashParam(ctx->hHash, HP_HASHVAL, NULL, &length, 0);
+  if(length == digestLen)
+    CryptGetHashParam(ctx->hHash, HP_HASHVAL, digest, &length, 0);
+  if(ctx->hHash)
+    CryptDestroyHash(ctx->hHash);
+  if(ctx->hCryptProv)
+    CryptReleaseContext(ctx->hCryptProv, 0);
+}
+
+static int MD5_Init(MD5_CTX *ctx)
+{
+  if(CryptAcquireContext(&ctx->hCryptProv, NULL, NULL,
+                         PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) {
+    CryptCreateHash(ctx->hCryptProv, CALG_MD5, 0, 0, &ctx->hHash);
+  }
+  return 1;
+}
+
+static void MD5_Update(MD5_CTX *ctx,
+                       const unsigned char *input,
+                       unsigned int inputLen)
+{
+  CryptHashData(ctx->hHash, (unsigned char *)input, inputLen, 0);
+}
+
+static void MD5_Final(unsigned char digest[16], MD5_CTX *ctx)
+{
+  win32_crypto_final(ctx, digest, 16);
+}
+
+static int SHA1_Init(SHA_CTX *ctx)
+{
+  if(CryptAcquireContext(&ctx->hCryptProv, NULL, NULL,
+                         PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) {
+    CryptCreateHash(ctx->hCryptProv, CALG_SHA1, 0, 0, &ctx->hHash);
+  }
+  return 1;
+}
+
+static void SHA1_Update(SHA_CTX *ctx,
+                        const unsigned char *input,
+                        unsigned int inputLen)
+{
+  CryptHashData(ctx->hHash, (unsigned char *)input, inputLen, 0);
+}
+
+static void SHA1_Final(unsigned char digest[20], SHA_CTX *ctx)
+{
+  win32_crypto_final(ctx, digest, 20);
+}
+
+static int SHA256_Init(SHA256_CTX *ctx)
+{
+  if(CryptAcquireContext(&ctx->hCryptProv, NULL, NULL,
+                         PROV_RSA_AES, CRYPT_VERIFYCONTEXT)) {
+    CryptCreateHash(ctx->hCryptProv, CALG_SHA_256, 0, 0, &ctx->hHash);
+  }
+  return 1;
+}
+
+static void SHA256_Update(SHA256_CTX *ctx,
+                          const unsigned char *input,
+                          unsigned int inputLen)
+{
+  CryptHashData(ctx->hHash, (unsigned char *)input, inputLen, 0);
+}
+
+static void SHA256_Final(unsigned char digest[32], SHA256_CTX *ctx)
+{
+  win32_crypto_final(ctx, digest, 32);
+}
+
+#endif /* CRYPTO LIBS */
 
 const digest_params MD5_DIGEST_PARAMS[] = {
   {
@@ -140,117 +458,6 @@ static const metalink_digest_alias digest_aliases[] = {
   {NULL, NULL}
 };
 
-#ifdef USE_GNUTLS_NETTLE
-
-static void MD5_Init(MD5_CTX *ctx)
-{
-  md5_init(ctx);
-}
-
-static void MD5_Update(MD5_CTX *ctx,
-                       const unsigned char *input,
-                       unsigned int inputLen)
-{
-  md5_update(ctx, inputLen, input);
-}
-
-static void MD5_Final(unsigned char digest[16], MD5_CTX *ctx)
-{
-  md5_digest(ctx, 16, digest);
-}
-
-static void SHA1_Init(SHA_CTX *ctx)
-{
-  sha1_init(ctx);
-}
-
-static void SHA1_Update(SHA_CTX *ctx,
-                        const unsigned char *input,
-                        unsigned int inputLen)
-{
-  sha1_update(ctx, inputLen, input);
-}
-
-static void SHA1_Final(unsigned char digest[20], SHA_CTX *ctx)
-{
-  sha1_digest(ctx, 20, digest);
-}
-
-static void SHA256_Init(SHA256_CTX *ctx)
-{
-  sha256_init(ctx);
-}
-
-static void SHA256_Update(SHA256_CTX *ctx,
-                          const unsigned char *input,
-                          unsigned int inputLen)
-{
-  sha256_update(ctx, inputLen, input);
-}
-
-static void SHA256_Final(unsigned char digest[32], SHA256_CTX *ctx)
-{
-  sha256_digest(ctx, 32, digest);
-}
-
-#elif defined(USE_GNUTLS)
-
-static void MD5_Init(MD5_CTX *ctx)
-{
-  gcry_md_open(ctx, GCRY_MD_MD5, 0);
-}
-
-static void MD5_Update(MD5_CTX *ctx,
-                       const unsigned char *input,
-                       unsigned int inputLen)
-{
-  gcry_md_write(*ctx, input, inputLen);
-}
-
-static void MD5_Final(unsigned char digest[16], MD5_CTX *ctx)
-{
-  memcpy(digest, gcry_md_read(*ctx, 0), 16);
-  gcry_md_close(*ctx);
-}
-
-static void SHA1_Init(SHA_CTX *ctx)
-{
-  gcry_md_open(ctx, GCRY_MD_SHA1, 0);
-}
-
-static void SHA1_Update(SHA_CTX *ctx,
-                        const unsigned char *input,
-                        unsigned int inputLen)
-{
-  gcry_md_write(*ctx, input, inputLen);
-}
-
-static void SHA1_Final(unsigned char digest[20], SHA_CTX *ctx)
-{
-  memcpy(digest, gcry_md_read(*ctx, 0), 20);
-  gcry_md_close(*ctx);
-}
-
-static void SHA256_Init(SHA256_CTX *ctx)
-{
-  gcry_md_open(ctx, GCRY_MD_SHA256, 0);
-}
-
-static void SHA256_Update(SHA256_CTX *ctx,
-                          const unsigned char *input,
-                          unsigned int inputLen)
-{
-  gcry_md_write(*ctx, input, inputLen);
-}
-
-static void SHA256_Final(unsigned char digest[32], SHA256_CTX *ctx)
-{
-  memcpy(digest, gcry_md_read(*ctx, 0), 32);
-  gcry_md_close(*ctx);
-}
-
-#endif /* CRYPTO LIBS */
-
 digest_context *Curl_digest_init(const digest_params *dparams)
 {
   digest_context *ctxt;
@@ -270,7 +477,10 @@ digest_context *Curl_digest_init(const digest_params *dparams)
 
   ctxt->digest_hash = dparams;
 
-  dparams->digest_init(ctxt->digest_hashctx);
+  if(dparams->digest_init(ctxt->digest_hashctx) != 1) {
+    free(ctxt);
+    return NULL;
+  }
 
   return ctxt;
 }
@@ -321,6 +531,8 @@ static unsigned char hex_to_uint(const char *s)
  *   Checksum didn't match.
  * -1:
  *   Could not open file; or could not read data from file.
+ * -2:
+ *   Hash algorithm not available.
  */
 static int check_hash(const char *filename,
                       const metalink_digest_def *digest_def,
@@ -328,15 +540,29 @@ static int check_hash(const char *filename,
 {
   unsigned char *result;
   digest_context *dctx;
-  int check_ok;
-  int fd;
-  fd = open(filename, O_RDONLY);
+  int check_ok, flags, fd;
+
+  flags = O_RDONLY;
+#ifdef O_BINARY
+  /* O_BINARY is required in order to avoid binary EOF in text mode */
+  flags |= O_BINARY;
+#endif
+
+  fd = open(filename, flags);
   if(fd == -1) {
-    fprintf(error, "Metalink: validating (%s) FAILED (%s)\n", filename,
-            strerror(errno));
+    fprintf(error, "Metalink: validating (%s) [%s] FAILED (%s)\n", filename,
+            digest_def->hash_name, strerror(errno));
     return -1;
   }
+
   dctx = Curl_digest_init(digest_def->dparams);
+  if(!dctx) {
+    fprintf(error, "Metalink: validating (%s) [%s] FAILED (%s)\n", filename,
+            digest_def->hash_name, "failed to initialize hash algorithm");
+    close(fd);
+    return -2;
+  }
+
   result = malloc(digest_def->dparams->digest_resultlen);
   while(1) {
     unsigned char buf[4096];
@@ -345,8 +571,8 @@ static int check_hash(const char *filename,
       break;
     }
     else if(len == -1) {
-      fprintf(error, "Metalink: validating (%s) FAILED (%s)\n", filename,
-              strerror(errno));
+      fprintf(error, "Metalink: validating (%s) [%s] FAILED (%s)\n", filename,
+              digest_def->hash_name, strerror(errno));
       Curl_digest_final(dctx, result);
       close(fd);
       return -1;
@@ -358,10 +584,11 @@ static int check_hash(const char *filename,
                     digest_def->dparams->digest_resultlen) == 0;
   /* sha*sum style verdict output */
   if(check_ok)
-    fprintf(error, "Metalink: validating (%s) OK\n", filename);
+    fprintf(error, "Metalink: validating (%s) [%s] OK\n", filename,
+            digest_def->hash_name);
   else
-    fprintf(error, "Metalink: validating (%s) FAILED (digest mismatch)\n",
-            filename);
+    fprintf(error, "Metalink: validating (%s) [%s] FAILED (digest mismatch)\n",
+            filename, digest_def->hash_name);
 
   free(result);
   close(fd);
@@ -462,9 +689,24 @@ static metalinkfile *new_metalinkfile(metalink_file_t *fileinfo)
     tail = &root;
     for(p = fileinfo->resources; *p; ++p) {
       metalink_resource *res;
-      res = new_metalink_resource((*p)->url);
-      tail->next = res;
-      tail = res;
+      /* Filter by type if it is non-NULL. In Metalink v3, type
+         includes the type of the resource. In curl, we are only
+         interested in HTTP, HTTPS and FTP. In addition to them,
+         Metalink v3 file may contain bittorrent type URL, which
+         points to the BitTorrent metainfo file. We ignore it here.
+         In Metalink v4, type was deprecated and all
+         fileinfo->resources point to the target file. BitTorrent
+         metainfo file URL may be appeared in fileinfo->metaurls.
+      */
+      if((*p)->type == NULL ||
+         Curl_raw_equal((*p)->type, "http") ||
+         Curl_raw_equal((*p)->type, "https") ||
+         Curl_raw_equal((*p)->type, "ftp") ||
+         Curl_raw_equal((*p)->type, "ftps")) {
+        res = new_metalink_resource((*p)->url);
+        tail->next = res;
+        tail = res;
+      }
     }
     f->resource = root.next;
   }
@@ -645,6 +887,16 @@ void clean_metalink(struct Configurable *config)
     delete_metalinkfile(mlfile);
   }
   config->metalinkfile_last = 0;
+}
+
+void metalink_cleanup(void)
+{
+#if defined(USE_NSS) && defined(HAVE_NSS_INITCONTEXT)
+  if(nss_context) {
+    NSS_ShutdownContext(nss_context);
+    nss_context = NULL;
+  }
+#endif
 }
 
 #endif /* USE_METALINK */

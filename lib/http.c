@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,20 +20,14 @@
  *
  ***************************************************************************/
 
-#include "setup.h"
+#include "curl_setup.h"
 
 #ifndef CURL_DISABLE_HTTP
 
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
@@ -387,7 +381,8 @@ static CURLcode http_perhapsrewind(struct connectdata *conn)
        (data->state.authproxy.picked == CURLAUTH_NTLM_WB) ||
        (data->state.authhost.picked == CURLAUTH_NTLM_WB)) {
       if(((expectsend - bytessent) < 2000) ||
-         (conn->ntlm.state != NTLMSTATE_NONE)) {
+         (conn->ntlm.state != NTLMSTATE_NONE) ||
+         (conn->proxyntlm.state != NTLMSTATE_NONE)) {
         /* The NTLM-negotiation has started *OR* there is just a little (<2K)
            data left to send, keep on sending. */
 
@@ -407,7 +402,7 @@ static CURLcode http_perhapsrewind(struct connectdata *conn)
             " bytes\n", (curl_off_t)(expectsend - bytessent));
     }
 
-    /* This is not NTLM or NTLM with many bytes left to send: close
+    /* This is not NTLM or many bytes left to send: close
      */
     conn->bits.close = TRUE;
     data->req.size = 0; /* don't download any more than 0 bytes */
@@ -1300,22 +1295,16 @@ Curl_compareheader(const char *headerline, /* line to check */
  */
 CURLcode Curl_http_connect(struct connectdata *conn, bool *done)
 {
-  struct SessionHandle *data;
   CURLcode result;
-
-  data=conn->data;
 
   /* We default to persistent connections. We set this already in this connect
      function to make the re-use checks properly be able to check this bit. */
   conn->bits.close = FALSE;
 
-  if(data->state.used_interface == Curl_if_multi) {
-    /* when the multi interface is used, the CONNECT procedure might not have
-       been completed */
-    result = Curl_proxy_connect(conn);
-    if(result)
-      return result;
-  }
+  /* the CONNECT procedure might not have been completed */
+  result = Curl_proxy_connect(conn);
+  if(result)
+    return result;
 
   if(conn->tunnel_state[FIRSTSOCKET] == TUNNEL_CONNECT)
     /* nothing else to do except wait right now - we're not done here. */
@@ -1323,22 +1312,12 @@ CURLcode Curl_http_connect(struct connectdata *conn, bool *done)
 
   if(conn->given->flags & PROTOPT_SSL) {
     /* perform SSL initialization */
-    if(data->state.used_interface == Curl_if_multi) {
-      result = https_connecting(conn, done);
-      if(result)
-        return result;
-    }
-    else {
-      /* BLOCKING */
-      result = Curl_ssl_connect(conn, FIRSTSOCKET);
-      if(result)
-        return result;
-      *done = TRUE;
-    }
+    result = https_connecting(conn, done);
+    if(result)
+      return result;
   }
-  else {
+  else
     *done = TRUE;
-  }
 
   return CURLE_OK;
 }
@@ -2483,15 +2462,19 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
           if(postsize) {
             /* Append the POST data chunky-style */
             result = Curl_add_bufferf(req_buffer, "%x\r\n", (int)postsize);
-            if(CURLE_OK == result)
+            if(CURLE_OK == result) {
               result = Curl_add_buffer(req_buffer, data->set.postfields,
                                        (size_t)postsize);
+              if(CURLE_OK == result)
+                 result = Curl_add_buffer(req_buffer, "\r\n", 2);
+              included_body = postsize + 2;
+            }
           }
           if(CURLE_OK == result)
             result = Curl_add_buffer(req_buffer,
-                                     "\x0d\x0a\x30\x0d\x0a\x0d\x0a", 7);
-          /* CR  LF   0  CR  LF  CR  LF */
-          included_body = postsize + 7;
+                                     "\x30\x0d\x0a\x0d\x0a", 5);
+          /* 0  CR  LF  CR  LF */
+          included_body += 5;
         }
         if(result)
           return result;
@@ -2525,8 +2508,8 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
         /* Chunky upload is selected and we're negotiating auth still, send
            end-of-data only */
         result = Curl_add_buffer(req_buffer,
-                                 "\x0d\x0a\x30\x0d\x0a\x0d\x0a", 7);
-        /* CR  LF   0  CR  LF  CR  LF */
+                                 "\x30\x0d\x0a\x0d\x0a", 5);
+        /* 0  CR  LF  CR  LF */
         if(result)
           return result;
       }
@@ -3165,6 +3148,7 @@ CURLcode Curl_http_readwrite_headers(struct SessionHandle *data,
         }
         else if(conn->httpversion >= 11 &&
                 !conn->bits.close) {
+
           /* If HTTP version is >= 1.1 and connection is persistent
              server supports pipelining. */
           DEBUGF(infof(data,

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -23,8 +23,8 @@
 
 #include <sys/stat.h>
 
-#ifdef HAVE_UNISTD_H
-#  include <unistd.h>
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
 #endif
 
 #define ENABLE_CURLX_PRINTF
@@ -46,6 +46,12 @@
 #include "memdebug.h" /* keep this as LAST include */
 
 #ifdef __VMS
+/*
+ * vms_show is a global variable, used in main() as parameter for
+ * function vms_special_exit() to allow proper curl tool exiting.
+ * Its value may be set in other tool_*.c source files thanks to
+ * forward declaration present in tool_vms.h
+ */
 static int vms_show = 0;
 #endif
 
@@ -86,6 +92,10 @@ int main(int argc, char *argv[])
   config.errors = stderr; /* default errors to stderr */
 
   main_checkfds();
+
+#if defined(HAVE_SIGNAL) && defined(SIGPIPE)
+  (void)signal(SIGPIPE, SIG_IGN);
+#endif
 
   res = operate(&config, argc, argv);
 

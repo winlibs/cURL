@@ -27,27 +27,27 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 # might possibly already be installed in the system.
 #
 # $(top_builddir)/include/curl for generated curlbuild.h included from curl.h
-# $(top_builddir)/include for generated curlbuild.h included from lib/setup.h
+# $(top_builddir)/include for generated curlbuild.h inc. from lib/curl_setup.h
 # $(top_srcdir)/include is for libcurl's external include files
 # $(top_builddir)/lib is for libcurl's generated lib/curl_config.h file
-# $(top_srcdir)/lib is for libcurl's lib/setup.h and other "borrowed" files
+# $(top_srcdir)/lib for libcurl's lib/curl_setup.h and other "borrowed" files
 # $(top_builddir)/ares is for in-tree c-ares's generated ares_build.h file
 # $(top_srcdir)/ares is for in-tree c-ares's external include files
 
 if USE_EMBEDDED_ARES
-INCLUDES = -I$(top_builddir)/include/curl \
-           -I$(top_builddir)/include      \
-           -I$(top_srcdir)/include        \
-           -I$(top_builddir)/lib          \
-           -I$(top_srcdir)/lib            \
-           -I$(top_builddir)/ares         \
-           -I$(top_srcdir)/ares
+AM_CPPFLAGS = -I$(top_builddir)/include/curl \
+              -I$(top_builddir)/include      \
+              -I$(top_srcdir)/include        \
+              -I$(top_builddir)/lib          \
+              -I$(top_srcdir)/lib            \
+              -I$(top_builddir)/ares         \
+              -I$(top_srcdir)/ares
 else
-INCLUDES = -I$(top_builddir)/include/curl \
-           -I$(top_builddir)/include      \
-           -I$(top_srcdir)/include        \
-           -I$(top_builddir)/lib          \
-           -I$(top_srcdir)/lib
+AM_CPPFLAGS = -I$(top_builddir)/include/curl \
+              -I$(top_builddir)/include      \
+              -I$(top_srcdir)/include        \
+              -I$(top_builddir)/lib          \
+              -I$(top_srcdir)/lib
 endif
 
 EXTRA_DIST = test75.pl test307.pl test610.pl test613.pl test1013.pl	\
@@ -55,13 +55,24 @@ test1022.pl Makefile.inc notexists.pl
 
 CFLAG_CURL_SYMBOL_HIDING = @CFLAG_CURL_SYMBOL_HIDING@
 
+# Prevent LIBS from being used for all link targets
+LIBS = $(BLANK_AT_MAKETIME)
+
+if USE_EXPLICIT_LIB_DEPS
+SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
+TESTUTIL_LIBS = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
+else
+SUPPORTFILES_LIBS = $(top_builddir)/lib/libcurl.la @CURL_NETWORK_LIBS@
+TESTUTIL_LIBS = $(top_builddir)/lib/libcurl.la @CURL_NETWORK_AND_TIME_LIBS@
+endif
+
 # Dependencies (may need to be overriden)
-LDADD = $(top_builddir)/lib/libcurl.la @CURL_LIBS@
+LDADD = $(SUPPORTFILES_LIBS)
 DEPENDENCIES = $(top_builddir)/lib/libcurl.la
 
 # Mostly for Windows build targets, when using static libcurl
 if USE_CPPFLAG_CURL_STATICLIB
-AM_CPPFLAGS = -DCURL_STATICLIB
+AM_CPPFLAGS += -DCURL_STATICLIB
 endif
 
 # Makefile.inc provides the source defines (TESTUTIL, SUPPORTFILES,

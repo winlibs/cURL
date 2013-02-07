@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -26,9 +26,8 @@ PDFPAGES = testcurl.pdf runtests.pdf
 EXTRA_DIST = ftpserver.pl httpserver.pl secureserver.pl runtests.pl getpart.pm \
  FILEFORMAT README stunnel.pem memanalyze.pl testcurl.pl valgrind.pm ftp.pm   \
  sshserver.pl sshhelp.pm testcurl.1 runtests.1 $(HTMLPAGES) $(PDFPAGES) \
- CMakeLists.txt certs/scripts/*.sh certs/Server* certs/EdelCurlRoot* \
  serverhelp.pm tftpserver.pl rtspserver.pl directories.pm symbol-scan.pl \
- certs/srp-verifier-conf certs/srp-verifier-db
+ CMakeLists.txt mem-include-scan.pl valgrind.supp
 
 # we have two variables here to make sure DIST_SUBDIRS won't get 'unit'
 # added twice as then targets such as 'distclean' misbehave and try to
@@ -41,7 +40,7 @@ BUILD_UNIT =
 DIST_UNIT = unit
 endif
 
-SUBDIRS = data server libtest $(BUILD_UNIT)
+SUBDIRS = certs data server libtest $(BUILD_UNIT)
 DIST_SUBDIRS = $(SUBDIRS) $(DIST_UNIT)
 
 PERLFLAGS = -I$(srcdir)
@@ -55,26 +54,31 @@ curl:
 
 if CROSSCOMPILING
 TEST = @echo "NOTICE: we can't run the tests when cross-compiling!"
-TEST_Q =
-TEST_F =
-TEST_T =
 else # if not cross-compiling:
 TEST = srcdir=$(srcdir) $(PERL) $(PERLFLAGS) $(srcdir)/runtests.pl
 TEST_Q = -a -s
+TEST_AM = -a -am
 TEST_F = -a -p -r
 TEST_T = -a -t
 endif
 
-test: all
+# make sure that PERL is pointing to an executable
+perlcheck:
+	@if ! test -x "$(PERL)"; then echo "No perl!"; exit 2; fi
+
+test: perhcheck all
 	$(TEST)
 
-quiet-test: all
+quiet-test: perlcheck all
 	$(TEST) $(TEST_Q)
 
-full-test: all
+am-test: perlcheck all
+	$(TEST) $(TEST_AM)
+
+full-test: perlcheck all
 	$(TEST) $(TEST_F)
 
-torture-test: all
+torture-test: perlcheck all
 	$(TEST) $(TEST_T)
 
 .1.html:

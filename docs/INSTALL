@@ -135,21 +135,18 @@ UNIX
      default. But if you want to alter it, you can select how to deal with
      each individual library.
 
-     To build with GnuTLS support instead of OpenSSL for SSL/TLS, note that
-     you need to use both --without-ssl and --with-gnutls.
+     To build with GnuTLS for SSL/TLS, use both --without-ssl and
+     --with-gnutls.
 
-     To build with yassl support instead of OpenSSL or GnuTLS, you must build
-     yassl with its OpenSSL emulation enabled and point to that directory root
-     with configure --with-ssl.
+     To build with Cyassl for SSL/TLS, use both --without-ssl and
+     --with-cyassl.
 
-     To build with NSS support instead of OpenSSL for SSL/TLS, note that
-     you need to use both --without-ssl and --with-nss.
+     To build with NSS for SSL/TLS, use both --without-ssl and --with-nss.
 
-     To build with PolarSSL support instead of OpenSSL for SSL/TLS, note that
-     you need to use both --without-ssl and --with-polarssl.
+     To build with PolarSSL for SSL/TLS, use both --without-ssl and
+     --with-polarssl.
 
-     To build with axTLS support instead of OpenSSL for TLS, note that you
-     need to use both --without-ssl and --with-axtls.
+     To build with axTLS for SSL/TLS, use both --without-ssl and --with-axtls.
 
      To get GSSAPI support, build with --with-gssapi and have the MIT or
      Heimdal Kerberos 5 packages installed.
@@ -225,7 +222,7 @@ Win32
 
      set ZLIB_PATH=c:\zlib-1.2.7
      set OPENSSL_PATH=c:\openssl-0.9.8x
-     set LIBSSH2_PATH=c:\libssh2-1.4.2
+     set LIBSSH2_PATH=c:\libssh2-1.4.3
 
    ATTENTION: if you want to build with libssh2 support you have to use latest
    version 0.17 - previous versions will NOT work with 7.17.0 and later!
@@ -467,7 +464,7 @@ Win32
    possibilities:
 
    - Modify lib/config-win32.h
-   - Modify lib/setup.h
+   - Modify lib/curl_setup.h
    - Modify lib/Makefile.vc6
    - Add defines to Project/Settings/C/C++/General/Preprocessor Definitions
      in the vc6libcurl.dsw/vc6libcurl.dsp Visual C++ 6 IDE project.
@@ -507,6 +504,38 @@ Win32
    When building an application that uses the static libcurl library, you must
    add '-DCURL_STATICLIB' to your CFLAGS.  Otherwise the linker will look for
    dynamic import symbols.
+
+
+Apple iOS and Mac OS X
+======================
+   On recent Apple operating systems, curl can be built to use Apple's
+   SSL/TLS implementation, Secure Transport, instead of OpenSSL. To build with
+   Secure Transport for SSL/TLS, use the configure option --with-darwinssl. (It
+   is not necessary to use the option --without-ssl.) This feature requires iOS
+   5.0 or later, or OS X 10.5 ("Leopard") or later.
+
+   When Secure Transport is in use, the curl options --cacert and --capath and
+   their libcurl equivalents, will be ignored, because Secure Transport uses
+   the certificates stored in the Keychain to evaluate whether or not to trust
+   the server. This, of course, includes the root certificates that ship with
+   the OS. The --cert and --engine options, and their libcurl equivalents, are
+   currently unimplemented in curl with Secure Transport.
+
+   For OS X users: In OS X 10.8 ("Mountain Lion"), Apple made a major
+   overhaul to the Secure Transport API that, among other things, added
+   support for the newer TLS 1.1 and 1.2 protocols. To get curl to support
+   TLS 1.1 and 1.2, you must build curl on Mountain Lion or later, or by
+   using the equivalent SDK. If you set the MACOSX_DEPLOYMENT_TARGET
+   environmental variable to an earlier version of OS X prior to building curl,
+   then curl will use the new Secure Transport API on Mountain Lion and later,
+   and fall back on the older API when the same curl binary is executed on
+   older cats. For example, running these commands in curl's directory in the
+   shell will build the code such that it will run on cats as old as OS X 10.6
+   ("Snow Leopard") (using bash):
+
+      export MACOSX_DEPLOYMENT_TARGET="10.6"
+      ./configure --with-darwinssl
+      make
 
 
 IBM OS/2
@@ -970,8 +999,9 @@ REDUCING SIZE
    The GNU compiler and linker have a number of options that can reduce the
    size of the libcurl dynamic libraries on some platforms even further.
    Specify them by providing appropriate CFLAGS and LDFLAGS variables on the
-   configure command-line:
-     CFLAGS="-ffunction-sections -fdata-sections" \
+   configure command-line, e.g.
+     CFLAGS="-Os -ffunction-sections -fdata-sections \
+             -fno-unwind-tables -fno-asynchronous-unwind-tables" \
      LDFLAGS="-Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
 
    Be sure also to strip debugging symbols from your binaries after
@@ -981,9 +1011,9 @@ REDUCING SIZE
    .comment section).
 
    Using these techniques it is possible to create a basic HTTP-only shared
-   libcurl library for i386 Linux platforms that is only 101 KiB in size, and
-   an FTP-only library that is 105 KiB in size (as of libcurl version 7.21.5,
-   using gcc 4.4.3).
+   libcurl library for i386 Linux platforms that is only 106 KiB in size, and
+   an FTP-only library that is 108 KiB in size (as of libcurl version 7.27.0,
+   using gcc 4.6.3).
 
    You may find that statically linking libcurl to your application will
    result in a lower total size than dynamically linking.
@@ -1017,7 +1047,7 @@ PORTS
         - AVR32 Linux
         - ARM Android 1.5, 2.1
         - ARM INTEGRITY
-        - ARM iPhone OS
+        - ARM iOS
         - Cell Linux
         - Cell Cell OS
         - HP-PA HP-UX 9.X 10.X 11.X
@@ -1055,6 +1085,7 @@ PORTS
         - i386 HURD
         - i386 Haiku OS
         - i386 Linux 1.3, 2.0, 2.2, 2.3, 2.4, 2.6
+        - i386 Mac OS X
         - i386 MINIX 3.1
         - i386 NetBSD
         - i386 Novell NetWare

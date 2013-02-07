@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -21,7 +21,7 @@
 #***************************************************************************
 
 # File version for 'aclocal' use. Keep it a single number.
-# serial 63
+# serial 65
 
 
 dnl CURL_CHECK_COMPILER
@@ -97,7 +97,7 @@ AC_DEFUN([CURL_CHECK_COMPILER_CLANG], [
     flags_dbg_all="$flags_dbg_all -gdwarf-2"
     flags_dbg_all="$flags_dbg_all -gvms"
     flags_dbg_yes="-g"
-    flags_dbg_off="-g0"
+    flags_dbg_off=""
     flags_opt_all="-O -O0 -O1 -O2 -Os -O3 -O4"
     flags_opt_yes="-Os"
     flags_opt_off="-O0"
@@ -121,7 +121,7 @@ AC_DEFUN([CURL_CHECK_COMPILER_DEC_C], [
     compiler_id="DEC_C"
     flags_dbg_all="-g -g0 -g1 -g2 -g3"
     flags_dbg_yes="-g2"
-    flags_dbg_off="-g0"
+    flags_dbg_off=""
     flags_opt_all="-O -O0 -O1 -O2 -O3 -O4"
     flags_opt_yes="-O1"
     flags_opt_off="-O0"
@@ -157,7 +157,7 @@ AC_DEFUN([CURL_CHECK_COMPILER_GNU_C], [
     flags_dbg_all="$flags_dbg_all -gdwarf-2"
     flags_dbg_all="$flags_dbg_all -gvms"
     flags_dbg_yes="-g"
-    flags_dbg_off="-g0"
+    flags_dbg_off=""
     flags_opt_all="-O -O0 -O1 -O2 -O3 -Os"
     flags_opt_yes="-O2"
     flags_opt_off="-O0"
@@ -236,7 +236,7 @@ AC_DEFUN([CURL_CHECK_COMPILER_INTEL_C], [
       compiler_id="INTEL_UNIX_C"
       flags_dbg_all="-g -g0"
       flags_dbg_yes="-g"
-      flags_dbg_off="-g0"
+      flags_dbg_off=""
       flags_opt_all="-O -O0 -O1 -O2 -O3 -Os"
       flags_opt_yes="-O2"
       flags_opt_off="-O0"
@@ -300,7 +300,7 @@ AC_DEFUN([CURL_CHECK_COMPILER_SGI_MIPS_C], [
     compiler_id="SGI_MIPS_C"
     flags_dbg_all="-g -g0 -g1 -g2 -g3"
     flags_dbg_yes="-g"
-    flags_dbg_off="-g0"
+    flags_dbg_off=""
     flags_opt_all="-O -O0 -O1 -O2 -O3 -Ofast"
     flags_opt_yes="-O2"
     flags_opt_off="-O0"
@@ -327,7 +327,7 @@ AC_DEFUN([CURL_CHECK_COMPILER_SGI_MIPSPRO_C], [
     compiler_id="SGI_MIPSPRO_C"
     flags_dbg_all="-g -g0 -g1 -g2 -g3"
     flags_dbg_yes="-g"
-    flags_dbg_off="-g0"
+    flags_dbg_off=""
     flags_opt_all="-O -O0 -O1 -O2 -O3 -Ofast"
     flags_opt_yes="-O2"
     flags_opt_off="-O0"
@@ -1264,20 +1264,6 @@ AC_DEFUN([CURL_CHECK_NO_UNDEFINED], [
 ])
 
 
-dnl CURL_CHECK_PROG_CC
-dnl -------------------------------------------------
-dnl Check for compiler program, preventing CFLAGS and
-dnl CPPFLAGS from being unexpectedly changed.
-
-AC_DEFUN([CURL_CHECK_PROG_CC], [
-  ac_save_CFLAGS="$CFLAGS"
-  ac_save_CPPFLAGS="$CPPFLAGS"
-  AC_PROG_CC
-  CFLAGS="$ac_save_CFLAGS"
-  CPPFLAGS="$ac_save_CPPFLAGS"
-])
-
-
 dnl CURL_CHECK_COMPILER_HALT_ON_ERROR
 dnl -------------------------------------------------
 dnl Verifies if the compiler actually halts after the
@@ -1492,6 +1478,42 @@ AC_DEFUN([CURL_CHECK_COMPILER_SYMBOL_HIDING], [
   else
     AC_MSG_RESULT([no])
   fi
+])
+
+
+dnl CURL_CHECK_COMPILER_PROTOTYPE_MISMATCH
+dnl -------------------------------------------------
+dnl Verifies if the compiler actually halts after the
+dnl compilation phase without generating any object
+dnl code file, when the source code tries to redefine
+dnl a prototype which does not match previous one.
+
+AC_DEFUN([CURL_CHECK_COMPILER_PROTOTYPE_MISMATCH], [
+  AC_REQUIRE([CURL_CHECK_COMPILER_HALT_ON_ERROR])dnl
+  AC_MSG_CHECKING([if compiler halts on function prototype mismatch])
+  AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([[
+#     include <stdlib.h>
+      int rand(int n);
+      int rand(int n)
+      {
+        if(n)
+          return ++n;
+        else
+          return n;
+      }
+    ]],[[
+      int i[2];
+      int j = rand(i[0]);
+      if(j)
+        return j;
+    ]])
+  ],[
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([compiler does not halt on function prototype mismatch.])
+  ],[
+    AC_MSG_RESULT([yes])
+  ])
 ])
 
 

@@ -27,36 +27,39 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 # might possibly already be installed in the system.
 #
 # $(top_builddir)/include/curl for generated curlbuild.h included from curl.h
-# $(top_builddir)/include for generated curlbuild.h included from lib/setup.h
+# $(top_builddir)/include for generated curlbuild.h inc. from lib/curl_setup.h
 # $(top_srcdir)/include is for libcurl's external include files
 # $(top_builddir)/lib is for libcurl's generated lib/curl_config.h file
-# $(top_srcdir)/lib is for libcurl's lib/setup.h and other "borrowed" files
+# $(top_srcdir)/lib for libcurl's lib/curl_setup.h and other "borrowed" files
 # $(top_builddir)/ares is for in-tree c-ares's generated ares_build.h file
 # $(top_srcdir)/ares is for in-tree c-ares's external include files
 
 if USE_EMBEDDED_ARES
-INCLUDES = -I$(top_builddir)/include/curl \
-           -I$(top_builddir)/include      \
-           -I$(top_srcdir)/include        \
-           -I$(top_builddir)/lib          \
-           -I$(top_srcdir)/lib            \
-           -I$(top_srcdir)/tests/libtest  \
-           -I$(top_builddir)/ares         \
-           -I$(top_srcdir)/ares
+AM_CPPFLAGS = -I$(top_builddir)/include/curl \
+              -I$(top_builddir)/include      \
+              -I$(top_srcdir)/include        \
+              -I$(top_builddir)/lib          \
+              -I$(top_srcdir)/lib            \
+              -I$(top_srcdir)/tests/libtest  \
+              -I$(top_builddir)/ares         \
+              -I$(top_srcdir)/ares
 else
-INCLUDES = -I$(top_builddir)/include/curl \
-           -I$(top_builddir)/include      \
-           -I$(top_srcdir)/include        \
-           -I$(top_builddir)/lib          \
-           -I$(top_srcdir)/lib            \
-           -I$(top_srcdir)/tests/libtest
+AM_CPPFLAGS = -I$(top_builddir)/include/curl \
+              -I$(top_builddir)/include      \
+              -I$(top_srcdir)/include        \
+              -I$(top_builddir)/lib          \
+              -I$(top_srcdir)/lib            \
+              -I$(top_srcdir)/tests/libtest
 endif
 
 EXTRA_DIST = Makefile.inc
 
-LDADD = $(top_builddir)/lib/libcurlu.la @LDFLAGS@ @LIBCURL_LIBS@ @LIBS@
+# Prevent LIBS from being used for all link targets
+LIBS = $(BLANK_AT_MAKETIME)
+
+LDADD = $(top_builddir)/lib/libcurlu.la @LDFLAGS@ @LIBCURL_LIBS@
 DEPENDENCIES = $(top_builddir)/lib/libcurlu.la
-AM_CPPFLAGS = -DUNITTESTS
+AM_CPPFLAGS += -DUNITTESTS
 
 # Mostly for Windows build targets, when using static libcurl
 if USE_CPPFLAG_CURL_STATICLIB

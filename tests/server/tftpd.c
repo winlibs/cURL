@@ -58,9 +58,6 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -81,9 +78,7 @@
 #endif
 
 #include <setjmp.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
+
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
@@ -257,6 +252,10 @@ static SIGHANDLER_T old_sigint_handler  = SIG_ERR;
 static SIGHANDLER_T old_sigterm_handler = SIG_ERR;
 #endif
 
+#if defined(SIGBREAK) && defined(WIN32)
+static SIGHANDLER_T old_sigbreak_handler = SIG_ERR;
+#endif
+
 /* var which if set indicates that the program should finish execution */
 
 SIG_ATOMIC_T got_exit_signal = 0;
@@ -370,13 +369,13 @@ static void justtimeout(int signum)
 
 static RETSIGTYPE exit_signal_handler(int signum)
 {
-  int old_errno = ERRNO;
+  int old_errno = errno;
   if(got_exit_signal == 0) {
     got_exit_signal = 1;
     exit_signal = signum;
   }
   (void)signal(signum, exit_signal_handler);
-  SET_ERRNO(old_errno);
+  errno = old_errno;
 }
 
 static void install_signal_handlers(void)
@@ -384,26 +383,33 @@ static void install_signal_handlers(void)
 #ifdef SIGHUP
   /* ignore SIGHUP signal */
   if((old_sighup_handler = signal(SIGHUP, SIG_IGN)) == SIG_ERR)
-    logmsg("cannot install SIGHUP handler: %s", strerror(ERRNO));
+    logmsg("cannot install SIGHUP handler: %s", strerror(errno));
 #endif
 #ifdef SIGPIPE
   /* ignore SIGPIPE signal */
   if((old_sigpipe_handler = signal(SIGPIPE, SIG_IGN)) == SIG_ERR)
-    logmsg("cannot install SIGPIPE handler: %s", strerror(ERRNO));
+    logmsg("cannot install SIGPIPE handler: %s", strerror(errno));
 #endif
 #ifdef SIGINT
   /* handle SIGINT signal with our exit_signal_handler */
   if((old_sigint_handler = signal(SIGINT, exit_signal_handler)) == SIG_ERR)
-    logmsg("cannot install SIGINT handler: %s", strerror(ERRNO));
+    logmsg("cannot install SIGINT handler: %s", strerror(errno));
   else
     siginterrupt(SIGINT, 1);
 #endif
 #ifdef SIGTERM
   /* handle SIGTERM signal with our exit_signal_handler */
   if((old_sigterm_handler = signal(SIGTERM, exit_signal_handler)) == SIG_ERR)
-    logmsg("cannot install SIGTERM handler: %s", strerror(ERRNO));
+    logmsg("cannot install SIGTERM handler: %s", strerror(errno));
   else
     siginterrupt(SIGTERM, 1);
+#endif
+#if defined(SIGBREAK) && defined(WIN32)
+  /* handle SIGBREAK signal with our exit_signal_handler */
+  if((old_sigbreak_handler = signal(SIGBREAK, exit_signal_handler)) == SIG_ERR)
+    logmsg("cannot install SIGBREAK handler: %s", strerror(errno));
+  else
+    siginterrupt(SIGBREAK, 1);
 #endif
 }
 
@@ -424,6 +430,10 @@ static void restore_signal_handlers(void)
 #ifdef SIGTERM
   if(SIG_ERR != old_sigterm_handler)
     (void)signal(SIGTERM, old_sigterm_handler);
+#endif
+#if defined(SIGBREAK) && defined(WIN32)
+  if(SIG_ERR != old_sigbreak_handler)
+    (void)signal(SIGBREAK, old_sigbreak_handler);
 #endif
 }
 
@@ -958,7 +968,7 @@ static int do_tftp(struct testcase *test, struct tftphdr *tp, ssize_t size)
   /* Open request dump file. */
   server = fopen(REQUEST_DUMP, "ab");
   if(!server) {
-    error = ERRNO;
+    error = errno;
     logmsg("fopen() failed with error: %d %s", error, strerror(error));
     logmsg("Error opening file: %s", REQUEST_DUMP);
     return -1;
@@ -1076,7 +1086,7 @@ static int validate_access(struct testcase *test,
     if(file) {
       FILE *stream=fopen(file, "rb");
       if(!stream) {
-        error = ERRNO;
+        error = errno;
         logmsg("fopen() failed with error: %d %s", error, strerror(error));
         logmsg("Error opening file: %s", file);
         logmsg("Couldn't open test file: %s", file);
@@ -1128,7 +1138,7 @@ static void sendtftp(struct testcase *test, struct formats *pf)
   do {
     size = readit(test, &sdp, pf->f_convert);
     if (size < 0) {
-      nak(ERRNO + 100);
+      nak(errno + 100);
       return;
     }
     sdp->th_opcode = htons((unsigned short)opcode_DATA);
@@ -1239,7 +1249,7 @@ send_ack:
     size = writeit(test, &rdp, (int)(n - 4), pf->f_convert);
     if (size != (n-4)) {                 /* ahem */
       if (size < 0)
-        nak(ERRNO + 100);
+        nak(errno + 100);
       else
         nak(ENOSPACE);
       goto abort;

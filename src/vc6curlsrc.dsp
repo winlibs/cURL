@@ -51,8 +51,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libcurld_imp.lib kernel32.lib ws2_32.lib wldap32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"DLL-Debug/curl.exe" /pdbtype:sept /libpath:"..\lib\DLL-Debug"
-# ADD LINK32 libcurld_imp.lib kernel32.lib ws2_32.lib wldap32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"DLL-Debug/curl.exe" /pdbtype:sept /libpath:"..\lib\DLL-Debug"
+# ADD BASE LINK32 libcurld_imp.lib kernel32.lib ws2_32.lib wldap32.lib advapi32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"DLL-Debug/curl.exe" /pdbtype:sept /libpath:"..\lib\DLL-Debug"
+# ADD LINK32 libcurld_imp.lib kernel32.lib ws2_32.lib wldap32.lib advapi32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"DLL-Debug/curl.exe" /pdbtype:sept /libpath:"..\lib\DLL-Debug"
 
 !ELSEIF  "$(CFG)" == "curlsrc - Win32 using libcurl DLL Release"
 
@@ -75,8 +75,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libcurl_imp.lib kernel32.lib ws2_32.lib wldap32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"DLL-Release/curl.exe" /libpath:"..\lib\DLL-Release"
-# ADD LINK32 libcurl_imp.lib kernel32.lib ws2_32.lib wldap32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"DLL-Release/curl.exe" /libpath:"..\lib\DLL-Release"
+# ADD BASE LINK32 libcurl_imp.lib kernel32.lib ws2_32.lib wldap32.lib advapi32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"DLL-Release/curl.exe" /libpath:"..\lib\DLL-Release"
+# ADD LINK32 libcurl_imp.lib kernel32.lib ws2_32.lib wldap32.lib advapi32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"DLL-Release/curl.exe" /libpath:"..\lib\DLL-Release"
 
 !ELSEIF  "$(CFG)" == "curlsrc - Win32 using libcurl LIB Debug"
 
@@ -99,8 +99,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libcurld.lib kernel32.lib ws2_32.lib wldap32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"LIB-Debug/curl.exe" /pdbtype:sept /libpath:"..\lib\LIB-Debug"
-# ADD LINK32 libcurld.lib kernel32.lib ws2_32.lib wldap32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"LIB-Debug/curl.exe" /pdbtype:sept /libpath:"..\lib\LIB-Debug"
+# ADD BASE LINK32 libcurld.lib kernel32.lib ws2_32.lib wldap32.lib advapi32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"LIB-Debug/curl.exe" /pdbtype:sept /libpath:"..\lib\LIB-Debug"
+# ADD LINK32 libcurld.lib kernel32.lib ws2_32.lib wldap32.lib advapi32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"LIB-Debug/curl.exe" /pdbtype:sept /libpath:"..\lib\LIB-Debug"
 
 !ELSEIF  "$(CFG)" == "curlsrc - Win32 using libcurl LIB Release"
 
@@ -123,8 +123,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libcurl.lib kernel32.lib ws2_32.lib wldap32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"LIB-Release/curl.exe" /libpath:"..\lib\LIB-Release"
-# ADD LINK32 libcurl.lib kernel32.lib ws2_32.lib wldap32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"LIB-Release/curl.exe" /libpath:"..\lib\LIB-Release"
+# ADD BASE LINK32 libcurl.lib kernel32.lib ws2_32.lib wldap32.lib advapi32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"LIB-Release/curl.exe" /libpath:"..\lib\LIB-Release"
+# ADD LINK32 libcurl.lib kernel32.lib ws2_32.lib wldap32.lib advapi32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"LIB-Release/curl.exe" /libpath:"..\lib\LIB-Release"
 
 !ENDIF 
 
@@ -137,10 +137,6 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\hugehelp.c
-# End Source File
 # Begin Source File
 
 SOURCE=..\lib\nonblock.c
@@ -231,6 +227,10 @@ SOURCE=.\tool_homedir.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\tool_hugehelp.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\tool_libinfo.c
 # End Source File
 # Begin Source File
@@ -308,10 +308,6 @@ SOURCE=.\tool_xattr.c
 # Begin Source File
 
 SOURCE=".\config-win32.h"
-# End Source File
-# Begin Source File
-
-SOURCE=.\hugehelp.h
 # End Source File
 # Begin Source File
 
@@ -400,6 +396,10 @@ SOURCE=.\tool_helpers.h
 # Begin Source File
 
 SOURCE=.\tool_homedir.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\tool_hugehelp.h
 # End Source File
 # Begin Source File
 

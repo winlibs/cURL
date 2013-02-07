@@ -75,6 +75,9 @@
 /* Define if you want to enable IPv6 support */
 #undef ENABLE_IPV6
 
+/* Define to the type of arg 2 for gethostname. */
+#undef GETHOSTNAME_TYPE_ARG2
+
 /* Define to the type qualifier of arg 1 for getnameinfo. */
 #undef GETNAMEINFO_QUAL_ARG1
 
@@ -810,6 +813,9 @@
 /* Define to 1 if _THREAD_SAFE preprocessor symbol must be defined. */
 #undef NEED_THREAD_SAFE
 
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
+
 /* Define to enable NTLM delegation to winbind's ntlm_auth helper. */
 #undef NTLM_WB_ENABLED
 
@@ -963,9 +969,6 @@
 /* if axTLS is enabled */
 #undef USE_AXTLS
 
-/* Define to disable non-blocking sockets. */
-#undef USE_BLOCKING_SOCKETS
-
 /* if CyaSSL is enabled */
 #undef USE_CYASSL
 
@@ -1043,6 +1046,11 @@
 /* Define to 1 if OS is AIX. */
 #ifndef _ALL_SOURCE
 #  undef _ALL_SOURCE
+#endif
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
 #endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */

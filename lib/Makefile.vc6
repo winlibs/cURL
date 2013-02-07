@@ -69,7 +69,7 @@ OPENSSL_PATH   = ../../openssl-0.9.8x
 !ENDIF
 
 !IFNDEF LIBSSH2_PATH
-LIBSSH2_PATH   = ../../libssh2-1.4.2
+LIBSSH2_PATH   = ../../libssh2-1.4.3
 !ENDIF
 
 !IFNDEF ZLIB_PATH
@@ -105,7 +105,7 @@ WINDOWS_SDK_PATH = "$(PROGRAMFILES)\Microsoft SDK"
 
 CCNODBG    = cl.exe /O2 /DNDEBUG
 CCDEBUG    = cl.exe /Od /Gm /Zi /D_DEBUG /GZ
-CFLAGSSSL  = /DUSE_SSLEAY /I "$(OPENSSL_PATH)/inc32" /I "$(OPENSSL_PATH)/inc32/openssl"
+CFLAGSSSL  = /DUSE_SSLEAY /DUSE_OPENSSL /I "$(OPENSSL_PATH)/inc32" /I "$(OPENSSL_PATH)/inc32/openssl"
 CFLAGSSSH2 = /DUSE_LIBSSH2 /DCURL_DISABLE_LDAP /DHAVE_LIBSSH2 /DHAVE_LIBSSH2_H /DLIBSSH2_WIN32 /DLIBSSH2_LIBRARY /I "$(LIBSSH2_PATH)/include"
 CFLAGSZLIB = /DHAVE_ZLIB_H /DHAVE_ZLIB /DHAVE_LIBZ /I "$(ZLIB_PATH)"
 CFLAGS     = /I. /I../include /nologo /W3 /GX /DWIN32 /YX /FD /c /DBUILDING_LIBCURL /D_BIND_TO_CURRENT_VCLIBS_VERSION=1
@@ -116,7 +116,7 @@ LFLAGS     = /nologo /machine:$(MACHINE)
 SSLLIBS    = libeay32.lib ssleay32.lib
 ZLIBLIBSDLL= zdll.lib
 ZLIBLIBS   = zlib.lib
-WINLIBS    = ws2_32.lib wldap32.lib
+WINLIBS    = ws2_32.lib wldap32.lib advapi32.lib
 CFLAGS     = $(CFLAGS)
 
 CFGSET     = FALSE
@@ -497,6 +497,8 @@ X_OBJS= \
 	$(DIROBJ)\asyn-ares.obj \
 	$(DIROBJ)\asyn-thread.obj \
 	$(DIROBJ)\base64.obj \
+	$(DIROBJ)\bundles.obj \
+	$(DIROBJ)\conncache.obj \
 	$(DIROBJ)\connect.obj \
 	$(DIROBJ)\content_encoding.obj \
 	$(DIROBJ)\cookie.obj \
@@ -531,6 +533,7 @@ X_OBJS= \
 	$(DIROBJ)\hash.obj \
 	$(DIROBJ)\hmac.obj \
 	$(DIROBJ)\hostasyn.obj \
+	$(DIROBJ)\hostcheck.obj \
 	$(DIROBJ)\hostip.obj \
 	$(DIROBJ)\hostip4.obj \
 	$(DIROBJ)\hostip6.obj \

@@ -109,7 +109,7 @@ p.roffit {
 <p class="level0"><a name="CURLINFOPROXYAUTHAVAIL"></a><span class="nroffip">CURLINFO_PROXYAUTH_AVAIL</span> 
 <p class="level1">Pass a pointer to a long to receive a bitmask indicating the authentication method(s) available for your proxy authentication.  (Added in 7.10.8) 
 <p class="level0"><a name="CURLINFOOSERRNO"></a><span class="nroffip">CURLINFO_OS_ERRNO</span> 
-<p class="level1">Pass a pointer to a long to receive the errno variable from a connect failure. Note that the value is only set on failure, it is not reset upon a successfull operation.  (Added in 7.12.2) 
+<p class="level1">Pass a pointer to a long to receive the errno variable from a connect failure. Note that the value is only set on failure, it is not reset upon a successful operation.  (Added in 7.12.2) 
 <p class="level0"><a name="CURLINFONUMCONNECTS"></a><span class="nroffip">CURLINFO_NUM_CONNECTS</span> 
 <p class="level1">Pass a pointer to a long to receive how many new connections libcurl had to create to achieve the previous transfer (only the successful connects are counted).  Combined with <a class="emphasis" href="#CURLINFOREDIRECTCOUNT">CURLINFO_REDIRECT_COUNT</a> you are able to know how many times libcurl successfully reused existing connection(s) or not.  See the Connection Options of <a class="emphasis" href="./curl_easy_setopt.html">curl_easy_setopt(3)</a> to see how libcurl tries to make persistent connections to save time.  (Added in 7.12.3) 
 <p class="level0"><a name="CURLINFOPRIMARYIP"></a><span class="nroffip">CURLINFO_PRIMARY_IP</span> 

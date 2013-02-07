@@ -274,14 +274,18 @@ Pass a pointer to a function that matches the following prototype: \fBint
 function(void *clientp, curl_socket_t curlfd, curlsocktype purpose);\fP. This
 function gets called by libcurl after the socket() call but before the
 connect() call. The callback's \fIpurpose\fP argument identifies the exact
-purpose for this particular socket, and currently only one value is supported:
-\fICURLSOCKTYPE_IPCXN\fP for the primary connection (meaning the control
-connection in the FTP case). Future versions of libcurl may support more
-purposes. It passes the newly created socket descriptor so additional
-setsockopt() calls can be done at the user's discretion.  Return 0 (zero) from
-the callback on success. Return 1 from the callback function to signal an
-unrecoverable error to the library and it will close the socket and return
-\fICURLE_COULDNT_CONNECT\fP.  (Option added in 7.16.0)
+purpose for this particular socket:
+
+\fICURLSOCKTYPE_IPCXN\fP for actively created connections or since 7.28.0
+\fICURLSOCKTYPE_ACCEPT\fP for FTP when the connection was setup with PORT/EPSV
+(in earlier versions these sockets weren't passed to this callback).
+
+Future versions of libcurl may support more purposes. It passes the newly
+created socket descriptor so additional setsockopt() calls can be done at the
+user's discretion.  Return 0 (zero) from the callback on success. Return 1
+from the callback function to signal an unrecoverable error to the library and
+it will close the socket and return \fICURLE_COULDNT_CONNECT\fP.  (Option
+added in 7.16.0)
 
 Added in 7.21.5, the callback function may return
 \fICURL_SOCKOPT_ALREADY_CONNECTED\fP, which tells libcurl that the socket is
@@ -2089,11 +2093,12 @@ Resolve to IPv6 addresses.
 .IP CURLOPT_CONNECT_ONLY
 Pass a long. If the parameter equals 1, it tells the library to perform all
 the required proxy authentication and connection setup, but no data transfer.
-This option is useful only on HTTP URLs.
+This option is implemented for HTTP, SMTP and POP3.
 
-This option is useful with the \fICURLINFO_LASTSOCKET\fP option to
-\fIcurl_easy_getinfo(3)\fP. The library can set up the connection and then the
-application can obtain the most recently used socket for special data
+The option can be used to simply test a connection to a server, but is more
+useful when used with the \fICURLINFO_LASTSOCKET\fP option to
+\fIcurl_easy_getinfo(3)\fP as the library can set up the connection and then
+the application can obtain the most recently used socket for special data
 transfers. (Added in 7.15.2)
 .IP CURLOPT_USE_SSL
 Pass a long using one of the values from below, to make libcurl use your
@@ -2255,8 +2260,8 @@ even indicate an accessible file.
 This option is by default set to the system path where libcurl's cacert bundle
 is assumed to be stored, as established at build time.
 
-When built against NSS, this is the directory that the NSS certificate
-database resides in.
+If curl is built against the NSS SSL library, the NSS PEM PKCS#11 module
+(libnsspem.so) needs to be available for this option to work properly.
 .IP CURLOPT_ISSUERCERT
 Pass a char * to a zero terminated string naming a file holding a CA
 certificate in PEM format. If the option is set, an additional check against
@@ -2319,8 +2324,9 @@ Curl considers the server the intended one when the Common Name field or a
 Subject Alternate Name field in the certificate matches the host name in the
 URL to which you told Curl to connect.
 
-When the value is 1, the certificate must contain a Common Name field, but it
-doesn't matter what name it says.  (This is not ordinarily a useful setting).
+When the value is 1, libcurl will return a failure. It was previously (in
+7.28.0 and earlier) a debug option of some sorts, but it is no longer
+supported due to frequently leading to programmer mistakes.
 
 When the value is 0, the connection succeeds regardless of the names in the
 certificate.
@@ -2367,7 +2373,7 @@ this option then all known ciphers are disabled and only those passed in
 are enabled.
 
 You'll find more details about the NSS cipher lists on this URL:
-\fIhttp://directory.fedora.redhat.com/docs/mod_nss.html#Directives\fP
+\fIhttp://git.fedorahosted.org/cgit/mod_nss.git/plain/docs/mod_nss.html#Directives\fP
 
 .IP CURLOPT_SSL_SESSIONID_CACHE
 Pass a long set to 0 to disable libcurl's use of SSL session-ID caching. Set
@@ -2405,8 +2411,11 @@ GSS_C_DELEG_POLICY_FLAG was available at compile-time.
 .IP CURLOPT_SSH_AUTH_TYPES
 Pass a long set to a bitmask consisting of one or more of
 CURLSSH_AUTH_PUBLICKEY, CURLSSH_AUTH_PASSWORD, CURLSSH_AUTH_HOST,
-CURLSSH_AUTH_KEYBOARD. Set CURLSSH_AUTH_ANY to let libcurl pick one. Currently
-CURLSSH_AUTH_HOST has no effect. (Added in 7.16.1)
+CURLSSH_AUTH_KEYBOARD and CURLSSH_AUTH_AGENT. Set CURLSSH_AUTH_ANY to let
+libcurl pick a suitable one. Currently CURLSSH_AUTH_HOST has no effect. (Added
+in 7.16.1) If CURLSSH_AUTH_AGENT is used, libcurl attempts to connect to
+ssh-agent or pageant and let the agent attempt the authentication. (Added in
+7.28.0)
 .IP CURLOPT_SSH_HOST_PUBLIC_KEY_MD5
 Pass a char * pointing to a string containing 32 hexadecimal digits. The
 string should be the 128 bit MD5 checksum of the remote host's public key, and

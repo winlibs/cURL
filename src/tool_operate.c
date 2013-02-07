@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,10 +20,6 @@
  *
  ***************************************************************************/
 #include "tool_setup.h"
-
-#ifdef HAVE_UNISTD_H
-#  include <unistd.h>
-#endif
 
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
@@ -77,6 +73,7 @@
 #include "tool_writeenv.h"
 #include "tool_writeout.h"
 #include "tool_xattr.h"
+#include "tool_vms.h"
 
 #include "memdebug.h" /* keep this as LAST include */
 
@@ -479,7 +476,6 @@ int operate(struct Configurable *config, int argc, argv_item_t argv[])
       int urlnum;
 
       uploadfile = NULL;
-      separator = 0;
       urls = NULL;
       urlnum = 0;
 
@@ -1052,7 +1048,7 @@ int operate(struct Configurable *config, int argc, argv_item_t argv[])
         if(curlinfo->features & CURL_VERSION_SSL) {
           if(config->insecure_ok) {
             my_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-            my_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1L);
+            my_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
           }
           else {
             my_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
@@ -1655,11 +1651,8 @@ int operate(struct Configurable *config, int argc, argv_item_t argv[])
         Curl_safefree(outfile);
         Curl_safefree(this_url);
 
-        if(infdopen) {
+        if(infdopen)
           close(infd);
-          infdopen = FALSE;
-          infd = STDIN_FILENO;
-        }
 
         if(metalink) {
           /* Should exit if error is fatal. */

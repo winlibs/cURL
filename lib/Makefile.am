@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -30,15 +30,15 @@ DOCS = README.encoding README.memoryleak README.ares README.curlx	\
 
 CMAKE_DIST = CMakeLists.txt curl_config.h.cmake
 
-EXTRA_DIST = Makefile.b32 Makefile.m32 Makefile.vc6 $(DSP)              \
- vc6libcurl.dsw config-win32.h config-win32ce.h config-riscos.h         \
- config-mac.h curl_config.h.in makefile.dj config-dos.h libcurl.plist   \
- libcurl.rc config-amigaos.h makefile.amiga                             \
- Makefile.netware nwlib.c nwos.c msvcproj.head msvcproj.foot		\
- config-win32ce.h config-os400.h setup-os400.h config-symbian.h		\
- Makefile.Watcom config-tpf.h $(DOCS) $(VCPROJ) mk-ca-bundle.pl		\
- mk-ca-bundle.vbs firefox-db2pem.sh $(CMAKE_DIST) config-vxworks.h	\
- Makefile.vxworks config-vms.h checksrc.pl
+EXTRA_DIST = Makefile.b32 Makefile.m32 Makefile.vc6 $(DSP)		\
+ vc6libcurl.dsw config-win32.h config-win32ce.h config-riscos.h		\
+ config-mac.h curl_config.h.in makefile.dj config-dos.h libcurl.plist	\
+ libcurl.rc config-amigaos.h makefile.amiga Makefile.netware nwlib.c	\
+ nwos.c msvcproj.head msvcproj.foot config-win32ce.h config-os400.h	\
+ setup-os400.h config-symbian.h Makefile.Watcom config-tpf.h $(DOCS)	\
+ $(VCPROJ) mk-ca-bundle.pl mk-ca-bundle.vbs firefox-db2pem.sh		\
+ $(CMAKE_DIST) config-vxworks.h Makefile.vxworks checksrc.pl		\
+ objnames-test08.sh objnames-test10.sh objnames.inc
 
 CLEANFILES = $(DSP) $(VCPROJ)
 
@@ -56,30 +56,28 @@ CFLAG_CURL_SYMBOL_HIDING = @CFLAG_CURL_SYMBOL_HIDING@
 # might possibly already be installed in the system.
 #
 # $(top_builddir)/include/curl for generated curlbuild.h included from curl.h
-# $(top_builddir)/include for generated curlbuild.h included from lib/setup.h
+# $(top_builddir)/include for generated curlbuild.h inc. from lib/curl_setup.h
 # $(top_srcdir)/include is for libcurl's external include files
 # $(top_builddir)/lib is for libcurl's generated lib/curl_config.h file
-# $(top_srcdir)/lib is for libcurl's lib/setup.h and other "private" files
+# $(top_srcdir)/lib for libcurl's lib/curl_setup.h and other "private" files
 # $(top_builddir)/ares is for in-tree c-ares's generated ares_build.h file
 # $(top_srcdir)/ares is for in-tree c-ares's external include files
 
 if USE_EMBEDDED_ARES
-INCLUDES = -I$(top_builddir)/include/curl \
-           -I$(top_builddir)/include      \
-           -I$(top_srcdir)/include        \
-           -I$(top_builddir)/lib          \
-           -I$(top_srcdir)/lib            \
-           -I$(top_builddir)/ares         \
-           -I$(top_srcdir)/ares
+AM_CPPFLAGS = -I$(top_builddir)/include/curl \
+              -I$(top_builddir)/include      \
+              -I$(top_srcdir)/include        \
+              -I$(top_builddir)/lib          \
+              -I$(top_srcdir)/lib            \
+              -I$(top_builddir)/ares         \
+              -I$(top_srcdir)/ares
 else
-INCLUDES = -I$(top_builddir)/include/curl \
-           -I$(top_builddir)/include      \
-           -I$(top_srcdir)/include        \
-           -I$(top_builddir)/lib          \
-           -I$(top_srcdir)/lib
+AM_CPPFLAGS = -I$(top_builddir)/include/curl \
+              -I$(top_builddir)/include      \
+              -I$(top_srcdir)/include        \
+              -I$(top_builddir)/lib          \
+              -I$(top_srcdir)/lib
 endif
-
-AM_CPPFLAGS =
 
 # Mostly for Windows build targets, when building libcurl library
 if USE_CPPFLAG_BUILDING_LIBCURL
@@ -101,9 +99,9 @@ if SONAME_BUMP
 #
 # This conditional soname bump SHOULD be removed at next "proper" bump.
 #
-VERSIONINFO=-version-info 7:0:2
+VERSIONINFO=-version-info 8:0:3
 else
-VERSIONINFO=-version-info 6:0:2
+VERSIONINFO=-version-info 7:0:3
 endif
 
 # This flag accepts an argument of the form current[:revision[:age]]. So,
@@ -133,6 +131,9 @@ endif
 if VERSIONED_SYMBOLS
 VERSIONED_SYMBOLS = -Wl,--version-script=libcurl.vers
 endif
+
+# Prevent LIBS from being used for all link targets
+LIBS = $(BLANK_AT_MAKETIME)
 
 libcurl_la_LDFLAGS = $(UNDEF) $(VERSIONINFO) $(MIMPURE) $(VERSIONED_SYMBOLS) $(LIBCURL_LIBS)
 

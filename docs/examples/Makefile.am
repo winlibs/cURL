@@ -31,24 +31,32 @@ EXTRA_DIST = README Makefile.example Makefile.inc Makefile.m32 \
 # might possibly already be installed in the system.
 #
 # $(top_builddir)/include/curl for generated curlbuild.h included from curl.h
-# $(top_builddir)/include for generated curlbuild.h included from lib/setup.h
+# $(top_builddir)/include for generated curlbuild.h inc. from lib/curl_setup.h
 # $(top_srcdir)/include is for libcurl's external include files
 
-INCLUDES = -I$(top_builddir)/include/curl \
-           -I$(top_builddir)/include      \
-           -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include/curl \
+              -I$(top_builddir)/include      \
+              -I$(top_srcdir)/include
 
 LIBDIR = $(top_builddir)/lib
 
-AM_CPPFLAGS = -DCURL_NO_OLDIES
+# Avoid libcurl obsolete stuff
+AM_CPPFLAGS += -DCURL_NO_OLDIES
 
 # Mostly for Windows build targets, when using static libcurl
 if USE_CPPFLAG_CURL_STATICLIB
 AM_CPPFLAGS += -DCURL_STATICLIB
 endif
 
+# Prevent LIBS from being used for all link targets
+LIBS = $(BLANK_AT_MAKETIME)
+
 # Dependencies
+if USE_EXPLICIT_LIB_DEPS
+LDADD = $(LIBDIR)/libcurl.la @LIBCURL_LIBS@
+else
 LDADD = $(LIBDIR)/libcurl.la
+endif
 
 # Makefile.inc provides the check_PROGRAMS and COMPLICATED_EXAMPLES defines
 include Makefile.inc

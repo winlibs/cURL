@@ -108,6 +108,8 @@
 <File RelativePath="asyn-thread.c"></File>
 <File RelativePath="axtls.c"></File>
 <File RelativePath="base64.c"></File>
+<File RelativePath="bundles.c"></File>
+<File RelativePath="conncache.c"></File>
 <File RelativePath="connect.c"></File>
 <File RelativePath="content_encoding.c"></File>
 <File RelativePath="cookie.c"></File>
@@ -144,6 +146,7 @@
 <File RelativePath="hash.c"></File>
 <File RelativePath="hmac.c"></File>
 <File RelativePath="hostasyn.c"></File>
+<File RelativePath="hostcheck.c"></File>
 <File RelativePath="hostip4.c"></File>
 <File RelativePath="hostip6.c"></File>
 <File RelativePath="hostip.c"></File>
@@ -213,7 +216,9 @@
 <File RelativePath="arpa_telnet.h"></File>
 <File RelativePath="asyn.h"></File>
 <File RelativePath="axtls.h"></File>
+<File RelativePath="bundles.h"></File>
 <File RelativePath="config-win32.h"></File>
+<File RelativePath="conncache.h"></File>
 <File RelativePath="connect.h"></File>
 <File RelativePath="content_encoding.h"></File>
 <File RelativePath="cookie.h"></File>
@@ -238,6 +243,8 @@
 <File RelativePath="curl_rtmp.h"></File>
 <File RelativePath="curl_sasl.h"></File>
 <File RelativePath="curl_schannel.h"></File>
+<File RelativePath="curl_setup.h"></File>
+<File RelativePath="curl_setup_once.h"></File>
 <File RelativePath="curl_sspi.h"></File>
 <File RelativePath="curl_threads.h"></File>
 <File RelativePath="curlx.h"></File>
@@ -254,6 +261,7 @@
 <File RelativePath="gopher.h"></File>
 <File RelativePath="gtls.h"></File>
 <File RelativePath="hash.h"></File>
+<File RelativePath="hostcheck.h"></File>
 <File RelativePath="hostip.h"></File>
 <File RelativePath="http_chunks.h"></File>
 <File RelativePath="http_digest.h"></File>
@@ -267,6 +275,7 @@
 <File RelativePath="krb4.h"></File>
 <File RelativePath="llist.h"></File>
 <File RelativePath="memdebug.h"></File>
+<File RelativePath="multihandle.h"></File>
 <File RelativePath="multiif.h"></File>
 <File RelativePath="netrc.h"></File>
 <File RelativePath="non-ascii.h"></File>
@@ -282,8 +291,7 @@
 <File RelativePath="rtsp.h"></File>
 <File RelativePath="select.h"></File>
 <File RelativePath="sendf.h"></File>
-<File RelativePath="setup.h"></File>
-<File RelativePath="setup_once.h"></File>
+<File RelativePath="setup-vms.h"></File>
 <File RelativePath="share.h"></File>
 <File RelativePath="slist.h"></File>
 <File RelativePath="smtp.h"></File>
