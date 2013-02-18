@@ -1,0 +1,138 @@
+diff -urN curl-7.29.0/lib/multi.c curl-7.29.0_patched/lib/multi.c
+--- curl-7.29.0/lib/multi.c	2013-02-05 23:01:40.000000000 +0100
++++ curl-7.29.0_patched/lib/multi.c	2013-02-17 19:30:04.642972347 +0100
+@@ -1773,10 +1773,12 @@
+     /* Close all the connections in the connection cache */
+     close_all_connections(multi);
+ 
+-    multi->closure_handle->dns.hostcache = multi->hostcache;
+-    Curl_hostcache_clean(multi->closure_handle);
++    if(multi->closure_handle) {
++      multi->closure_handle->dns.hostcache = multi->hostcache;
++      Curl_hostcache_clean(multi->closure_handle);
+ 
+-    Curl_close(multi->closure_handle);
++      Curl_close(multi->closure_handle);
++    }
+     multi->closure_handle = NULL;
+ 
+     Curl_hash_destroy(multi->sockhash);
+diff -urN curl-7.29.0/tests/data/Makefile.am curl-7.29.0_patched/tests/data/Makefile.am
+--- curl-7.29.0/tests/data/Makefile.am	2013-02-06 10:47:19.000000000 +0100
++++ curl-7.29.0_patched/tests/data/Makefile.am	2013-02-17 19:30:04.642972347 +0100
+@@ -94,6 +94,7 @@
+ test1400 test1401 test1402 test1403 test1404 test1405 test1406 test1407 \
+ test1408 test1409 test1410 test1411 test1412 test1413 \
+ test1500 test1501 test1502 test1503 test1504 test1505 test1506 \
++test1508 \
+ test2000 test2001 test2002 test2003 test2004 test2005 test2006 test2007 \
+ test2008 test2009 test2010 test2011 test2012 test2013 test2014 test2015 \
+ test2016 test2017 test2018 test2019 test2020 test2021 test2022 \
+diff -urN curl-7.29.0/tests/data/test1508 curl-7.29.0_patched/tests/data/test1508
+--- curl-7.29.0/tests/data/test1508	1970-01-01 01:00:00.000000000 +0100
++++ curl-7.29.0_patched/tests/data/test1508	2013-02-17 19:30:04.642972347 +0100
+@@ -0,0 +1,31 @@
++<testcase>
++<info>
++<keywords>
++HTTP
++multi
++</keywords>
++</info>
++
++# Client-side
++<client>
++<server>
++none
++</server>
++<tool>
++lib1508
++</tool>
++ <name>
++Close a multi handle without using it
++ </name>
++ <command>
++http://%HOSTIP:%HTTPPORT/path/1508
++</command>
++</client>
++
++# Verify data after the test has been "shot"
++<verify>
++<file name="log/stdout1508" mode="text">
++We are done
++</file>
++</verify>
++</testcase>
+diff -urN curl-7.29.0/tests/libtest/lib1508.c curl-7.29.0_patched/tests/libtest/lib1508.c
+--- curl-7.29.0/tests/libtest/lib1508.c	1970-01-01 01:00:00.000000000 +0100
++++ curl-7.29.0_patched/tests/libtest/lib1508.c	2013-02-17 19:30:04.642972347 +0100
+@@ -0,0 +1,49 @@
++/***************************************************************************
++ *                                  _   _ ____  _
++ *  Project                     ___| | | |  _ \| |
++ *                             / __| | | | |_) | |
++ *                            | (__| |_| |  _ <| |___
++ *                             \___|\___/|_| \_\_____|
++ *
++ * Copyright (C) 2013, Linus Nielsen Feltzing <linus@haxx.se>
++ *
++ * This software is licensed as described in the file COPYING, which
++ * you should have received as part of this distribution. The terms
++ * are also available at http://curl.haxx.se/docs/copyright.html.
++ *
++ * You may opt to use, copy, modify, merge, publish, distribute and/or sell
++ * copies of the Software, and permit persons to whom the Software is
++ * furnished to do so, under the terms of the COPYING file.
++ *
++ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
++ * KIND, either express or implied.
++ *
++ ***************************************************************************/
++#include "test.h"
++
++#include "testutil.h"
++#include "warnless.h"
++#include "memdebug.h"
++
++int test(char *URL)
++{
++  int res = 0;
++  CURLM *m = NULL;
++
++  (void)URL;
++
++  global_init(CURL_GLOBAL_ALL);
++
++  multi_init(m);
++
++test_cleanup:
++
++  /* proper cleanup sequence - type PB */
++
++  curl_multi_cleanup(m);
++  curl_global_cleanup();
++
++  printf("We are done\n");
++
++  return res;
++}
+diff -urN curl-7.29.0/tests/libtest/Makefile.inc curl-7.29.0_patched/tests/libtest/Makefile.inc
+--- curl-7.29.0/tests/libtest/Makefile.inc	2013-02-06 10:47:19.000000000 +0100
++++ curl-7.29.0_patched/tests/libtest/Makefile.inc	2013-02-17 19:30:04.642972347 +0100
+@@ -23,7 +23,7 @@
+                 lib582 lib583        lib585 lib586 lib587               \
+   lib590 lib591                                    lib597 lib598 lib599 \
+   \
+-  lib1500 lib1501 lib1502 lib1503 lib1504 lib1505 lib1506
++  lib1500 lib1501 lib1502 lib1503 lib1504 lib1505 lib1506 lib1508
+ 
+ chkhostname_SOURCES = chkhostname.c ../../lib/curl_gethostname.c
+ chkhostname_LDADD = @CURL_NETWORK_LIBS@
+@@ -312,3 +312,7 @@
+ lib1506_SOURCES = lib1506.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
+ lib1506_LDADD = $(TESTUTIL_LIBS)
+ lib1506_CPPFLAGS = $(AM_CPPFLAGS) -DLIB1506
++
++lib1508_SOURCES = lib1508.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
++lib1508_LDADD = $(TESTUTIL_LIBS)
++lib1508_CPPFLAGS = $(AM_CPPFLAGS) -DLIB1508
