@@ -53,7 +53,7 @@ if "vc9"=="%WL_VC%" (
 )
 
 rem all checks are ok, do build
-nmake /f Makefile.vc mode=static VC=%WL_WC_NUM% WITH_DEVEL=%WL_DEPS% WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=%wL_IDN% ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=%WL_PLATFORM%
+nmake /f Makefile.vc mode=static VC=%WL_WC_NUM% WITH_DEVEL=%WL_DEPS% WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=%WL_IDN% ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=%WL_PLATFORM%
 goto EXIT_GOOD
 
 :EXIT_GOOD
