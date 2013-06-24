@@ -78,7 +78,7 @@ goto EXIT_GOOD
 :HELP
 	cd ..
 	echo Builds a winlibs project
-	echo Usage: build.bat vc env platform
-	echo     vc         vc9 or vc11
-	echo     env        release or debug
-	echo     platform   x86 or x64
+	echo Usage: build.bat ^<CRT^> ^<mode^> ^<arch^>
+	echo     CRT         vc9 or vc11
+	echo     mode        release or debug
+	echo     arch        x86 or x64
