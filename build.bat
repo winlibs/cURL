@@ -5,15 +5,13 @@ cd winbuild
 if "%1"=="" goto HELP
 if "%2"=="" goto HELP
 if "%3"=="" goto HELP
-if "%4"=="" goto HELP
 
-set WL_VC=%1
-set WL_ENV=%2
-set WL_PLATFORM=%3
-set WL_DEPS=%4
+set WL_CRT=%1
+set WL_MODE=%2
+set WL_ARCH=%3
 
-if NOT "debug"=="%WL_ENV%" (
-	if NOT "release"=="%WL_ENV%" (
+if NOT "debug"=="%WL_MODE%" (
+	if NOT "release"=="%WL_MODE%" (
 		echo Invalid env
 		goto HELP
 	)
@@ -21,21 +19,21 @@ if NOT "debug"=="%WL_ENV%" (
 
 rem set debug option
 set WL_DEBUG=no
-if "debug"=="%WL_ENV%" (
+if "debug"=="%WL_MODE%" (
 	set WL_DEBUG=yes
 )
 
-if NOT "x86"=="%WL_PLATFORM%" (
-	if NOT "x64"=="%WL_PLATFORM%" (
+if NOT "x86"=="%WL_ARCH%" (
+	if NOT "x64"=="%WL_ARCH%" (
 		echo Invalid platform
 		goto HELP
 	)
 )
 
-if "vc9"=="%WL_VC%" (
-	if "x86"=="%WL_PLATFORM%" (
+if "vc9"=="%WL_CRT%" (
+	if "x86"=="%WL_ARCH%" (
 		call "%ProgramFiles%\Microsoft Visual Studio 9.0\VC\bin\vcvars32.bat" 
-		setenv /%WL_ENV% /%WL_PLATFORM% /xp
+		setenv /%WL_MODE% /%WL_ARCH% /xp
 		set WL_IDN=no
 		set WL_WC_NUM=9
 	) else (
@@ -43,17 +41,30 @@ if "vc9"=="%WL_VC%" (
 		echo only x86 build for vc9 are supported
 		goto EXIT_BAD 
 	)
-) else if "vc11"=="%WL_VC%" (
-	call "%ProgramFiles%\Microsoft Visual Studio 11.0\VC\vcvarsall.bat" %WL_PLATFORM%
+) else if "vc11"=="%WL_CRT%" (
+	call "%ProgramFiles%\Microsoft Visual Studio 11.0\VC\vcvarsall.bat" %WL_ARCH%
 	set WL_IDN=yes
 	set WL_WC_NUM=11
 ) else (
-	echo Unsupported Visual Studio version
+	echo Unsupported Visual C++ version
 	goto EXIT_BAD 
 )
 
+
+if ""=="%WL_DEPS_PREFIX%" set WL_DEPS_PREFIX=C:\php-lib-deps
+set WL_DEPS="%WL_DEPS_PREFIX%\%WL_CRT%\%WL_ARCH%\curl"
+if NOT EXIST %WL_DEPS% (
+        echo "Dependencies not found!"
+        echo "To fix this, please"
+        echo " - set WL_DEPS_PREFIX=<some_full_path> or use C:\php-lib-deps as a fallback"
+        echo " - put the dependencies into WL_DEPS_PREFIX\%WL_CRT%\%WL_ARCH%\curl"
+        echo " - rerun the script"
+        goto EXIT_BAD
+)
+
+
 rem all checks are ok, do build
-nmake /f Makefile.vc mode=static VC=%WL_WC_NUM% WITH_DEVEL=%WL_DEPS% WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=%WL_IDN% ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=%WL_PLATFORM%
+nmake /f Makefile.vc mode=static VC=%WL_WC_NUM% WITH_DEVEL=%WL_DEPS% WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=%WL_IDN% ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=%WL_ARCH%
 goto EXIT_GOOD
 
 :EXIT_GOOD
@@ -67,8 +78,7 @@ goto EXIT_GOOD
 :HELP
 	cd ..
 	echo Builds a winlibs project
-	echo Usage: build.bat vc env platform path
+	echo Usage: build.bat vc env platform
 	echo     vc         vc9 or vc11
 	echo     env        release or debug
 	echo     platform   x86 or x64
-	echo     path       path to the deps
