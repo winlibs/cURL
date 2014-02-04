@@ -86,9 +86,16 @@ p.roffit {
 <p class="level1">The default value is NULL, which means that there is no blacklist. 
 <p class="level1">Pass a NULL pointer to clear the blacklist. 
 <p class="level1">Example: 
-<p class="level1">
-<p class="level1">&nbsp; site_blacklist[] = &nbsp; { &nbsp;   "www.haxx.se", &nbsp;   "www.example.com:1234", &nbsp;   NULL &nbsp; }; 
-<p class="level1">&nbsp; curl_multi_setopt(m, CURLMOPT_PIPELINE_SITE_BL, site_blacklist); 
+<p class="level1"><pre>
+<p class="level1">&nbsp; site_blacklist[] =
+ &nbsp; {
+ &nbsp;   "www.haxx.se",
+ &nbsp;   "www.example.com:1234",
+ &nbsp;   NULL
+ &nbsp; };
+ <p class="level1">&nbsp; curl_multi_setopt(m, CURLMOPT_PIPELINE_SITE_BL, site_blacklist);
+ </pre>
+
 <p class="level1">
 <p class="level1">(Added in 7.30.0) 
 <p class="level0"><a name="CURLMOPTPIPELININGSERVERBL"></a><span class="nroffip">CURLMOPT_PIPELINING_SERVER_BL</span> 
@@ -97,9 +104,16 @@ p.roffit {
 <p class="level1">The default value is NULL, which means that there is no blacklist. 
 <p class="level1">Pass a NULL pointer to clear the blacklist. 
 <p class="level1">Example: 
-<p class="level1">
-<p class="level1">&nbsp; server_blacklist[] = &nbsp; { &nbsp;   "Microsoft-IIS/6.0", &nbsp;   "nginx/0.8.54", &nbsp;   NULL &nbsp; }; 
-<p class="level1">&nbsp; curl_multi_setopt(m, CURLMOPT_PIPELINE_SERVER_BL, server_blacklist); 
+<p class="level1"><pre>
+<p class="level1">&nbsp; server_blacklist[] =
+ &nbsp; {
+ &nbsp;   "Microsoft-IIS/6.0",
+ &nbsp;   "nginx/0.8.54",
+ &nbsp;   NULL
+ &nbsp; };
+ <p class="level1">&nbsp; curl_multi_setopt(m, CURLMOPT_PIPELINE_SERVER_BL, server_blacklist);
+ </pre>
+
 <p class="level1">
 <p class="level1">(Added in 7.30.0) 
 <p class="level0"><a name="CURLMOPTMAXTOTALCONNECTIONS"></a><span class="nroffip">CURLMOPT_MAX_TOTAL_CONNECTIONS</span> 

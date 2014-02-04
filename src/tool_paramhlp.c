@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -178,9 +178,55 @@ ParameterError str2num(long *val, const char *str)
 
 ParameterError str2unum(long *val, const char *str)
 {
-  if(str[0]=='-')
-    return PARAM_NEGATIVE_NUMERIC; /* badness */
-  return str2num(val, str);
+  ParameterError result = str2num(val, str);
+  if(result != PARAM_OK)
+    return result;
+  if(*val < 0)
+    return PARAM_NEGATIVE_NUMERIC;
+
+  return PARAM_OK;
+}
+
+/*
+ * Parse the string and write the double in the given address. Return PARAM_OK
+ * on success, otherwise a parameter specific error enum.
+ *
+ * Since this function gets called with the 'nextarg' pointer from within the
+ * getparameter a lot, we must check it for NULL before accessing the str
+ * data.
+ */
+
+ParameterError str2double(double *val, const char *str)
+{
+  if(str) {
+    char *endptr;
+    double num = strtod(str, &endptr);
+    if((endptr != str) && (endptr == str + strlen(str))) {
+      *val = num;
+      return PARAM_OK;  /* Ok */
+    }
+  }
+  return PARAM_BAD_NUMERIC; /* badness */
+}
+
+/*
+ * Parse the string and write the double in the given address. Return PARAM_OK
+ * on success, otherwise a parameter error enum. ONLY ACCEPTS POSITIVE NUMBERS!
+ *
+ * Since this function gets called with the 'nextarg' pointer from within the
+ * getparameter a lot, we must check it for NULL before accessing the str
+ * data.
+ */
+
+ParameterError str2udouble(double *val, const char *str)
+{
+  ParameterError result = str2double(val, str);
+  if(result != PARAM_OK)
+    return result;
+  if(*val < 0)
+    return PARAM_NEGATIVE_NUMERIC;
+
+  return PARAM_OK;
 }
 
 /*
@@ -319,22 +365,31 @@ ParameterError str2offset(curl_off_t *val, const char *str)
   return PARAM_BAD_NUMERIC;
 }
 
-ParameterError checkpasswd(const char *kind, /* for what purpose */
-                           char **userpwd)   /* pointer to allocated string */
+CURLcode checkpasswd(const char *kind, /* for what purpose */
+                     char **userpwd)   /* pointer to allocated string */
 {
-  char *ptr;
+  char *psep;
+  char *osep;
 
   if(!*userpwd)
-    return PARAM_OK;
+    return CURLE_OK;
 
-  ptr = strchr(*userpwd, ':');
-  if(!ptr) {
+  /* Attempt to find the password separator */
+  psep = strchr(*userpwd, ':');
+
+  /* Attempt to find the options separator */
+  osep = strchr(*userpwd, ';');
+
+  if(!psep && **userpwd != ';') {
     /* no password present, prompt for one */
     char passwd[256] = "";
     char prompt[256];
     size_t passwdlen;
     size_t userlen = strlen(*userpwd);
     char *passptr;
+
+    if(osep)
+      *osep = '\0';
 
     /* build a nice-looking prompt */
     curlx_msnprintf(prompt, sizeof(prompt),
@@ -345,19 +400,23 @@ ParameterError checkpasswd(const char *kind, /* for what purpose */
     getpass_r(prompt, passwd, sizeof(passwd));
     passwdlen = strlen(passwd);
 
+    if(osep)
+      *osep = ';';
+
     /* extend the allocated memory area to fit the password too */
     passptr = realloc(*userpwd,
                       passwdlen + 1 + /* an extra for the colon */
                       userlen + 1);   /* an extra for the zero */
     if(!passptr)
-      return PARAM_NO_MEM;
+      return CURLE_OUT_OF_MEMORY;
 
     /* append the password separated with a colon */
     passptr[userlen] = ':';
     memcpy(&passptr[userlen+1], passwd, passwdlen+1);
     *userpwd = passptr;
   }
-  return PARAM_OK;
+
+  return CURLE_OK;
 }
 
 ParameterError add2list(struct curl_slist **list, const char *ptr)

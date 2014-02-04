@@ -162,10 +162,6 @@ SOURCE=..\..\..\lib\asyn-thread.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\axtls.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\base64.c
 # End Source File
 # Begin Source File
@@ -191,10 +187,6 @@ SOURCE=..\..\..\lib\cookie.c
 # Begin Source File
 
 SOURCE=..\..\..\lib\curl_addrinfo.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\curl_darwinssl.c
 # End Source File
 # Begin Source File
 
@@ -234,19 +226,11 @@ SOURCE=..\..\..\lib\curl_ntlm_wb.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\curl_rand.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\curl_rtmp.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\lib\curl_sasl.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\curl_schannel.c
 # End Source File
 # Begin Source File
 
@@ -258,11 +242,11 @@ SOURCE=..\..\..\lib\curl_threads.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\cyassl.c
+SOURCE=..\..\..\lib\dict.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\dict.c
+SOURCE=..\..\..\lib\dotdot.c
 # End Source File
 # Begin Source File
 
@@ -306,10 +290,6 @@ SOURCE=..\..\..\lib\gopher.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\gtls.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\hash.c
 # End Source File
 # Begin Source File
@@ -339,6 +319,10 @@ SOURCE=..\..\..\lib\hostip.c
 # Begin Source File
 
 SOURCE=..\..\..\lib\hostsyn.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\http2.c
 # End Source File
 # Begin Source File
 
@@ -386,10 +370,6 @@ SOURCE=..\..\..\lib\inet_pton.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\krb4.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\krb5.c
 # End Source File
 # Begin Source File
@@ -434,10 +414,6 @@ SOURCE=..\..\..\lib\nonblock.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\nss.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\openldap.c
 # End Source File
 # Begin Source File
@@ -454,23 +430,11 @@ SOURCE=..\..\..\lib\pipeline.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\polarssl.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\polarssl_threadlock.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\pop3.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\lib\progress.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\qssl.c
 # End Source File
 # Begin Source File
 
@@ -530,14 +494,6 @@ SOURCE=..\..\..\lib\ssh.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\sslgen.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\ssluse.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\strdup.c
 # End Source File
 # Begin Source File
@@ -582,11 +538,63 @@ SOURCE=..\..\..\lib\version.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\lib\vtls/axtls.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/curl_darwinssl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/curl_schannel.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/cyassl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/gskit.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/gtls.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/nss.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/openssl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/polarssl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/polarssl_threadlock.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/qssl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/vtls.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\lib\warnless.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\lib\wildcard.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\x509asn1.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -603,10 +611,6 @@ SOURCE=..\..\..\lib\arpa_telnet.h
 # Begin Source File
 
 SOURCE=..\..\..\lib\asyn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\axtls.h
 # End Source File
 # Begin Source File
 
@@ -639,10 +643,6 @@ SOURCE=..\..\..\lib\curl_addrinfo.h
 # Begin Source File
 
 SOURCE=..\..\..\lib\curl_base64.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\curl_darwinssl.h
 # End Source File
 # Begin Source File
 
@@ -702,10 +702,6 @@ SOURCE=..\..\..\lib\curl_ntlm_wb.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\curl_rand.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\curl_rtmp.h
 # End Source File
 # Begin Source File
@@ -714,7 +710,7 @@ SOURCE=..\..\..\lib\curl_sasl.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\curl_schannel.h
+SOURCE=..\..\..\lib\curl_sec.h
 # End Source File
 # Begin Source File
 
@@ -738,11 +734,11 @@ SOURCE=..\..\..\lib\curlx.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\cyassl.h
+SOURCE=..\..\..\lib\dict.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\dict.h
+SOURCE=..\..\..\lib\dotdot.h
 # End Source File
 # Begin Source File
 
@@ -782,10 +778,6 @@ SOURCE=..\..\..\lib\gopher.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\gtls.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\hash.h
 # End Source File
 # Begin Source File
@@ -795,6 +787,10 @@ SOURCE=..\..\..\lib\hostcheck.h
 # Begin Source File
 
 SOURCE=..\..\..\lib\hostip.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\http2.h
 # End Source File
 # Begin Source File
 
@@ -834,10 +830,6 @@ SOURCE=..\..\..\lib\inet_pton.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\krb4.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\llist.h
 # End Source File
 # Begin Source File
@@ -866,10 +858,6 @@ SOURCE=..\..\..\lib\nonblock.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\nssg.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\parsedate.h
 # End Source File
 # Begin Source File
@@ -882,23 +870,11 @@ SOURCE=..\..\..\lib\pipeline.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\lib\polarssl.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\polarssl_threadlock.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\lib\pop3.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\lib\progress.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\qssl.h
 # End Source File
 # Begin Source File
 
@@ -923,6 +899,10 @@ SOURCE=..\..\..\lib\setup-vms.h
 # Begin Source File
 
 SOURCE=..\..\..\lib\share.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\sigpipe.h
 # End Source File
 # Begin Source File
 
@@ -951,14 +931,6 @@ SOURCE=..\..\..\lib\splay.h
 # Begin Source File
 
 SOURCE=..\..\..\lib\ssh.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\sslgen.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\lib\ssluse.h
 # End Source File
 # Begin Source File
 
@@ -1006,11 +978,63 @@ SOURCE=..\..\..\lib\url.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\lib\vtls/axtls.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/curl_darwinssl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/curl_schannel.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/cyassl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/gskit.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/gtls.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/nssg.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/openssl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/polarssl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/polarssl_threadlock.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/qssl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\vtls/vtls.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\lib\warnless.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\lib\wildcard.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\lib\x509asn1.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

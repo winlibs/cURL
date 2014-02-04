@@ -1,4 +1,11 @@
 <testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
 # Server-side
 <reply>
 
@@ -49,6 +56,7 @@ Finally, this is the real page!
 <client>
 <features>
 NTLM
+!SSPI
 </features>
 <server>
 http

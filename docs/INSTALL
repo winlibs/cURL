@@ -220,7 +220,7 @@ Win32
    adjust as necessary. It is also possible to override these paths with
    environment variables, for example:
 
-     set ZLIB_PATH=c:\zlib-1.2.7
+     set ZLIB_PATH=c:\zlib-1.2.8
      set OPENSSL_PATH=c:\openssl-0.9.8y
      set LIBSSH2_PATH=c:\libssh2-1.4.3
 
@@ -323,7 +323,7 @@ Win32
    documentation on how to compile zlib. Define the ZLIB_PATH environment
    variable to the location of zlib.h and zlib.lib, for example:
 
-     set ZLIB_PATH=c:\zlib-1.2.7
+     set ZLIB_PATH=c:\zlib-1.2.8
 
    Then run 'nmake vc-zlib' in curl's root directory.
 
@@ -993,6 +993,7 @@ REDUCING SIZE
      --disable-verbose (eliminates debugging strings and error code strings)
      --enable-hidden-symbols (eliminates unneeded symbols in the shared library)
      --without-libidn (disables support for the libidn DNS library)
+     --without-librtmp (disables support for RTMP)
      --without-ssl (disables support for SSL/TLS)
      --without-zlib (disables support for on-the-fly decompression)
 
@@ -1011,9 +1012,9 @@ REDUCING SIZE
    .comment section).
 
    Using these techniques it is possible to create a basic HTTP-only shared
-   libcurl library for i386 Linux platforms that is only 106 KiB in size, and
-   an FTP-only library that is 108 KiB in size (as of libcurl version 7.27.0,
-   using gcc 4.6.3).
+   libcurl library for i386 Linux platforms that is only 114 KiB in size, and
+   an FTP-only library that is 115 KiB in size (as of libcurl version 7.34.1,
+   using gcc 4.8.2).
 
    You may find that statically linking libcurl to your application will
    result in a lower total size than dynamically linking.
@@ -1045,7 +1046,7 @@ PORTS
         - Alpha OpenVMS V7.1-1H2
         - Alpha Tru64 v5.0 5.1
         - AVR32 Linux
-        - ARM Android 1.5, 2.1
+        - ARM Android 1.5, 2.1, 2.3, 3.2, 4.x
         - ARM INTEGRITY
         - ARM iOS
         - Cell Linux
@@ -1116,6 +1117,7 @@ GNU GSS      http://www.gnu.org/software/gss/
 GnuTLS       http://www.gnu.org/software/gnutls/
 Heimdal      http://www.pdc.kth.se/heimdal/
 libidn       http://www.gnu.org/software/libidn/
+libmetalink  https://launchpad.net/libmetalink/
 libssh2      http://www.libssh2.org/
 MIT Kerberos http://web.mit.edu/kerberos/www/dist/
 NSS          http://www.mozilla.org/projects/security/pki/nss/

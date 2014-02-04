@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -56,6 +56,7 @@
 #include "multiif.h"
 #include "url.h"
 #include "rawstr.h"
+#include "speedcheck.h"
 
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
@@ -498,7 +499,8 @@ static CURLcode tftp_send_first(tftp_state_data_t *state, tftp_event_t event)
 
     /* add tsize option */
     if(data->set.upload && (data->set.infilesize != -1))
-      snprintf( buf, sizeof(buf), "%" FORMAT_OFF_T, data->set.infilesize );
+      snprintf(buf, sizeof(buf), "%" CURL_FORMAT_CURL_OFF_T,
+               data->set.infilesize);
     else
       strcpy(buf, "0"); /* the destination is large enough */
 
@@ -947,10 +949,6 @@ static CURLcode tftp_connect(struct connectdata *conn, bool *done)
 
   blksize = TFTP_BLKSIZE_DEFAULT;
 
-  /* If there already is a protocol-specific struct allocated for this
-     sessionhandle, deal with it */
-  Curl_reset_reqproto(conn);
-
   state = conn->proto.tftpc = calloc(1, sizeof(tftp_state_data_t));
   if(!state)
     return CURLE_OUT_OF_MEMORY;
@@ -1043,7 +1041,8 @@ static CURLcode tftp_done(struct connectdata *conn, CURLcode status,
     return CURLE_ABORTED_BY_CALLBACK;
 
   /* If we have encountered an error */
-  code = tftp_translate_code(state->error);
+  if(state)
+    code = tftp_translate_code(state->error);
 
   return code;
 }
@@ -1259,6 +1258,15 @@ static CURLcode tftp_doing(struct connectdata *conn, bool *dophase_done)
   if(*dophase_done) {
     DEBUGF(infof(conn->data, "DO phase is complete\n"));
   }
+  else if(!result) {
+    /* The multi code doesn't have this logic for the DOING state so we
+       provide it for TFTP since it may do the entire transfer in this
+       state. */
+    if(Curl_pgrsUpdate(conn))
+      result = CURLE_ABORTED_BY_CALLBACK;
+    else
+      result = Curl_speedcheck(conn->data, Curl_tvnow());
+  }
   return result;
 }
 
@@ -1306,14 +1314,6 @@ static CURLcode tftp_do(struct connectdata *conn, bool *done)
   CURLcode              code;
 
   *done = FALSE;
-
-  /*
-    Since connections can be re-used between SessionHandles, this might be a
-    connection already existing but on a fresh SessionHandle struct so we must
-    make sure we have a good 'struct TFTP' to play with. For new connections,
-    the struct TFTP is allocated and setup in the tftp_connect() function.
-  */
-  Curl_reset_reqproto(conn);
 
   if(!conn->proto.tftpc) {
     code = tftp_connect(conn, done);

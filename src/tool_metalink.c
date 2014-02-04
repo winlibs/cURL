@@ -54,15 +54,16 @@
 #  define MD5_CTX    void *
 #  define SHA_CTX    void *
 #  define SHA256_CTX void *
-#  ifdef HAVE_NSS_INITCONTEXT
-     static NSSInitContext *nss_context;
-#  endif
-#elif defined(__MAC_10_4) || defined(__IPHONE_5_0)
+   static NSSInitContext *nss_context;
+#elif (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && \
+              (__MAC_OS_X_VERSION_MAX_ALLOWED >= 1040)) || \
+      (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
+              (__IPHONE_OS_VERSION_MAX_ALLOWED >= 20000))
 /* For Apple operating systems: CommonCrypto has the functions we need.
    The library's headers are even backward-compatible with OpenSSL's
    headers as long as we define COMMON_DIGEST_FOR_OPENSSL first.
 
-   These functions are available on Tiger and later, as well as iOS 5.0
+   These functions are available on Tiger and later, as well as iOS 2.0
    and later. If you're building for an older cat, well, sorry. */
 #  define COMMON_DIGEST_FOR_OPENSSL
 #  include <CommonCrypto/CommonDigest.h>
@@ -237,7 +238,6 @@ static int nss_hash_init(void **pctx, SECOidTag hash_alg)
   PK11Context *ctx;
 
   /* we have to initialize NSS if not initialized alraedy */
-#ifdef HAVE_NSS_INITCONTEXT
   if(!NSS_IsInitialized() && !nss_context) {
     static NSSInitParameters params;
     params.length = sizeof params;
@@ -245,7 +245,6 @@ static int nss_hash_init(void **pctx, SECOidTag hash_alg)
         | NSS_INIT_NOCERTDB   | NSS_INIT_NOMODDB       | NSS_INIT_FORCEOPEN
         | NSS_INIT_NOROOTINIT | NSS_INIT_OPTIMIZESPACE | NSS_INIT_PK11RELOAD);
   }
-#endif
 
   ctx = PK11_CreateDigestContext(hash_alg);
   if(!ctx)
@@ -891,7 +890,7 @@ void clean_metalink(struct Configurable *config)
 
 void metalink_cleanup(void)
 {
-#if defined(USE_NSS) && defined(HAVE_NSS_INITCONTEXT)
+#ifdef USE_NSS
   if(nss_context) {
     NSS_ShutdownContext(nss_context);
     nss_context = NULL;

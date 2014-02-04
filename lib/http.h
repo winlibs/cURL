@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -21,7 +21,13 @@
  * KIND, either express or implied.
  *
  ***************************************************************************/
+#include "curl_setup.h"
+
 #ifndef CURL_DISABLE_HTTP
+
+#ifdef USE_NGHTTP2
+#include <nghttp2/nghttp2.h>
+#endif
 
 extern const struct Curl_handler Curl_handler_http;
 
@@ -29,11 +35,12 @@ extern const struct Curl_handler Curl_handler_http;
 extern const struct Curl_handler Curl_handler_https;
 #endif
 
+/* Header specific functions */
 bool Curl_compareheader(const char *headerline,  /* line to check */
                         const char *header,   /* header keyword _with_ colon */
                         const char *content); /* content string to find */
-
 char *Curl_checkheaders(struct SessionHandle *data, const char *thisheader);
+char *Curl_copy_header_value(const char *header);
 
 /* ------------------------------------------------------------------------- */
 /*
@@ -66,6 +73,7 @@ CURLcode Curl_add_custom_headers(struct connectdata *conn,
 CURLcode Curl_http(struct connectdata *conn, bool *done);
 CURLcode Curl_http_done(struct connectdata *, CURLcode, bool premature);
 CURLcode Curl_http_connect(struct connectdata *conn, bool *done);
+CURLcode Curl_http_setup_conn(struct connectdata *conn);
 
 /* The following functions are defined in http_chunks.c */
 void Curl_httpchunk_init(struct connectdata *conn);
@@ -74,8 +82,8 @@ CHUNKcode Curl_httpchunk_read(struct connectdata *conn, char *datap,
 
 /* These functions are in http.c */
 void Curl_http_auth_stage(struct SessionHandle *data, int stage);
-CURLcode Curl_http_input_auth(struct connectdata *conn,
-                              int httpcode, const char *header);
+CURLcode Curl_http_input_auth(struct connectdata *conn, bool proxy,
+                              const char *auth);
 CURLcode Curl_http_auth_act(struct connectdata *conn);
 CURLcode Curl_http_perhapsrewind(struct connectdata *conn);
 
@@ -139,6 +147,14 @@ struct HTTP {
 
   void *send_buffer; /* used if the request couldn't be sent in one chunk,
                         points to an allocated send_buffer struct */
+};
+
+struct http_conn {
+#ifdef USE_NGHTTP2
+  nghttp2_session *h2;
+#else
+  int unused; /* prevent a compiler warning */
+#endif
 };
 
 CURLcode Curl_http_readwrite_headers(struct SessionHandle *data,

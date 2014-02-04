@@ -66,13 +66,13 @@ CURLcode Curl_proxy_connect(struct connectdata *conn)
      * This function might be called several times in the multi interface case
      * if the proxy's CONNTECT response is not instant.
      */
-    prot_save = conn->data->state.proto.generic;
+    prot_save = conn->data->req.protop;
     memset(&http_proxy, 0, sizeof(http_proxy));
-    conn->data->state.proto.http = &http_proxy;
+    conn->data->req.protop = &http_proxy;
     conn->bits.close = FALSE;
     result = Curl_proxyCONNECT(conn, FIRSTSOCKET,
                                conn->host.name, conn->remote_port);
-    conn->data->state.proto.generic = prot_save;
+    conn->data->req.protop = prot_save;
     if(CURLE_OK != result)
       return result;
 #else
@@ -380,9 +380,9 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
                       keepon = 2;
 
                       if(cl) {
-
-                        infof(data, "Ignore %" FORMAT_OFF_T
+                        infof(data, "Ignore %" CURL_FORMAT_CURL_OFF_T
                               " bytes of response-body\n", cl);
+
                         /* remove the remaining chunk of what we already
                            read */
                         cl -= (gotbytes - i);
@@ -452,8 +452,16 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
                       (401 == k->httpcode)) ||
                      (checkprefix("Proxy-authenticate:", line_start) &&
                       (407 == k->httpcode))) {
-                    result = Curl_http_input_auth(conn, k->httpcode,
-                                                  line_start);
+
+                    bool proxy = (k->httpcode == 407) ? TRUE : FALSE;
+                    char *auth = Curl_copy_header_value(line_start);
+                    if(!auth)
+                      return CURLE_OUT_OF_MEMORY;
+
+                    result = Curl_http_input_auth(conn, proxy, auth);
+
+                    Curl_safefree(auth);
+
                     if(result)
                       return result;
                   }

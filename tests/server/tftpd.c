@@ -107,8 +107,10 @@ struct testcase {
   size_t bufsize; /* size of the data in buffer */
   char *rptr;     /* read pointer into the buffer */
   size_t rcount;  /* amount of data left to read of the file */
-  long num;       /* test case number */
+  long testno;    /* test case number */
   int ofile;      /* file descriptor for output file when uploading to us */
+
+  int writedelay; /* number of seconds between each packet */
 };
 
 struct formats {
@@ -199,14 +201,6 @@ static curl_socket_t peer = CURL_SOCKET_BAD;
 
 static int timeout;
 static int maxtimeout = 5 * TIMEOUT;
-
-static unsigned short sendblock; /* block count used by sendtftp() */
-static struct tftphdr *sdp;      /* data buffer used by sendtftp() */
-static struct tftphdr *sap;      /* ack buffer  used by sendtftp() */
-
-static unsigned short recvblock; /* block count used by recvtftp() */
-static struct tftphdr *rdp;      /* data buffer used by recvtftp() */
-static struct tftphdr *rap;      /* ack buffer  used by recvtftp() */
 
 #ifdef ENABLE_IPV6
 static bool use_ipv6 = FALSE;
@@ -579,7 +573,7 @@ static ssize_t write_behind(struct testcase *test, int convert)
 
   if(!test->ofile) {
     char outfile[256];
-    snprintf(outfile, sizeof(outfile), "log/upload.%ld", test->num);
+    snprintf(outfile, sizeof(outfile), "log/upload.%ld", test->testno);
     test->ofile=open(outfile, O_CREAT|O_RDWR, 0777);
     if(test->ofile == -1) {
       logmsg("Couldn't create and/or open file %s for upload!", outfile);
@@ -1045,6 +1039,73 @@ again:
   return 0;
 }
 
+/* Based on the testno, parse the correct server commands. */
+static int parse_servercmd(struct testcase *req)
+{
+  FILE *stream;
+  char *filename;
+  int error;
+
+  filename = test2file(req->testno);
+
+  stream=fopen(filename, "rb");
+  if(!stream) {
+    error = errno;
+    logmsg("fopen() failed with error: %d %s", error, strerror(error));
+    logmsg("  [1] Error opening file: %s", filename);
+    logmsg("  Couldn't open test file %ld", req->testno);
+    return 1; /* done */
+  }
+  else {
+    char *orgcmd = NULL;
+    char *cmd = NULL;
+    size_t cmdsize = 0;
+    int num=0;
+
+    /* get the custom server control "commands" */
+    error = getpart(&orgcmd, &cmdsize, "reply", "servercmd", stream);
+    fclose(stream);
+    if(error) {
+      logmsg("getpart() failed with error: %d", error);
+      return 1; /* done */
+    }
+
+    cmd = orgcmd;
+    while(cmd && cmdsize) {
+      char *check;
+      if(1 == sscanf(cmd, "writedelay: %d", &num)) {
+        logmsg("instructed to delay %d secs between packets", num);
+        req->writedelay = num;
+      }
+      else {
+        logmsg("Unknown <servercmd> instruction found: %s", cmd);
+      }
+      /* try to deal with CRLF or just LF */
+      check = strchr(cmd, '\r');
+      if(!check)
+        check = strchr(cmd, '\n');
+
+      if(check) {
+        /* get to the letter following the newline */
+        while((*check == '\r') || (*check == '\n'))
+          check++;
+
+        if(!*check)
+          /* if we reached a zero, get out */
+          break;
+        cmd = check;
+      }
+      else
+        break;
+    }
+    if(orgcmd)
+      free(orgcmd);
+  }
+
+  return 0; /* OK! */
+}
+
+
 /*
  * Validate file access.
  */
@@ -1095,7 +1156,9 @@ static int validate_access(struct testcase *test,
 
     logmsg("requested test number %ld part %ld", testno, partno);
 
-    test->num = testno;
+    test->testno = testno;
+
+    (void)parse_servercmd(test);
 
     file = test2file(testno);
 
@@ -1148,6 +1211,10 @@ static void sendtftp(struct testcase *test, struct formats *pf)
 {
   int size;
   ssize_t n;
+  unsigned short sendblock; /* block count */
+  struct tftphdr *sdp;      /* data buffer */
+  struct tftphdr *sap;      /* ack buffer */
+
   sendblock = 1;
 #if defined(HAVE_ALARM) && defined(SIGALRM)
   mysignal(SIGALRM, timer);
@@ -1166,6 +1233,12 @@ static void sendtftp(struct testcase *test, struct formats *pf)
 #ifdef HAVE_SIGSETJMP
     (void) sigsetjmp(timeoutbuf, 1);
 #endif
+    if(test->writedelay) {
+      logmsg("Pausing %d seconds before %d bytes", test->writedelay,
+             size);
+      wait_ms(1000*test->writedelay);
+    }
+
     send_data:
     if (swrite(peer, sdp, size + 4) != size + 4) {
       logmsg("write");
@@ -1216,6 +1289,10 @@ static void sendtftp(struct testcase *test, struct formats *pf)
 static void recvtftp(struct testcase *test, struct formats *pf)
 {
   ssize_t n, size;
+  unsigned short recvblock; /* block count */
+  struct tftphdr *rdp;      /* data buffer */
+  struct tftphdr *rap;      /* ack buffer */
+
   recvblock = 0;
 #if defined(HAVE_ALARM) && defined(SIGALRM)
   mysignal(SIGALRM, timer);
