@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -123,9 +123,12 @@ static const cipher_s cipherlist[] = {
   {"rsa_des_56_sha",             TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA},
   {"rsa_rc4_56_sha",             TLS_RSA_EXPORT1024_WITH_RC4_56_SHA},
   /* AES ciphers. */
+  {"dhe_dss_aes_128_cbc_sha",    TLS_DHE_DSS_WITH_AES_128_CBC_SHA},
+  {"dhe_dss_aes_256_cbc_sha",    TLS_DHE_DSS_WITH_AES_256_CBC_SHA},
+  {"dhe_rsa_aes_128_cbc_sha",    TLS_DHE_RSA_WITH_AES_128_CBC_SHA},
+  {"dhe_rsa_aes_256_cbc_sha",    TLS_DHE_RSA_WITH_AES_256_CBC_SHA},
   {"rsa_aes_128_sha",            TLS_RSA_WITH_AES_128_CBC_SHA},
   {"rsa_aes_256_sha",            TLS_RSA_WITH_AES_256_CBC_SHA},
-#ifdef NSS_ENABLE_ECC
   /* ECC ciphers. */
   {"ecdh_ecdsa_null_sha",        TLS_ECDH_ECDSA_WITH_NULL_SHA},
   {"ecdh_ecdsa_rc4_128_sha",     TLS_ECDH_ECDSA_WITH_RC4_128_SHA},
@@ -152,19 +155,26 @@ static const cipher_s cipherlist[] = {
   {"ecdh_anon_3des_sha",         TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA},
   {"ecdh_anon_aes_128_sha",      TLS_ECDH_anon_WITH_AES_128_CBC_SHA},
   {"ecdh_anon_aes_256_sha",      TLS_ECDH_anon_WITH_AES_256_CBC_SHA},
+#ifdef TLS_RSA_WITH_NULL_SHA256
+  /* new HMAC-SHA256 cipher suites specified in RFC */
+  {"rsa_null_sha_256",                TLS_RSA_WITH_NULL_SHA256},
+  {"rsa_aes_128_cbc_sha_256",         TLS_RSA_WITH_AES_128_CBC_SHA256},
+  {"rsa_aes_256_cbc_sha_256",         TLS_RSA_WITH_AES_256_CBC_SHA256},
+  {"dhe_rsa_aes_128_cbc_sha_256",     TLS_DHE_RSA_WITH_AES_128_CBC_SHA256},
+  {"dhe_rsa_aes_256_cbc_sha_256",     TLS_DHE_RSA_WITH_AES_256_CBC_SHA256},
+  {"ecdhe_ecdsa_aes_128_cbc_sha_256", TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256},
+  {"ecdhe_rsa_aes_128_cbc_sha_256",   TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256},
 #endif
-};
-
-/* following ciphers are new in NSS 3.4 and not enabled by default, therefore
-   they are enabled explicitly */
-static const int enable_ciphers_by_default[] = {
-  TLS_DHE_DSS_WITH_AES_128_CBC_SHA,
-  TLS_DHE_DSS_WITH_AES_256_CBC_SHA,
-  TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-  TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
-  TLS_RSA_WITH_AES_128_CBC_SHA,
-  TLS_RSA_WITH_AES_256_CBC_SHA,
-  SSL_NULL_WITH_NULL_NULL
+#ifdef TLS_RSA_WITH_AES_128_GCM_SHA256
+  /* AES GCM cipher suites in RFC 5288 and RFC 5289 */
+  {"rsa_aes_128_gcm_sha_256",         TLS_RSA_WITH_AES_128_GCM_SHA256},
+  {"dhe_rsa_aes_128_gcm_sha_256",     TLS_DHE_RSA_WITH_AES_128_GCM_SHA256},
+  {"dhe_dss_aes_128_gcm_sha_256",     TLS_DHE_DSS_WITH_AES_128_GCM_SHA256},
+  {"ecdhe_ecdsa_aes_128_gcm_sha_256", TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
+  {"ecdh_ecdsa_aes_128_gcm_sha_256",  TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256},
+  {"ecdhe_rsa_aes_128_gcm_sha_256",   TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+  {"ecdh_rsa_aes_128_gcm_sha_256",    TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256},
+#endif
 };
 
 static const char* pem_library = "libnsspem.so";
@@ -191,14 +201,13 @@ static SECStatus set_ciphers(struct SessionHandle *data, PRFileDesc * model,
   PRBool cipher_state[NUM_OF_CIPHERS];
   PRBool found;
   char *cipher;
-  SECStatus rv;
 
   /* First disable all ciphers. This uses a different max value in case
    * NSS adds more ciphers later we don't want them available by
    * accident
    */
   for(i=0; i<SSL_NumImplementedCiphers; i++) {
-    SSL_CipherPrefSet(model, SSL_ImplementedCiphers[i], SSL_NOT_ALLOWED);
+    SSL_CipherPrefSet(model, SSL_ImplementedCiphers[i], PR_FALSE);
   }
 
   /* Set every entry in our list to false */
@@ -238,8 +247,10 @@ static SECStatus set_ciphers(struct SessionHandle *data, PRFileDesc * model,
 
   /* Finally actually enable the selected ciphers */
   for(i=0; i<NUM_OF_CIPHERS; i++) {
-    rv = SSL_CipherPrefSet(model, cipherlist[i].num, cipher_state[i]);
-    if(rv != SECSuccess) {
+    if(!cipher_state[i])
+      continue;
+
+    if(SSL_CipherPrefSet(model, cipherlist[i].num, PR_TRUE) != SECSuccess) {
       failf(data, "cipher-suite not supported by NSS: %s", cipherlist[i].name);
       return SECFailure;
     }
@@ -615,8 +626,48 @@ static SECStatus nss_auth_cert_hook(void *arg, PRFileDesc *fd, PRBool checksig,
  */
 static void HandshakeCallback(PRFileDesc *sock, void *arg)
 {
+#ifdef USE_NGHTTP2
+  struct connectdata *conn = (struct connectdata*) arg;
+  unsigned int buflenmax = 50;
+  unsigned char buf[50];
+  unsigned int buflen;
+  SSLNextProtoState state;
+
+  if(!conn->data->set.ssl_enable_npn && !conn->data->set.ssl_enable_alpn) {
+    return;
+  }
+
+  if(SSL_GetNextProto(sock, &state, buf, &buflen, buflenmax) == SECSuccess) {
+
+    switch(state) {
+      case SSL_NEXT_PROTO_NO_SUPPORT:
+      case SSL_NEXT_PROTO_NO_OVERLAP:
+        infof(conn->data, "TLS, neither ALPN nor NPN succeeded\n");
+        return;
+#ifdef SSL_ENABLE_ALPN
+      case SSL_NEXT_PROTO_SELECTED:
+        infof(conn->data, "ALPN, server accepted to use %.*s\n", buflen, buf);
+        break;
+#endif
+      case SSL_NEXT_PROTO_NEGOTIATED:
+        infof(conn->data, "NPN, server accepted to use %.*s\n", buflen, buf);
+        break;
+    }
+
+    if(buflen == NGHTTP2_PROTO_VERSION_ID_LEN &&
+       memcmp(NGHTTP2_PROTO_VERSION_ID, buf, NGHTTP2_PROTO_VERSION_ID_LEN)
+       == 0) {
+      conn->negnpn = NPN_HTTP2_DRAFT09;
+    }
+    else if(buflen == ALPN_HTTP_1_1_LENGTH && memcmp(ALPN_HTTP_1_1, buf,
+                                                     ALPN_HTTP_1_1_LENGTH)) {
+      conn->negnpn = NPN_HTTP1_1;
+    }
+  }
+#else
   (void)sock;
   (void)arg;
+#endif
 }
 
 static void display_cert_info(struct SessionHandle *data,
@@ -1194,8 +1245,9 @@ static CURLcode nss_init_sslver(SSLVersionRange *sslver,
     if(data->state.ssl_connect_retry) {
       infof(data, "TLS disabled due to previous handshake failure\n");
       sslver->max = SSL_LIBRARY_VERSION_3_0;
+      return CURLE_OK;
     }
-    return CURLE_OK;
+  /* intentional fall-through to default to highest TLS version if possible */
 
   case CURL_SSLVERSION_TLSv1:
     sslver->min = SSL_LIBRARY_VERSION_TLS_1_0;
@@ -1254,7 +1306,6 @@ CURLcode Curl_nss_connect(struct connectdata *conn, int sockindex)
   curl_socket_t sockfd = conn->sock[sockindex];
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   CURLcode curlerr;
-  const int *cipher_to_enable;
   PRSocketOptionData sock_opt;
   long time_left;
   PRUint32 timeout;
@@ -1263,6 +1314,17 @@ CURLcode Curl_nss_connect(struct connectdata *conn, int sockindex)
     SSL_LIBRARY_VERSION_3_0,      /* min */
     SSL_LIBRARY_VERSION_TLS_1_0   /* max */
   };
+
+#ifdef USE_NGHTTP2
+#if defined(SSL_ENABLE_NPN) || defined(SSL_ENABLE_ALPN)
+  unsigned int alpn_protos_len = NGHTTP2_PROTO_VERSION_ID_LEN +
+      ALPN_HTTP_1_1_LENGTH + 2;
+  unsigned char alpn_protos[NGHTTP2_PROTO_VERSION_ID_LEN + ALPN_HTTP_1_1_LENGTH
+      + 2];
+  int cur = 0;
+#endif
+#endif
+
 
   if(connssl->state == ssl_connection_complete)
     return CURLE_OK;
@@ -1345,16 +1407,6 @@ CURLcode Curl_nss_connect(struct connectdata *conn, int sockindex)
   /* reset the flag to avoid an infinite loop */
   data->state.ssl_connect_retry = FALSE;
 
-  /* enable all ciphers from enable_ciphers_by_default */
-  cipher_to_enable = enable_ciphers_by_default;
-  while(SSL_NULL_WITH_NULL_NULL != *cipher_to_enable) {
-    if(SSL_CipherPrefSet(model, *cipher_to_enable, PR_TRUE) != SECSuccess) {
-      curlerr = CURLE_SSL_CIPHER;
-      goto error;
-    }
-    cipher_to_enable++;
-  }
-
   if(data->set.ssl.cipher_list) {
     if(set_ciphers(data, model, data->set.ssl.cipher_list) != SECSuccess) {
       curlerr = CURLE_SSL_CIPHER;
@@ -1374,7 +1426,7 @@ CURLcode Curl_nss_connect(struct connectdata *conn, int sockindex)
   if(SSL_BadCertHook(model, BadCertHandler, conn) != SECSuccess)
     goto error;
 
-  if(SSL_HandshakeCallback(model, HandshakeCallback, NULL) != SECSuccess)
+  if(SSL_HandshakeCallback(model, HandshakeCallback, conn) != SECSuccess)
     goto error;
 
   if(data->set.ssl.verifypeer) {
@@ -1436,6 +1488,46 @@ CURLcode Curl_nss_connect(struct connectdata *conn, int sockindex)
   if(data->set.str[STRING_KEY_PASSWD]) {
     SSL_SetPKCS11PinArg(connssl->handle, data->set.str[STRING_KEY_PASSWD]);
   }
+
+#ifdef USE_NGHTTP2
+  if(data->set.httpversion == CURL_HTTP_VERSION_2_0) {
+#ifdef SSL_ENABLE_NPN
+    if(data->set.ssl_enable_npn) {
+      if(SSL_OptionSet(connssl->handle, SSL_ENABLE_NPN, PR_TRUE) != SECSuccess)
+        goto error;
+    }
+#endif
+
+#ifdef SSL_ENABLE_ALPN
+    if(data->set.ssl_enable_alpn) {
+      if(SSL_OptionSet(connssl->handle, SSL_ENABLE_ALPN, PR_TRUE)
+          != SECSuccess)
+        goto error;
+    }
+#endif
+
+#if defined(SSL_ENABLE_NPN) || defined(SSL_ENABLE_ALPN)
+    if(data->set.ssl_enable_npn || data->set.ssl_enable_alpn) {
+      alpn_protos[cur] = NGHTTP2_PROTO_VERSION_ID_LEN;
+      cur++;
+      memcpy(&alpn_protos[cur], NGHTTP2_PROTO_VERSION_ID,
+          NGHTTP2_PROTO_VERSION_ID_LEN);
+      cur += NGHTTP2_PROTO_VERSION_ID_LEN;
+      alpn_protos[cur] = ALPN_HTTP_1_1_LENGTH;
+      cur++;
+      memcpy(&alpn_protos[cur], ALPN_HTTP_1_1, ALPN_HTTP_1_1_LENGTH);
+
+      if(SSL_SetNextProtoNego(connssl->handle, alpn_protos, alpn_protos_len)
+          != SECSuccess)
+        goto error;
+    }
+    else {
+      infof(data, "SSL, can't negotiate HTTP/2.0 with neither NPN nor ALPN\n");
+    }
+#endif
+  }
+#endif
+
 
   /* Force handshake on next I/O */
   SSL_ResetHandshake(connssl->handle, /* asServer */ PR_FALSE);

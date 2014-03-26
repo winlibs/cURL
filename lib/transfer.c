@@ -87,8 +87,6 @@
 /* The last #include file should be: */
 #include "memdebug.h"
 
-#define CURL_TIMEOUT_EXPECT_100 1000 /* counting ms here */
-
 /*
  * This function will call the read callback to fill our buffer with data
  * to upload.
@@ -312,7 +310,20 @@ static int data_pending(const struct connectdata *conn)
   /* in the case of libssh2, we can never be really sure that we have emptied
      its internal buffers so we MUST always try until we get EAGAIN back */
   return conn->handler->protocol&(CURLPROTO_SCP|CURLPROTO_SFTP) ||
+#if defined(USE_NGHTTP2)
+    Curl_ssl_data_pending(conn, FIRSTSOCKET) ||
+    /* For HTTP/2, we may read up everything including responde body
+       with header fields in Curl_http_readwrite_headers. If no
+       content-length is provided, curl waits for the connection
+       close, which we emulate it using conn->proto.httpc.closed =
+       TRUE. The thing is if we read everything, then http2_recv won't
+       be called and we cannot signal the HTTP/2 stream has closed. As
+       a workaround, we return nonzero here to call http2_recv. */
+    ((conn->handler->protocol&CURLPROTO_HTTP) && conn->httpversion == 20 &&
+     conn->proto.httpc.closed);
+#else
     Curl_ssl_data_pending(conn, FIRSTSOCKET);
+#endif
 }
 
 static void read_rewind(struct connectdata *conn,
@@ -600,7 +611,7 @@ static CURLcode readwrite_data(struct SessionHandle *data,
             failf(data, "Failed writing data");
             return CURLE_WRITE_ERROR;
           }
-          failf(data, "Problem (%d) in the Chunked-Encoded data", (int)res);
+          failf(data, "%s in chunked-encoding", Curl_chunked_strerror(res));
           return CURLE_RECV_ERROR;
         }
         else if(CHUNKE_STOP == res) {
@@ -839,7 +850,7 @@ static CURLcode readwrite_upload(struct SessionHandle *data,
           *didwhat &= ~KEEP_SEND;  /* we didn't write anything actually */
 
           /* set a timeout for the multi interface */
-          Curl_expire(data, CURL_TIMEOUT_EXPECT_100);
+          Curl_expire(data, data->set.expect_100_timeout);
           break;
         }
 
@@ -1075,7 +1086,7 @@ CURLcode Curl_readwrite(struct connectdata *conn,
       */
 
       long ms = Curl_tvdiff(k->now, k->start100);
-      if(ms > CURL_TIMEOUT_EXPECT_100) {
+      if(ms >= data->set.expect_100_timeout) {
         /* we've waited long enough, continue anyway */
         k->exp100 = EXP100_SEND_DATA;
         k->keepon |= KEEP_SEND;
@@ -1969,7 +1980,7 @@ Curl_setup_transfer(
 
         /* Set a timeout for the multi interface. Add the inaccuracy margin so
            that we don't fire slightly too early and get denied to run. */
-        Curl_expire(data, CURL_TIMEOUT_EXPECT_100);
+        Curl_expire(data, data->set.expect_100_timeout);
       }
       else {
         if(data->state.expect100header)

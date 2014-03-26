@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -149,9 +149,37 @@ struct HTTP {
                         points to an allocated send_buffer struct */
 };
 
+typedef int (*sending)(void); /* Curl_send */
+typedef int (*recving)(void); /* Curl_recv */
+
 struct http_conn {
 #ifdef USE_NGHTTP2
+#define H2_BINSETTINGS_LEN 80
   nghttp2_session *h2;
+  uint8_t binsettings[H2_BINSETTINGS_LEN];
+  size_t  binlen; /* length of the binsettings data */
+  char *mem;     /* points to a buffer in memory to store */
+  size_t len;    /* size of the buffer 'mem' points to */
+  bool bodystarted;
+  sending send_underlying; /* underlying send Curl_send callback */
+  recving recv_underlying; /* underlying recv Curl_recv callback */
+  bool closed; /* TRUE on HTTP2 stream close */
+  Curl_send_buffer *header_recvbuf; /* store response headers */
+  size_t nread_header_recvbuf; /* number of bytes in header_recvbuf
+                                  fed into upper layer */
+  int32_t stream_id; /* stream we are interested in */
+  const uint8_t *data; /* pointer to data chunk, received in
+                          on_data_chunk */
+  size_t datalen; /* the number of bytes left in data */
+  char *inbuf; /* buffer to receive data from underlying socket */
+  /* We need separate buffer for transmission and reception because we
+     may call nghttp2_session_send() after the
+     nghttp2_session_mem_recv() but mem buffer is still not full. In
+     this case, we wrongly sends the content of mem buffer if we share
+     them for both cases. */
+  const uint8_t *upload_mem; /* points to a buffer to read from */
+  size_t upload_len; /* size of the buffer 'upload_mem' points to */
+  size_t upload_left; /* number of bytes left to upload */
 #else
   int unused; /* prevent a compiler warning */
 #endif

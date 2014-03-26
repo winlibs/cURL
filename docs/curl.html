@@ -75,14 +75,22 @@ p.roffit {
 <p class="level0">In general, all boolean options are enabled with --<span Class="bold">option</span> and yet again disabled with --<span Class="bold">no-</span>option. That is, you use the exact same option name but prefix it with "no-". However, in this list we mostly only list and show the --option version of them. (This concept with --no options was added in 7.19.0. Previously most options were toggled on/off on repeated use of the same command line option.) 
 <p class="level0"><a name="-"></a><span class="nroffip">-#, --progress-bar</span> 
 <p class="level1">Make curl display progress as a simple progress bar instead of the standard, more informational, meter. 
+<p class="level0"><a name="-"></a><span class="nroffip">-:, --next</span> 
+<p class="level1">Tells curl to use a separate operation for the following URL and associated options. This allows you to send several URL requests, each with their own specific options, for example, such as different user names or custom requests for each. (Added in 7.36.0) 
 <p class="level0"><a name="-0"></a><span class="nroffip">-0, --http1.0</span> 
 <p class="level1">(HTTP) Tells curl to use HTTP version 1.0 instead of using its internally preferred: HTTP 1.1. 
 <p class="level0"><a name="--http11"></a><span class="nroffip">--http1.1</span> 
 <p class="level1">(HTTP) Tells curl to use HTTP version 1.1. This is the internal default version. (Added in 7.33.0) 
-<p class="level0"><a name="--http20"></a><span class="nroffip">--http2.0</span> 
-<p class="level1">(HTTP) Tells curl to issue its requests using HTTP 2.0. This requires that the underlying libcurl was built to support it. (Added in 7.33.0) 
+<p class="level0"><a name="--http2"></a><span class="nroffip">--http2</span> 
+<p class="level1">(HTTP) Tells curl to issue its requests using HTTP 2. This requires that the underlying libcurl was built to support it. (Added in 7.33.0) 
+<p class="level0"><a name="--no-npn"></a><span class="nroffip">--no-npn</span> 
+<p class="level1">Disable the NPN TLS extension. NPN is enabled by default if libcurl was built with an SSL library that supports NPN. NPN is used by a libcurl that supports HTTP 2 to negotiate HTTP 2 support with the server during https sessions. 
+<p class="level1">(Added in 7.36.0) 
+<p class="level0"><a name="--no-alpn"></a><span class="nroffip">--no-alpn</span> 
+<p class="level1">Disable the ALPN TLS extension. ALPN is enabled by default if libcurl was built with an SSL library that supports ALPN. ALPN is used by a libcurl that supports HTTP 2 to negotiate HTTP 2 support with the server during https sessions. 
+<p class="level1">(Added in 7.36.0) 
 <p class="level0"><a name="-1"></a><span class="nroffip">-1, --tlsv1</span> 
-<p class="level1">(SSL) Forces curl to use TLS version 1 when negotiating with a remote TLS server. 
+<p class="level1">(SSL) Forces curl to use TLS version 1.x when negotiating with a remote TLS server. You can use options <a class="emphasis" href="#--tlsv10">--tlsv1.0</a>, <a class="emphasis" href="#--tlsv11">--tlsv1.1</a>, and <a class="emphasis" href="#--tlsv12">--tlsv1.2</a> to control the TLS version more precisely (if the SSL backend in use supports such a level of control). 
 <p class="level0"><a name="-2"></a><span class="nroffip">-2, --sslv2</span> 
 <p class="level1">(SSL) Forces curl to use SSL version 2 when negotiating with a remote SSL server. 
 <p class="level0"><a name="-3"></a><span class="nroffip">-3, --sslv3</span> 
@@ -201,7 +209,7 @@ p.roffit {
 <p class="level1">Set the list of DNS servers to be used instead of the system default. The list of IP addresses should be separated with commas. Port numbers may also optionally be given as <span Class="emphasis">:&lt;port-number&gt;</span> after each IP address. 
 <p class="level1">This option requires that libcurl was built with a resolver backend that supports this operation. The c-ares backend is the only such one.  (Added in 7.33.0) 
 <p class="level0"><a name="-e"></a><span class="nroffip">-e, --referer &lt;URL&gt;</span> 
-<p class="level1">(HTTP) Sends the "Referer Page" information to the HTTP server. This can also be set with the <a class="emphasis" href="#-H">-H, --header</a> flag of course.  When used with <a class="emphasis" href="#-L">-L, --location</a> you can append ";auto" to the --referer URL to make curl automatically set the previous URL when it follows a Location: header. The ";auto" string can be used alone, even if you don't set an initial --referer. 
+<p class="level1">(HTTP) Sends the "Referrer Page" information to the HTTP server. This can also be set with the <a class="emphasis" href="#-H">-H, --header</a> flag of course.  When used with <a class="emphasis" href="#-L">-L, --location</a> you can append ";auto" to the --referer URL to make curl automatically set the previous URL when it follows a Location: header. The ";auto" string can be used alone, even if you don't set an initial --referer. 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="-E"></a><span class="nroffip">-E, --cert &lt;certificate[:password]&gt;</span> 
 <p class="level1">(SSL) Tells curl to use the specified client certificate file when getting a file with HTTPS, FTPS or another SSL-based protocol. The certificate must be in PKCS#12 format if using Secure Transport, or PEM format if using any other engine.  If the optional password isn't specified, it will be queried for on the terminal. Note that this option assumes a "certificate" file that is the private key and the private certificate concatenated! See <span Class="emphasis">--cert</span> and <a class="emphasis" href="#--key">--key</a> to specify them independently. 
@@ -589,7 +597,7 @@ p.roffit {
 <p class="level1">(FTP, POP3, IMAP, SMTP) Require SSL/TLS for the connection.  Terminates the connection if the server doesn't support SSL/TLS. (Added in 7.20.0) 
 <p class="level1">This option was formerly known as <span Class="emphasis">--ftp-ssl-reqd</span> (added in 7.15.5). That option name can still be used but will be removed in a future version. 
 <p class="level0"><a name="--ssl-allow-beast"></a><span class="nroffip">--ssl-allow-beast</span> 
-<p class="level1">(SSL) This option tells curl to not work around a security flaw in the SSL3 and TLS1.0 protocols known as BEAST.  If this option isn't used, the SSL layer may use work-arounds known to cause interoperability problems with some older SSL implementations. WARNING: this option loosens the SSL security, and by using this flag you ask for exactly that.  (Added in 7.25.0) 
+<p class="level1">(SSL) This option tells curl to not work around a security flaw in the SSL3 and TLS1.0 protocols known as BEAST.  If this option isn't used, the SSL layer may use workarounds known to cause interoperability problems with some older SSL implementations. WARNING: this option loosens the SSL security, and by using this flag you ask for exactly that.  (Added in 7.25.0) 
 <p class="level0"><a name="--socks4"></a><span class="nroffip">--socks4 &lt;host[:port]&gt;</span> 
 <p class="level1">Use the specified SOCKS4 proxy. If the port number is not specified, it is assumed at port 1080. (Added in 7.15.2) 
 <p class="level1">This option overrides any previous use of <a class="emphasis" href="#-x">-x, --proxy</a>, as they are mutually exclusive. 
@@ -666,7 +674,7 @@ p.roffit {
 <p class="level0"><a name="-u"></a><span class="nroffip">-u, --user &lt;user:password;options&gt;</span> 
 <p class="level1">Specify the user name, password and optional login options to use for server authentication. Overrides <a class="emphasis" href="#-n">-n, --netrc</a> and <a class="emphasis" href="#--netrc-optional">--netrc-optional</a>. 
 <p class="level1">If you simply specify the user name, with or without the login options, curl will prompt for a password. 
-<p class="level1">If you use an SSPI-enabled curl binary and perform NTLM authentication, you can force curl to select the user name and password from your environment by simply specifying a single colon with this option: "-u :" or by specfying the login options on their own, for example "-u ;auth=NTLM". 
+<p class="level1">If you use an SSPI-enabled curl binary and perform NTLM authentication, you can force curl to select the user name and password from your environment by simply specifying a single colon with this option: "-u :" or by specifying the login options on their own, for example "-u ;auth=NTLM". 
 <p class="level1">You can use the optional login options part to specify protocol specific options that may be used during authentication. At present only IMAP, POP3 and SMTP support login options as part of the user login information. For more information about the login options please see <a href="http://www.ietf.org/rfc/rfc2384.txt">RFC 2384</a>, RFC 5092 and IETF draft draft-earhart-url-smtp-00.txt (Added in 7.31.0).  
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="-U"></a><span class="nroffip">-U, --proxy-user &lt;user:password&gt;</span> 
@@ -732,7 +740,7 @@ p.roffit {
 <p class="level1">This option only changes the actual word used in the HTTP request, it does not alter the way curl behaves. So for example if you want to make a proper HEAD request, using -X HEAD will not suffice. You need to use the <a class="emphasis" href="#-I">-I, --head</a> option. 
 <p class="level1">(FTP) Specifies a custom FTP command to use instead of LIST when doing file lists with FTP. 
 <p class="level1">(POP3) Specifies a custom POP3 command to use instead of LIST or RETR. (Added in 7.26.0) 
-<p class="level1">(IMAP) Specifies a custom IMAP command to use insead of LIST. (Added in 7.30.0) 
+<p class="level1">(IMAP) Specifies a custom IMAP command to use instead of LIST. (Added in 7.30.0) 
 <p class="level1">(SMTP) Specifies a custom SMTP command to use instead of HELP or VRFY. (Added in 7.34.0) 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--xattr"></a><span class="nroffip">--xattr</span> 

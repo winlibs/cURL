@@ -317,6 +317,9 @@ struct Curl_multi *Curl_multi_handle(int hashsize, /* socket hash */
   multi->closure_handle->state.conn_cache = multi->conn_cache;
 
   multi->max_pipeline_length = 5;
+
+  /* -1 means it not set by user, use the default value */
+  multi->maxconnects = -1;
   return (CURLM *) multi;
 
   error:
@@ -551,9 +554,11 @@ CURLMcode curl_multi_remove_handle(CURLM *multi_handle,
         Curl_getoff_all_pipelines(data, data->easy_conn);
     }
 
+    Curl_wildcard_dtor(&data->wildcard);
+
     /* as this was using a shared connection cache we clear the pointer
        to that since we're not part of that multi handle anymore */
-      data->state.conn_cache = NULL;
+    data->state.conn_cache = NULL;
 
     /* change state without using multistate(), only to make singlesocket() do
        what we want */
@@ -1019,6 +1024,7 @@ static CURLMcode multi_runsingle(struct Curl_multi *multi,
       if(CURLE_OK == data->result) {
         /* after init, go CONNECT */
         multistate(data, CURLM_STATE_CONNECT);
+        Curl_pgrsTime(data, TIMER_STARTSINGLE);
         result = CURLM_CALL_MULTI_PERFORM;
       }
       break;
@@ -1030,7 +1036,6 @@ static CURLMcode multi_runsingle(struct Curl_multi *multi,
 
     case CURLM_STATE_CONNECT:
       /* Connect. We want to get a connection identifier filled in. */
-      Curl_pgrsTime(data, TIMER_STARTSINGLE);
       data->result = Curl_connect(data, &data->easy_conn,
                                   &async, &protocol_connect);
       if(CURLE_NO_CONNECTION_AVAILABLE == data->result) {
@@ -1739,6 +1744,7 @@ CURLMcode curl_multi_perform(CURLM *multi_handle, int *running_handles)
   while(data) {
     CURLMcode result;
     struct WildcardData *wc = &data->wildcard;
+    SIGPIPE_VARIABLE(pipe_st);
 
     if(data->set.wildcardmatch) {
       if(!wc->filelist) {
@@ -1748,9 +1754,11 @@ CURLMcode curl_multi_perform(CURLM *multi_handle, int *running_handles)
       }
     }
 
+    sigpipe_ignore(data, &pipe_st);
     do
       result = multi_runsingle(multi, now, data);
     while(CURLM_CALL_MULTI_PERFORM == result);
+    sigpipe_restore(&pipe_st);
 
     if(data->set.wildcardmatch) {
       /* destruct wildcard structures if it is needed */
@@ -2195,6 +2203,8 @@ static CURLMcode multi_socket(struct Curl_multi *multi,
          and just move on. */
       ;
     else {
+      SIGPIPE_VARIABLE(pipe_st);
+
       data = entry->easy;
 
       if(data->magic != CURLEASY_MAGIC_NUMBER)
@@ -2220,9 +2230,11 @@ static CURLMcode multi_socket(struct Curl_multi *multi,
         /* set socket event bitmask if they're not locked */
         data->easy_conn->cselect_bits = ev_bitmask;
 
+      sigpipe_ignore(data, &pipe_st);
       do
         result = multi_runsingle(multi, now, data);
       while(CURLM_CALL_MULTI_PERFORM == result);
+      sigpipe_restore(&pipe_st);
 
       if(data->easy_conn &&
          !(data->easy_conn->handler->flags & PROTOPT_DIRLOCK))
@@ -2260,9 +2272,13 @@ static CURLMcode multi_socket(struct Curl_multi *multi,
   do {
     /* the first loop lap 'data' can be NULL */
     if(data) {
+      SIGPIPE_VARIABLE(pipe_st);
+
+      sigpipe_ignore(data, &pipe_st);
       do
         result = multi_runsingle(multi, now, data);
       while(CURLM_CALL_MULTI_PERFORM == result);
+      sigpipe_restore(&pipe_st);
 
       if(CURLM_OK >= result)
         /* get the socket(s) and check if the state has been changed since

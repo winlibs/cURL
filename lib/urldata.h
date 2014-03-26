@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -296,18 +296,13 @@ struct ssl_connect_data {
   ssl_connect_state connecting_state;
 #endif /* USE_GNUTLS */
 #ifdef USE_POLARSSL
-#if POLARSSL_VERSION_NUMBER<0x01010000
-  havege_state hs;
-#else
-  /* from v1.1.0, use ctr_drbg and entropy */
   ctr_drbg_context ctr_drbg;
   entropy_context entropy;
-#endif /* POLARSSL_VERSION_NUMBER<0x01010000 */
   ssl_context ssl;
   ssl_session ssn;
   int server_fd;
-  x509_cert cacert;
-  x509_cert clicert;
+  x509_crt cacert;
+  x509_crt clicert;
   x509_crl crl;
   rsa_context rsa;
   ssl_connect_state connecting_state;
@@ -388,7 +383,7 @@ struct curl_ssl_session {
   void *sessionid;  /* as returned from the SSL layer */
   size_t idsize;    /* if known, otherwise 0 */
   long age;         /* just a number, the higher the more recent */
-  unsigned short remote_port; /* remote port to connect to */
+  int remote_port;  /* remote port to connect to */
   struct ssl_config_data ssl_config; /* setup for this session */
 };
 
@@ -435,6 +430,8 @@ struct ntlmdata {
 #else
   unsigned int flags;
   unsigned char nonce[8];
+  void* target_info; /* TargetInfo received in the ntlm type-2 message */
+  unsigned int target_info_len;
 #endif
 };
 
@@ -580,13 +577,25 @@ struct Curl_async {
 typedef CURLcode (*Curl_do_more_func)(struct connectdata *, int *);
 typedef CURLcode (*Curl_done_func)(struct connectdata *, CURLcode, bool);
 
-
 enum expect100 {
   EXP100_SEND_DATA,           /* enough waiting, just send the body now */
   EXP100_AWAITING_CONTINUE,   /* waiting for the 100 Continue header */
   EXP100_SENDING_REQUEST,     /* still sending the request but will wait for
                                  the 100 header once done with the request */
   EXP100_FAILED               /* used on 417 Expectation Failed */
+};
+
+enum upgrade101 {
+  UPGR101_INIT,               /* default state */
+  UPGR101_REQUESTED,          /* upgrade requested */
+  UPGR101_RECEIVED,           /* response received */
+  UPGR101_WORKING             /* talking upgraded protocol */
+};
+
+enum negotiatenpn {
+  NPN_INIT,                   /* default state */
+  NPN_HTTP1_1,                /* HTTP/1.1 negotiated */
+  NPN_HTTP2_DRAFT09           /* HTTP-draft-0.9/2.0 negotiated */
 };
 
 /*
@@ -639,6 +648,7 @@ struct SingleRequest {
                                    'RTSP/1.? XXX' line */
   struct timeval start100;      /* time stamp to wait for the 100 code from */
   enum expect100 exp100;        /* expect 100 continue state */
+  enum upgrade101 upgr101;      /* 101 upgrade state */
 
   int auto_decoding;            /* What content encoding. sec 3.5, RFC2616. */
 
@@ -785,6 +795,8 @@ struct Curl_handler {
                                       gets a default */
 #define PROTOPT_NOURLQUERY (1<<6)   /* protocol can't handle
                                         url query strings (?foo=bar) ! */
+#define PROTOPT_CREDSPERREQUEST (1<<7) /* requires login creditials per request
+                                          as opposed to per connection */
 
 
 /* return the count of bytes sent, or -1 on error */
@@ -853,8 +865,7 @@ struct connectdata {
   struct hostname proxy;
 
   long port;       /* which port to use locally */
-  unsigned short remote_port; /* what remote port to connect to,
-                                 not the proxy port! */
+  int remote_port; /* what remote port to connect to, not the proxy port! */
 
   /* 'primary_ip' and 'primary_port' get filled with peer's numerical
      ip address and port number whenever an outgoing connection is
@@ -1039,6 +1050,8 @@ struct connectdata {
     TUNNEL_COMPLETE /* CONNECT response received completely */
   } tunnel_state[2]; /* two separate ones to allow FTP */
   struct connectbundle *bundle; /* The bundle we are member of */
+
+  enum negotiatenpn negnpn;
 };
 
 /* The end of connectdata. */
@@ -1576,6 +1589,11 @@ struct UserDefined {
   long tcp_keepintvl;    /* seconds between TCP keepalive probes */
 
   size_t maxconnects;  /* Max idle connections in the connection cache */
+
+  bool ssl_enable_npn;  /* TLS NPN extension? */
+  bool ssl_enable_alpn; /* TLS ALPN extension? */
+
+  long expect_100_timeout; /* in milliseconds */
 };
 
 struct Names {

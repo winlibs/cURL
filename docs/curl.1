@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -124,18 +124,38 @@ same command line option.)
 .IP "-#, --progress-bar"
 Make curl display progress as a simple progress bar instead of the standard,
 more informational, meter.
+.IP "-:, --next"
+Tells curl to use a separate operation for the following URL and associated
+options. This allows you to send several URL requests, each with their own
+specific options, for example, such as different user names or custom requests
+for each. (Added in 7.36.0)
 .IP "-0, --http1.0"
 (HTTP) Tells curl to use HTTP version 1.0 instead of using its internally
 preferred: HTTP 1.1.
 .IP "--http1.1"
 (HTTP) Tells curl to use HTTP version 1.1. This is the internal default
 version. (Added in 7.33.0)
-.IP "--http2.0"
-(HTTP) Tells curl to issue its requests using HTTP 2.0. This requires that the
+.IP "--http2"
+(HTTP) Tells curl to issue its requests using HTTP 2. This requires that the
 underlying libcurl was built to support it. (Added in 7.33.0)
+.IP "--no-npn"
+Disable the NPN TLS extension. NPN is enabled by default if libcurl was built
+with an SSL library that supports NPN. NPN is used by a libcurl that supports
+HTTP 2 to negotiate HTTP 2 support with the server during https sessions.
+
+(Added in 7.36.0)
+.IP "--no-alpn"
+Disable the ALPN TLS extension. ALPN is enabled by default if libcurl was built
+with an SSL library that supports ALPN. ALPN is used by a libcurl that supports
+HTTP 2 to negotiate HTTP 2 support with the server during https sessions.
+
+(Added in 7.36.0)
 .IP "-1, --tlsv1"
 (SSL)
-Forces curl to use TLS version 1 when negotiating with a remote TLS server.
+Forces curl to use TLS version 1.x when negotiating with a remote TLS server.
+You can use options \fI--tlsv1.0\fP, \fI--tlsv1.1\fP, and \fI--tlsv1.2\fP to
+control the TLS version more precisely (if the SSL backend in use supports such
+a level of control).
 .IP "-2, --sslv2"
 (SSL)
 Forces curl to use SSL version 2 when negotiating with a remote SSL server.
@@ -422,7 +442,7 @@ This option requires that libcurl was built with a resolver backend that
 supports this operation. The c-ares backend is the only such one.  (Added in
 7.33.0)
 .IP "-e, --referer <URL>"
-(HTTP) Sends the "Referer Page" information to the HTTP server. This can also
+(HTTP) Sends the "Referrer Page" information to the HTTP server. This can also
 be set with the \fI-H, --header\fP flag of course.  When used with
 \fI-L, --location\fP you can append ";auto" to the --referer URL to make curl
 automatically set the previous URL when it follows a Location: header. The
@@ -1404,7 +1424,7 @@ option name can still be used but will be removed in a future version.
 .IP "--ssl-allow-beast"
 (SSL) This option tells curl to not work around a security flaw in the SSL3
 and TLS1.0 protocols known as BEAST.  If this option isn't used, the SSL layer
-may use work-arounds known to cause interoperability problems with some older
+may use workarounds known to cause interoperability problems with some older
 SSL implementations. WARNING: this option loosens the SSL security, and by
 using this flag you ask for exactly that.  (Added in 7.25.0)
 .IP "--socks4 <host[:port]>"
@@ -1581,7 +1601,7 @@ will prompt for a password.
 
 If you use an SSPI-enabled curl binary and perform NTLM authentication, you
 can force curl to select the user name and password from your environment by
-simply specifying a single colon with this option: "-u :" or by specfying the
+simply specifying a single colon with this option: "-u :" or by specifying the
 login options on their own, for example "-u ;auth=NTLM".
 
 You can use the optional login options part to specify protocol specific
@@ -1803,7 +1823,7 @@ Specifies a custom POP3 command to use instead of LIST or RETR. (Added in
 7.26.0)
 
 (IMAP)
-Specifies a custom IMAP command to use insead of LIST. (Added in 7.30.0)
+Specifies a custom IMAP command to use instead of LIST. (Added in 7.30.0)
 
 (SMTP)
 Specifies a custom SMTP command to use instead of HELP or VRFY. (Added in 7.34.0)

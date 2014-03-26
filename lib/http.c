@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -145,7 +145,7 @@ const struct Curl_handler Curl_handler_https = {
   ZERO_NULL,                            /* readwrite */
   PORT_HTTPS,                           /* defport */
   CURLPROTO_HTTP | CURLPROTO_HTTPS,     /* protocol */
-  PROTOPT_SSL                           /* flags */
+  PROTOPT_SSL | PROTOPT_CREDSPERREQUEST /* flags */
 };
 #endif
 
@@ -1056,6 +1056,7 @@ CURLcode Curl_add_buffer_send(Curl_send_buffer *in,
     return res;
   }
 
+
   if(conn->handler->flags & PROTOPT_SSL) {
     /* We never send more than CURL_MAX_WRITE_SIZE bytes in one single chunk
        when we speak HTTPS, as if only a fraction of it is sent now, this data
@@ -1360,8 +1361,8 @@ static CURLcode https_connecting(struct connectdata *conn, bool *done)
 #endif
 
 #if defined(USE_SSLEAY) || defined(USE_GNUTLS) || defined(USE_SCHANNEL) || \
-    defined(USE_DARWINSSL)
-/* This function is for OpenSSL, GnuTLS, darwinssl, and schannel only.
+    defined(USE_DARWINSSL) || defined(USE_POLARSSL)
+/* This function is for OpenSSL, GnuTLS, darwinssl, schannel and polarssl only.
    It should be made to query the generic SSL layer instead. */
 static int https_getsock(struct connectdata *conn,
                          curl_socket_t *socks,
@@ -1492,6 +1493,10 @@ static CURLcode expect100(struct SessionHandle *data,
   const char *ptr;
   data->state.expect100header = FALSE; /* default to false unless it is set
                                           to TRUE below */
+  if(conn->httpversion == 20) {
+    /* We don't use Expect in HTTP2 */
+    return CURLE_OK;
+  }
   if(use_http_1_1plus(data, conn)) {
     /* if not doing HTTP 1.0 or disabled explicitly, we add a Expect:
        100-continue to the headers which actually speeds up post operations
@@ -1668,6 +1673,20 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
      the rest of the request in the PERFORM phase. */
   *done = TRUE;
 
+  switch (conn->negnpn) {
+    case NPN_HTTP2_DRAFT09:
+      infof(data, "http, we have to use HTTP-draft-09/2\n");
+      Curl_http2_init(conn);
+      Curl_http2_switched(conn);
+      break;
+    case NPN_HTTP1_1:
+      /* continue with HTTP/1.1 when explicitly requested */
+      break;
+    default:
+      /* and as fallback */
+      break;
+  }
+
   http = data->req.protop;
 
   if(!data->state.this_is_a_follow) {
@@ -1782,35 +1801,40 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
   }
 #endif
 
-  ptr = Curl_checkheaders(data, "Transfer-Encoding:");
-  if(ptr) {
-    /* Some kind of TE is requested, check if 'chunked' is chosen */
-    data->req.upload_chunky =
-      Curl_compareheader(ptr, "Transfer-Encoding:", "chunked");
-  }
+  if(conn->httpversion == 20)
+    /* In HTTP2 forbids Transfer-Encoding: chunked */
+    ptr = NULL;
   else {
-    if((conn->handler->protocol&CURLPROTO_HTTP) &&
-       data->set.upload &&
-       (data->set.infilesize == -1)) {
-      if(conn->bits.authneg)
-        /* don't enable chunked during auth neg */
-        ;
-      else if(use_http_1_1plus(data, conn)) {
-        /* HTTP, upload, unknown file size and not HTTP 1.0 */
-        data->req.upload_chunky = TRUE;
-      }
-      else {
-        failf(data, "Chunky upload is not supported by HTTP 1.0");
-        return CURLE_UPLOAD_FAILED;
-      }
+    ptr = Curl_checkheaders(data, "Transfer-Encoding:");
+    if(ptr) {
+      /* Some kind of TE is requested, check if 'chunked' is chosen */
+      data->req.upload_chunky =
+        Curl_compareheader(ptr, "Transfer-Encoding:", "chunked");
     }
     else {
-      /* else, no chunky upload */
-      data->req.upload_chunky = FALSE;
-    }
+      if((conn->handler->protocol&CURLPROTO_HTTP) &&
+         data->set.upload &&
+         (data->set.infilesize == -1)) {
+        if(conn->bits.authneg)
+          /* don't enable chunked during auth neg */
+          ;
+        else if(use_http_1_1plus(data, conn)) {
+          /* HTTP, upload, unknown file size and not HTTP 1.0 */
+          data->req.upload_chunky = TRUE;
+        }
+        else {
+          failf(data, "Chunky upload is not supported by HTTP 1.0");
+          return CURLE_UPLOAD_FAILED;
+        }
+      }
+      else {
+        /* else, no chunky upload */
+        data->req.upload_chunky = FALSE;
+      }
 
-    if(data->req.upload_chunky)
-      te = "Transfer-Encoding: chunked\r\n";
+      if(data->req.upload_chunky)
+        te = "Transfer-Encoding: chunked\r\n";
+    }
   }
 
   Curl_safefree(conn->allocptr.host);
@@ -2176,7 +2200,7 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
      (data->set.httpversion == CURL_HTTP_VERSION_2_0)) {
     /* append HTTP2 updrade magic stuff to the HTTP request if it isn't done
        over SSL */
-    result = Curl_http2_request(req_buffer, conn);
+    result = Curl_http2_request_upgrade(req_buffer, conn);
     if(result)
       return result;
   }
@@ -2450,7 +2474,10 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
 
     if(data->set.postfields) {
 
-      if(!data->state.expect100header &&
+      /* In HTTP2, we send request body in DATA frame regardless of
+         its size. */
+      if(conn->httpversion != 20 &&
+         !data->state.expect100header &&
          (postsize < MAX_INITIAL_POST_SIZE))  {
         /* if we don't use expect: 100  AND
            postsize is less than MAX_INITIAL_POST_SIZE
@@ -2872,10 +2899,27 @@ CURLcode Curl_http_readwrite_headers(struct SessionHandle *data,
         k->header = TRUE;
         k->headerline = 0; /* restart the header line counter */
 
-        /* if we did wait for this do enable write now! */
-        if(k->exp100) {
-          k->exp100 = EXP100_SEND_DATA;
-          k->keepon |= KEEP_SEND;
+        /* "A user agent MAY ignore unexpected 1xx status responses." */
+        switch(k->httpcode) {
+        case 100:
+          /* if we did wait for this do enable write now! */
+          if(k->exp100) {
+            k->exp100 = EXP100_SEND_DATA;
+            k->keepon |= KEEP_SEND;
+          }
+          break;
+        case 101:
+          /* Switching Protocols */
+          if(k->upgr101 == UPGR101_REQUESTED) {
+            infof(data, "Received 101\n");
+            k->upgr101 = UPGR101_RECEIVED;
+
+            /* switch to http2 now */
+            Curl_http2_switched(conn);
+          }
+          break;
+        default:
+          break;
         }
       }
       else {
@@ -3370,7 +3414,8 @@ CURLcode Curl_http_readwrite_headers(struct SessionHandle *data,
 
     }
     else if(checkprefix("Content-Encoding:", k->p) &&
-            data->set.str[STRING_ENCODING]) {
+            (data->set.str[STRING_ENCODING] ||
+             conn->httpversion == 20)) {
       /*
        * Process Content-Encoding. Look for the values: identity,
        * gzip, deflate, compress, x-gzip and x-compress. x-gzip and

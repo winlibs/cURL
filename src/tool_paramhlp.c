@@ -33,10 +33,11 @@
 #include "tool_homedir.h"
 #include "tool_msgs.h"
 #include "tool_paramhlp.h"
+#include "tool_version.h"
 
 #include "memdebug.h" /* keep this as LAST include */
 
-struct getout *new_getout(struct Configurable *config)
+struct getout *new_getout(struct OperationConfig *config)
 {
   struct getout *node = calloc(1, sizeof(struct getout));
   struct getout *last = config->url_last;
@@ -240,7 +241,7 @@ ParameterError str2udouble(double *val, const char *str)
  * data.
  */
 
-long proto2num(struct Configurable *config, long *val, const char *str)
+long proto2num(struct OperationConfig *config, long *val, const char *str)
 {
   char *buffer;
   const char *sep = ",";
@@ -365,8 +366,10 @@ ParameterError str2offset(curl_off_t *val, const char *str)
   return PARAM_BAD_NUMERIC;
 }
 
-CURLcode checkpasswd(const char *kind, /* for what purpose */
-                     char **userpwd)   /* pointer to allocated string */
+static CURLcode checkpasswd(const char *kind, /* for what purpose */
+                            const size_t i,   /* operation index */
+                            const bool last,  /* TRUE if last operation */
+                            char **userpwd)   /* pointer to allocated string */
 {
   char *psep;
   char *osep;
@@ -392,9 +395,15 @@ CURLcode checkpasswd(const char *kind, /* for what purpose */
       *osep = '\0';
 
     /* build a nice-looking prompt */
-    curlx_msnprintf(prompt, sizeof(prompt),
-                    "Enter %s password for user '%s':",
-                    kind, *userpwd);
+    if(!i && last)
+      curlx_msnprintf(prompt, sizeof(prompt),
+                      "Enter %s password for user '%s':",
+                      kind, *userpwd);
+    else
+      curlx_msnprintf(prompt, sizeof(prompt),
+                      "Enter %s password for user '%s' on URL #%"
+                      CURL_FORMAT_CURL_OFF_TU ":",
+                      kind, *userpwd, i + 1);
 
     /* get password */
     getpass_r(prompt, passwd, sizeof(passwd));
@@ -430,7 +439,7 @@ ParameterError add2list(struct curl_slist **list, const char *ptr)
   return PARAM_OK;
 }
 
-int ftpfilemethod(struct Configurable *config, const char *str)
+int ftpfilemethod(struct OperationConfig *config, const char *str)
 {
   if(curlx_raw_equal("singlecwd", str))
     return CURLFTPMETHOD_SINGLECWD;
@@ -442,7 +451,7 @@ int ftpfilemethod(struct Configurable *config, const char *str)
   return CURLFTPMETHOD_MULTICWD;
 }
 
-int ftpcccmethod(struct Configurable *config, const char *str)
+int ftpcccmethod(struct OperationConfig *config, const char *str)
 {
   if(curlx_raw_equal("passive", str))
     return CURLFTPSSL_CCC_PASSIVE;
@@ -452,7 +461,7 @@ int ftpcccmethod(struct Configurable *config, const char *str)
   return CURLFTPSSL_CCC_PASSIVE;
 }
 
-long delegation(struct Configurable *config, char *str)
+long delegation(struct OperationConfig *config, char *str)
 {
   if(curlx_raw_equal("none", str))
     return CURLGSSAPI_DELEGATION_NONE;
@@ -464,3 +473,41 @@ long delegation(struct Configurable *config, char *str)
   return CURLGSSAPI_DELEGATION_NONE;
 }
 
+/*
+ * my_useragent: returns allocated string with default user agent
+ */
+static char *my_useragent(void)
+{
+  return strdup(CURL_NAME "/" CURL_VERSION);
+}
+
+CURLcode get_args(struct OperationConfig *config, const size_t i)
+{
+  CURLcode result = CURLE_OK;
+  bool last = (config->next ? FALSE : TRUE);
+
+  /* Check we have a password for the given host user */
+  if(config->userpwd && !config->xoauth2_bearer) {
+    result = checkpasswd("host", i, last, &config->userpwd);
+    if(result)
+      return result;
+  }
+
+  /* Check we have a password for the given proxy user */
+  if(config->proxyuserpwd) {
+    result = checkpasswd("proxy", i, last, &config->proxyuserpwd);
+    if(result)
+      return result;
+  }
+
+  /* Check we have a user agent */
+  if(!config->useragent) {
+    config->useragent = my_useragent();
+    if(!config->useragent) {
+      helpf(config->global->errors, "out of memory\n");
+      result = CURLE_OUT_OF_MEMORY;
+    }
+  }
+
+  return result;
+}

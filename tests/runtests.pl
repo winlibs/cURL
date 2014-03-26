@@ -2349,7 +2349,7 @@ sub checksystem {
                $has_darwinssl=1;
                $ssllib="DarwinSSL";
            }
-           elsif ($libcurl =~ /ares/i) {
+           if ($libcurl =~ /ares/i) {
                $has_cares=1;
                $resolver="c-ares";
            }
@@ -2403,6 +2403,8 @@ sub checksystem {
             if($feat =~ /NTLM/i) {
                 # NTLM enabled
                 $has_ntlm=1;
+		# Use this as a proxy for any cryptographic authentication
+                $has_crypto=1;
             }
             if($feat =~ /NTLM_WB/i) {
                 # NTLM delegation to winbind daemon ntlm_auth helper enabled
@@ -2512,10 +2514,6 @@ sub checksystem {
 
     $has_shared = `sh $CURLCONFIG --built-shared`;
     chomp $has_shared;
-
-    # curl doesn't list cryptographic support separately, so assume it's
-    # always available
-    $has_crypto=1;
 
     my $hostname=join(' ', runclientoutput("hostname"));
     my $hosttype=join(' ', runclientoutput("uname -a"));
@@ -3147,14 +3145,19 @@ sub singletest {
     my @reply = getpart("reply", "data");
     my @replycheck = getpart("reply", "datacheck");
 
+    my %replyattr = getpartattr("reply", "data");
+    my %replycheckattr = getpartattr("reply", "datacheck");
+
     if (@replycheck) {
         # we use this file instead to check the final output against
 
-        my %hash = getpartattr("reply", "datacheck");
-        if($hash{'nonewline'}) {
+        if($replycheckattr{'nonewline'}) {
             # Yes, we must cut off the final newline from the final line
             # of the datacheck
             chomp($replycheck[$#replycheck]);
+        }
+        if($replycheckattr{'mode'}) {
+            $replyattr{'mode'} = $replycheckattr{'mode'};
         }
 
         @reply=@replycheck;
@@ -3329,6 +3332,13 @@ sub singletest {
         $DBGCURL=$CMDLINE;
     }
 
+    if($gdbthis) {
+        # gdb is incompatible with valgrind, so disable it when debugging
+        # Perhaps a better approach would be to run it under valgrind anyway
+        # with --db-attach=yes or --vgdb=yes.
+        $disablevalgrind=1;
+    }
+
     if($fail_due_event_based) {
         logmsg "This test cannot run event based\n";
         return -1;
@@ -3363,6 +3373,7 @@ sub singletest {
             $valgrindcmd .= "$valgrind_tool " if($valgrind_tool);
             $valgrindcmd .= "--leak-check=yes ";
             $valgrindcmd .= "--suppressions=$srcdir/valgrind.supp ";
+           # $valgrindcmd .= "--gen-suppressions=all ";
             $valgrindcmd .= "--num-callers=16 ";
             $valgrindcmd .= "${valgrind_logfile}=$LOGDIR/valgrind$testnum";
             $CMDLINE = "$valgrindcmd $CMDLINE";
@@ -3616,7 +3627,8 @@ sub singletest {
         my $filemode=$hash{'mode'};
         if($filemode && ($filemode eq "text") && $has_textaware) {
             # text mode when running on windows: fix line endings
-            map s/\r\n/\n/g, @actual;
+            map s/\r\n/\n/g, @validstdout;
+            map s/\n/\r\n/g, @validstdout;
         }
 
         if($hash{'nonewline'}) {
@@ -3635,16 +3647,15 @@ sub singletest {
         $ok .= "-"; # stdout not checked
     }
 
-    my %replyattr = getpartattr("reply", "data");
     if(!$replyattr{'nocheck'} && (@reply || $replyattr{'sendzero'})) {
         # verify the received data
         my @out = loadarray($CURLOUT);
-        my %hash = getpartattr("reply", "data");
         # get the mode attribute
-        my $filemode=$hash{'mode'};
+        my $filemode=$replyattr{'mode'};
         if($filemode && ($filemode eq "text") && $has_textaware) {
             # text mode when running on windows: fix line endings
-            map s/\r\n/\n/g, @out;
+            map s/\r\n/\n/g, @reply;
+            map s/\n/\r\n/g, @reply;
         }
 
         $res = compare($testnum, $testname, "data", \@out, \@reply);
@@ -3788,17 +3799,24 @@ sub singletest {
 
             my $filemode=$hash{'mode'};
             if($filemode && ($filemode eq "text") && $has_textaware) {
-                # text mode when running on windows means adding an extra
-                # strip expression
-                push @stripfile, "s/\r\n/\n/";
+                # text mode when running on windows: fix line endings
+                map s/\r\n/\n/g, @outfile;
+                map s/\n/\r\n/g, @outfile;
             }
 
             my $strip;
             for $strip (@stripfile) {
                 chomp $strip;
+                my @newgen;
                 for(@generated) {
                     eval $strip;
+                    if($_) {
+                        push @newgen, $_;
+                    }
                 }
+                # this is to get rid of array entries that vanished (zero
+                # length) because of replacements
+                @generated = @newgen;
             }
 
             @outfile = fixarray(@outfile);
@@ -4882,6 +4900,19 @@ if ( $TESTCASES eq "all") {
         }
         $TESTCASES .= " $n";
     }
+}
+else {
+    my $verified="";
+    map {
+        if (-e "$TESTDIR/test$_") {
+            $verified.="$_ ";
+        }
+    } split(" ", $TESTCASES);
+    if($verified eq "") {
+        print "No existing test cases were specified\n";
+        exit;
+    }
+    $TESTCASES = $verified;
 }
 
 #######################################################################

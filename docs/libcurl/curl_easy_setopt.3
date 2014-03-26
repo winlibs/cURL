@@ -493,6 +493,10 @@ The data is header (or header-like) data sent to the peer.
 The data is protocol data received from the peer.
 .IP CURLINFO_DATA_OUT
 The data is protocol data sent to the peer.
+.IP CURLINFO_SSL_DATA_OUT
+The data is SSL/TLS (binary) data sent to the peer.
+.IP CURLINFO_SSL_DATA_IN
+The data is SSL/TLS (binary) data received from the peer.
 .RE
 .IP CURLOPT_DEBUGDATA
 Pass a pointer to whatever you want passed in to your
@@ -936,9 +940,9 @@ Set HTTP proxy to use. The parameter should be a char * to a zero terminated
 string holding the host name or dotted IP address. To specify port number in
 this string, append :[port] to the end of the host name. The proxy string may
 be prefixed with [protocol]:// since any such prefix will be ignored. The
-proxy's port number may optionally be specified with the separate option. If
-not specified, libcurl will default to using port 1080 for proxies.
-\fICURLOPT_PROXYPORT\fP.
+proxy's port number may optionally be specified with the separate option
+\fICURLOPT_PROXYPORT\fP. If not specified, libcurl will default to using port
+1080 for proxies.
 
 When you tell the library to use a HTTP proxy, libcurl will transparently
 convert operations to HTTP even if you specify an FTP URL etc. This may have
@@ -985,8 +989,8 @@ if one is specified.  The only wildcard available is a single * character,
 which matches all hosts, and effectively disables the proxy. Each name in this
 list is matched as either a domain which contains the hostname, or the
 hostname itself. For example, example.com would match example.com,
-example.com:80, and www.example.com, but not www.notanexample.com.  (Added in
-7.19.4)
+example.com:80, and www.example.com, but not www.notanexample.com or
+example.com.othertld.  (Added in 7.19.4)
 .IP CURLOPT_HTTPPROXYTUNNEL
 Set the parameter to 1 to make the library tunnel all operations through a
 given HTTP proxy. There is a big difference between using a proxy and to
@@ -1619,7 +1623,8 @@ When setting \fICURLOPT_HTTPGET\fP to 1, it will automatically set
 .IP CURLOPT_HTTP_VERSION
 Pass a long, set to one of the values described below. They force libcurl to
 use the specific HTTP versions. This is not sensible to do unless you have a
-good reason.
+good reason. You have to set this option if you want to use libcurl's HTTP 2.0
+support.
 .RS
 .IP CURL_HTTP_VERSION_NONE
 We don't care about what version the library uses. libcurl will use whatever
@@ -1628,6 +1633,9 @@ it thinks fit.
 Enforce HTTP 1.0 requests.
 .IP CURL_HTTP_VERSION_1_1
 Enforce HTTP 1.1 requests.
+.IP CURL_HTTP_VERSION_2_0
+Attempt HTTP 2.0 requests. libcurl will fall back to HTTP 1.x if HTTP 2.0
+can't be negotiated with the server.
 .RE
 .IP CURLOPT_IGNORE_CONTENT_LENGTH
 Ignore the Content-Length header. This is useful for Apache 1.x (and similar
@@ -1645,6 +1653,12 @@ Pass a long to tell libcurl how to act on transfer decoding. If set to zero,
 transfer decoding will be disabled, if set to 1 it is enabled
 (default). libcurl does chunked transfer decoding by default unless this
 option is set to zero. (added in 7.16.2)
+.IP CURLOPT_EXPECT_100_TIMEOUT_MS
+Pass a long to tell libcurl the number of milliseconds to wait for a server
+response with the HTTP status 100 (Continue), 417 (Expectation Failed) or
+similar after sending a HTTP request containing an Expect: 100-continue
+header. If this times out before a response is received, the request body is
+sent anyway. By default, libcurl waits 1000 milliseconds. (Added in 7.36.0)
 .SH SMTP OPTIONS
 .IP CURLOPT_MAIL_FROM
 Pass a pointer to a zero terminated string as parameter. This should be used
@@ -2451,6 +2465,20 @@ load your private key.
 
 (This option was known as CURLOPT_SSLKEYPASSWD up to 7.16.4 and
 CURLOPT_SSLCERTPASSWD up to 7.9.2)
+.IP CURLOPT_SSL_ENABLE_ALPN
+Pass a long as parameter, 0 or 1 where 1 is for enable and 0 for disable. By
+default, libcurl assumes a value of 1. This option enables/disables ALPN in
+the SSL handshake (if the SSL backend libcurl is built to use supports it),
+which can be used to negotiate http2.
+
+(Added in 7.36.0)
+.IP CURLOPT_SSL_ENABLE_NPN
+Pass a long as parameter, 0 or 1 where 1 is for enable and 0 for disable. By
+default, libcurl assumes a value of 1. This option enables/disables NPN in the
+SSL handshake (if the SSL backend libcurl is built to use supports it), which
+can be used to negotiate http2.
+
+(Added in 7.36.0)
 .IP CURLOPT_SSLENGINE
 Pass a pointer to a zero terminated string as parameter. It will be used as
 the identifier for the crypto engine you want to use for your private

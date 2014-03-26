@@ -563,6 +563,10 @@ CURLcode Curl_init_userdefined(struct UserDefined *set)
   set->tcp_keepintvl = 60;
   set->tcp_keepidle = 60;
 
+  set->ssl_enable_npn = TRUE;
+  set->ssl_enable_alpn = TRUE;
+
+  set->expect_100_timeout = 1000L; /* Wait for a second by default. */
   return res;
 }
 
@@ -1253,6 +1257,14 @@ CURLcode Curl_setopt(struct SessionHandle *data, CURLoption option,
     data->set.httpauth = auth;
   }
   break;
+
+  case CURLOPT_EXPECT_100_TIMEOUT_MS:
+    /*
+     * Time to wait for a response to a HTTP request containing an
+     * Expect: 100-continue header before sending the data anyway.
+     */
+    data->set.expect_100_timeout = va_arg(param, long);
+    break;
 
 #endif   /* CURL_DISABLE_HTTP */
 
@@ -2478,6 +2490,12 @@ CURLcode Curl_setopt(struct SessionHandle *data, CURLoption option,
   case CURLOPT_TCP_KEEPINTVL:
     data->set.tcp_keepintvl = va_arg(param, long);
     break;
+  case CURLOPT_SSL_ENABLE_NPN:
+    data->set.ssl_enable_npn = (0 != va_arg(param, long))?TRUE:FALSE;
+    break;
+  case CURLOPT_SSL_ENABLE_ALPN:
+    data->set.ssl_enable_alpn = (0 != va_arg(param, long))?TRUE:FALSE;
+    break;
 
   default:
     /* unknown tag and its companion, just ignore: */
@@ -2885,8 +2903,9 @@ ConnectionExists(struct SessionHandle *data,
   struct connectdata *check;
   struct connectdata *chosen = 0;
   bool canPipeline = IsPipeliningPossible(data, needle);
-  bool wantNTLM = (data->state.authhost.want & CURLAUTH_NTLM) ||
-    (data->state.authhost.want & CURLAUTH_NTLM_WB) ? TRUE : FALSE;
+  bool wantNTLMhttp = ((data->state.authhost.want & CURLAUTH_NTLM) ||
+                       (data->state.authhost.want & CURLAUTH_NTLM_WB)) &&
+    (needle->handler->protocol & CURLPROTO_HTTP) ? TRUE : FALSE;
   struct connectbundle *bundle;
 
   *force_reuse = FALSE;
@@ -3041,16 +3060,16 @@ ConnectionExists(struct SessionHandle *data,
           continue;
       }
 
-      if((needle->handler->protocol & CURLPROTO_FTP) ||
-         ((needle->handler->protocol & CURLPROTO_HTTP) && wantNTLM)) {
-         /* This is FTP or HTTP+NTLM, verify that we're using the same name
-            and password as well */
-         if(!strequal(needle->user, check->user) ||
-            !strequal(needle->passwd, check->passwd)) {
-            /* one of them was different */
-            continue;
-         }
-         credentialsMatch = TRUE;
+      if((!(needle->handler->flags & PROTOPT_CREDSPERREQUEST)) ||
+         wantNTLMhttp) {
+        /* This protocol requires credentials per connection or is HTTP+NTLM,
+           so verify that we're using the same name and password as well */
+        if(!strequal(needle->user, check->user) ||
+           !strequal(needle->passwd, check->passwd)) {
+          /* one of them was different */
+          continue;
+        }
+        credentialsMatch = TRUE;
       }
 
       if(!needle->bits.httpproxy || needle->handler->flags&PROTOPT_SSL ||
@@ -3102,12 +3121,12 @@ ConnectionExists(struct SessionHandle *data,
       }
 
       if(match) {
-        /* If we are looking for an NTLM connection, check if this is already
-           authenticating with the right credentials. If not, keep looking so
-           that we can reuse NTLM connections if possible. (Especially we
-           must not reuse the same connection if partway through
-           a handshake!) */
-        if(wantNTLM) {
+        /* If we are looking for an HTTP+NTLM connection, check if this is
+           already authenticating with the right credentials. If not, keep
+           looking so that we can reuse NTLM connections if
+           possible. (Especially we must not reuse the same connection if
+           partway through a handshake!) */
+        if(wantNTLMhttp) {
           if(credentialsMatch && check->ntlm.state != NTLMSTATE_NONE) {
             chosen = check;
 
@@ -3115,8 +3134,10 @@ ConnectionExists(struct SessionHandle *data,
             *force_reuse = TRUE;
             break;
           }
-          else
-            continue;
+          else if(credentialsMatch)
+            /* this is a backup choice */
+            chosen = check;
+          continue;
         }
 
         if(canPipeline) {
@@ -3170,7 +3191,8 @@ ConnectionDone(struct SessionHandle *data, struct connectdata *conn)
 {
   /* data->multi->maxconnects can be negative, deal with it. */
   size_t maxconnects =
-    (data->multi->maxconnects < 0) ? 0 : data->multi->maxconnects;
+    (data->multi->maxconnects < 0) ? data->multi->num_easy * 4:
+    data->multi->maxconnects;
   struct connectdata *conn_candidate = NULL;
 
   /* Mark the current connection as 'unused' */
@@ -3532,6 +3554,7 @@ static struct connectdata *allocate_conn(struct SessionHandle *data)
   conn->tempsock[1] = CURL_SOCKET_BAD; /* no file descriptor */
   conn->connection_id = -1;    /* no ID */
   conn->port = -1; /* unknown at this point */
+  conn->remote_port = -1; /* unknown */
 
   /* Default protocol-independent behavior doesn't support persistent
      connections, so we set this to force-close. Protocols that support
@@ -4054,7 +4077,7 @@ static CURLcode setup_connection_internals(struct connectdata *conn)
 
   /* only if remote_port was not already parsed off the URL we use the
      default port number */
-  if(!conn->remote_port)
+  if(conn->remote_port < 0)
     conn->remote_port = (unsigned short)conn->given->defport;
 
   return CURLE_OK;
@@ -4748,24 +4771,21 @@ static CURLcode parse_remote_port(struct SessionHandle *data,
     /* no CURLOPT_PORT given, extract the one from the URL */
 
     char *rest;
-    unsigned long port;
+    long port;
 
-    port=strtoul(portptr+1, &rest, 10);  /* Port number must be decimal */
+    port=strtol(portptr+1, &rest, 10);  /* Port number must be decimal */
 
-    if(rest != (portptr+1) && *rest == '\0') {
-      /* The colon really did have only digits after it,
-       * so it is either a port number or a mistake */
+    if((port < 0) || (port > 0xffff)) {
+      /* Single unix standard says port numbers are 16 bits long */
+      failf(data, "Port number out of range");
+      return CURLE_URL_MALFORMAT;
+    }
 
-      if(port > 0xffff) {   /* Single unix standard says port numbers are
-                              * 16 bits long */
-        failf(data, "Port number too large: %lu", port);
-        return CURLE_URL_MALFORMAT;
-      }
-
+    else if(rest != &portptr[1]) {
       *portptr = '\0'; /* cut off the name there */
       conn->remote_port = curlx_ultous(port);
     }
-    else if(!port)
+    else
       /* Browser behavior adaptation. If there's a colon with no digits after,
          just cut off the name there which makes us ignore the colon and just
          use the default port. Firefox and Chrome both do that. */
@@ -4805,12 +4825,16 @@ static CURLcode override_login(struct SessionHandle *data,
 
   conn->bits.netrc = FALSE;
   if(data->set.use_netrc != CURL_NETRC_IGNORED) {
-    if(Curl_parsenetrc(conn->host.name,
-                       userp, passwdp,
-                       data->set.str[STRING_NETRC_FILE])) {
+    int ret = Curl_parsenetrc(conn->host.name,
+                              userp, passwdp,
+                              data->set.str[STRING_NETRC_FILE]);
+    if(ret > 0) {
       infof(data, "Couldn't find host %s in the "
             DOT_CHAR "netrc file; using defaults\n",
             conn->host.name);
+    }
+    else if(ret < 0 ) {
+      return CURLE_OUT_OF_MEMORY;
     }
     else {
       /* set bits.netrc TRUE to remember that we got the name from a .netrc

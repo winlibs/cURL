@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -328,6 +328,7 @@ static LIBSSH2_FREE_FUNC(my_libssh2_free)
 /* This is the ONLY way to change SSH state! */
 static void state(struct connectdata *conn, sshstate nowstate)
 {
+  struct ssh_conn *sshc = &conn->proto.sshc;
 #if defined(DEBUGBUILD) && !defined(CURL_DISABLE_VERBOSE_STRINGS)
   /* for debug purposes */
   static const char * const names[] = {
@@ -387,10 +388,7 @@ static void state(struct connectdata *conn, sshstate nowstate)
     "SSH_SESSION_FREE",
     "QUIT"
   };
-#endif
-  struct ssh_conn *sshc = &conn->proto.sshc;
 
-#if defined(DEBUGBUILD) && !defined(CURL_DISABLE_VERBOSE_STRINGS)
   if(sshc->state != nowstate) {
     infof(conn->data, "SFTP %p state change from %s to %s\n",
           (void *)sshc, names[sshc->state], names[nowstate]);
@@ -736,6 +734,7 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
       result = ssh_check_fingerprint(conn);
       if(result == CURLE_OK)
         state(conn, SSH_AUTHLIST);
+      /* ssh_check_fingerprint sets state appropriately on error */
       break;
 
     case SSH_AUTHLIST:
@@ -932,6 +931,7 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
             infof(data, "Could not create agent object\n");
 
             state(conn, SSH_AUTH_KEY_INIT);
+            break;
           }
         }
 
@@ -1197,7 +1197,13 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
            using ordinary FTP. */
         result = Curl_client_write(conn, CLIENTWRITE_HEADER, tmp, strlen(tmp));
         free(tmp);
-        state(conn, SSH_SFTP_NEXT_QUOTE);
+        if(result) {
+          state(conn, SSH_SFTP_CLOSE);
+          sshc->nextstate = SSH_NO_STATE;
+          sshc->actualcode = result;
+        }
+        else
+          state(conn, SSH_SFTP_NEXT_QUOTE);
         break;
       }
       else if(cmd) {
@@ -1231,8 +1237,8 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
         }
 
         /*
-         * SFTP is a binary protocol, so we don't send text commands to
-         * the server. Instead, we scan for commands for commands used by
+         * SFTP is a binary protocol, so we don't send text commands
+         * to the server. Instead, we scan for commands used by
          * OpenSSH's sftp program and call the appropriate libssh2
          * functions.
          */
@@ -1672,7 +1678,7 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
         }
       }
 
-      /* If we have restart point then we need to seek to the correct
+      /* If we have a restart point then we need to seek to the correct
          position. */
       if(data->state.resume_from > 0) {
         /* Let's read off the proper amount of bytes from the input. */
@@ -1807,8 +1813,10 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
 
     case SSH_SFTP_READDIR_INIT:
       Curl_pgrsSetDownloadSize(data, -1);
-      if(data->set.opt_no_body)
+      if(data->set.opt_no_body) {
         state(conn, SSH_STOP);
+        break;
+      }
 
       /*
        * This is a directory that we are trying to get, so produce a directory
@@ -2146,9 +2154,6 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
       }
     }
 
-    if(data->set.opt_no_body)
-      state(conn, SSH_SFTP_CLOSE);
-
     /* Setup the actual download */
     if(data->req.size == 0) {
       /* no data to transfer */
@@ -2170,6 +2175,8 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
       conn->cselect_bits = CURL_CSELECT_IN;
     }
     if(result) {
+      /* this should never occur; the close state should be entered
+         at the time the error occurs */
       state(conn, SSH_SFTP_CLOSE);
       sshc->actualcode = result;
     }
@@ -2197,7 +2204,8 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
       /* Check if nextstate is set and move .nextstate could be POSTQUOTE_INIT
          After nextstate is executed,the control should come back to
          SSH_SFTP_CLOSE to pass the correct result back  */
-      if(sshc->nextstate != SSH_NO_STATE) {
+      if(sshc->nextstate != SSH_NO_STATE &&
+         sshc->nextstate != SSH_SFTP_CLOSE) {
         state(conn, sshc->nextstate);
         sshc->nextstate = SSH_SFTP_CLOSE;
       }
@@ -3115,6 +3123,7 @@ static ssize_t sftp_send(struct connectdata *conn, int sockindex,
 
 /*
  * Return number of received (decrypted) bytes
+ * or <0 on error
  */
 static ssize_t sftp_recv(struct connectdata *conn, int sockindex,
                          char *mem, size_t len, CURLcode *err)
@@ -3129,6 +3138,10 @@ static ssize_t sftp_recv(struct connectdata *conn, int sockindex,
   if(nread == LIBSSH2_ERROR_EAGAIN) {
     *err = CURLE_AGAIN;
     nread = -1;
+
+  }
+  else if(nread < 0) {
+    *err = libssh2_session_error_to_CURLE((int)nread);
   }
   return nread;
 }

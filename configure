@@ -1900,9 +1900,9 @@ Optional Packages:
   --with-lber-lib=libname Specify name of lber lib file
   --with-spnego=DIR       Specify location of SPNEGO library fbopenssl
   --with-gssapi-includes=DIR
-                          Specify location of GSSAPI header
-  --with-gssapi-libs=DIR  Specify location of GSSAPI libs
-  --with-gssapi=DIR       Where to look for GSSAPI
+                          Specify location of GSS-API headers
+  --with-gssapi-libs=DIR  Specify location of GSS-API libs
+  --with-gssapi=DIR       Where to look for GSS-API
   --with-winssl           enable Windows native SSL/TLS
   --without-winssl        disable Windows native SSL/TLS
   --with-darwinssl        enable iOS/Mac OS X native SSL/TLS
@@ -5466,6 +5466,7 @@ END
     as_fn_error $? "Your 'rm' program is bad, sorry." "$LINENO" 5
   fi
 fi
+
 ## ------------------------------------- ##
 ##  End of automake initialization code  ##
 ## ------------------------------------- ##
@@ -21070,8 +21071,8 @@ fi
 
 
 save_CPPFLAGS="$CPPFLAGS"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if GSSAPI support is requested" >&5
-$as_echo_n "checking if GSSAPI support is requested... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if GSS-API support is requested" >&5
+$as_echo_n "checking if GSS-API support is requested... " >&6; }
 if test x"$want_gss" = xyes; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -21142,8 +21143,8 @@ $as_echo "#define HAVE_GSSHEIMDAL 1" >>confdefs.h
 else
 
                             want_gss=no
-              { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: disabling GSSAPI since no header files was found" >&5
-$as_echo "$as_me: WARNING: disabling GSSAPI since no header files was found" >&2;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: disabling GSS-API support since no header files were found" >&5
+$as_echo "$as_me: WARNING: disabling GSS-API support since no header files were found" >&2;}
 
 
 fi
@@ -21153,8 +21154,8 @@ fi
 
 $as_echo "#define HAVE_GSSMIT 1" >>confdefs.h
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking if gssapi headers declare GSS_C_NT_HOSTBASED_SERVICE" >&5
-$as_echo_n "checking if gssapi headers declare GSS_C_NT_HOSTBASED_SERVICE... " >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking if GSS-API headers declare GSS_C_NT_HOSTBASED_SERVICE" >&5
+$as_echo_n "checking if GSS-API headers declare GSS_C_NT_HOSTBASED_SERVICE... " >&6; }
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -21207,7 +21208,7 @@ if test x"$want_gss" = xyes; then
 $as_echo "#define HAVE_GSSAPI 1" >>confdefs.h
 
 
-  curl_gss_msg="enabled (MIT/Heimdal)"
+  curl_gss_msg="enabled (MIT Kerberos/Heimdal)"
 
   if test -n "$gnu_gss"; then
     curl_gss_msg="enabled (GNU GSS)"
@@ -21874,7 +21875,10 @@ fi
                     ENGINE_cleanup \
                     CRYPTO_cleanup_all_ex_data \
                     SSL_get_shutdown \
-                    SSLv2_client_method
+                    SSLv2_client_method \
+                    SSL_CTX_set_next_proto_select_cb \
+                    SSL_CTX_set_alpn_protos \
+                    SSL_CTX_set_alpn_select_cb
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -24834,19 +24838,19 @@ $as_echo "$as_me: WARNING: You need an ld version supporting the --version-scrip
 $as_echo "yes" >&6; }
         if test "x$OPENSSL_ENABLED" = "x1"; then
           versioned_symbols_flavour="OPENSSL_"
-        elif test "x$GNUTLS_ENABLED" == "x1"; then
+        elif test "x$GNUTLS_ENABLED" = "x1"; then
           versioned_symbols_flavour="GNUTLS_"
-        elif test "x$NSS_ENABLED" == "x1"; then
+        elif test "x$NSS_ENABLED" = "x1"; then
           versioned_symbols_flavour="NSS_"
-        elif test "x$POLARSSL_ENABLED" == "x1"; then
+        elif test "x$POLARSSL_ENABLED" = "x1"; then
           versioned_symbols_flavour="POLARSSL_"
-        elif test "x$CYASSL_ENABLED" == "x1"; then
+        elif test "x$CYASSL_ENABLED" = "x1"; then
           versioned_symbols_flavour="CYASSL_"
-        elif test "x$AXTLS_ENABLED" == "x1"; then
+        elif test "x$AXTLS_ENABLED" = "x1"; then
           versioned_symbols_flavour="AXTLS_"
-        elif test "x$WINSSL_ENABLED" == "x1"; then
+        elif test "x$WINSSL_ENABLED" = "x1"; then
           versioned_symbols_flavour="WINSSL_"
-        elif test "x$DARWINSSL_ENABLED" == "x1"; then
+        elif test "x$DARWINSSL_ENABLED" = "x1"; then
           versioned_symbols_flavour="DARWINSSL_"
         else
           versioned_symbols_flavour=""
@@ -38861,6 +38865,7 @@ $as_echo "no" >&6; }
 
 $as_echo "#define CURL_DISABLE_CRYPTO_AUTH 1" >>confdefs.h
 
+       CURL_DISABLE_CRYPTO_AUTH=1
        ;;
   *)   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -39085,7 +39090,8 @@ fi
 if test "x$USE_WINDOWS_SSPI" = "x1"; then
   SUPPORT_FEATURES="$SUPPORT_FEATURES SSPI"
 fi
-if test "x$CURL_DISABLE_HTTP" != "x1"; then
+if test "x$CURL_DISABLE_HTTP" != "x1" -a \
+	"x$CURL_DISABLE_CRYPTO_AUTH" != "x1"; then
   if test "x$USE_SSLEAY" = "x1" -o "x$USE_WINDOWS_SSPI" = "x1" \
       -o "x$GNUTLS_ENABLED" = "x1" -o "x$NSS_ENABLED" = "x1" \
       -o "x$DARWINSSL_ENABLED" = "x1"; then
@@ -42114,7 +42120,7 @@ done
   SSL support:      ${curl_ssl_msg}
   SSH support:      ${curl_ssh_msg}
   zlib support:     ${curl_zlib_msg}
-  GSSAPI support:   ${curl_gss_msg}
+  GSS-API support:  ${curl_gss_msg}
   SPNEGO support:   ${curl_spnego_msg}
   TLS-SRP support:  ${curl_tls_srp_msg}
   resolver:         ${curl_res_msg}
@@ -42144,7 +42150,7 @@ $as_echo "$as_me: Configured to build curl/libcurl:
   SSL support:      ${curl_ssl_msg}
   SSH support:      ${curl_ssh_msg}
   zlib support:     ${curl_zlib_msg}
-  GSSAPI support:   ${curl_gss_msg}
+  GSS-API support:  ${curl_gss_msg}
   SPNEGO support:   ${curl_spnego_msg}
   TLS-SRP support:  ${curl_tls_srp_msg}
   resolver:         ${curl_res_msg}

@@ -115,18 +115,6 @@ UNIX
 
        ./configure --disable-thread
 
-     To build curl with kerberos4 support enabled, curl requires the krb4 libs
-     and headers installed. You can then use a set of options to tell
-     configure where those are:
-
-          --with-krb4-includes[=DIR]   Specify location of kerberos4 headers
-          --with-krb4-libs[=DIR]       Specify location of kerberos4 libs
-          --with-krb4[=DIR]            where to look for Kerberos4
-
-     In most cases, /usr/athena is the install prefix and then it works with
-
-       ./configure --with-krb4=/usr/athena
-
      If you're a curl developer and use gcc, you might want to enable more
      debug options with the --enable-debug option.
 
@@ -1013,7 +1001,7 @@ REDUCING SIZE
 
    Using these techniques it is possible to create a basic HTTP-only shared
    libcurl library for i386 Linux platforms that is only 114 KiB in size, and
-   an FTP-only library that is 115 KiB in size (as of libcurl version 7.34.1,
+   an FTP-only library that is 115 KiB in size (as of libcurl version 7.35.0,
    using gcc 4.8.2).
 
    You may find that statically linking libcurl to your application will
@@ -1026,7 +1014,6 @@ REDUCING SIZE
    command line.  Following is a list of appropriate key words:
 
      --disable-cookies          !cookies
-     --disable-crypto-auth      !HTTP\ Digest\ auth !HTTP\ proxy\ Digest\ auth
      --disable-manual           !--manual
      --disable-proxy            !HTTP\ proxy !proxytunnel !SOCKS4 !SOCKS5
 

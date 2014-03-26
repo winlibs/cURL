@@ -5,9 +5,9 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2012 - 2013, Marc Hoersken, <info@marc-hoersken.de>
+ * Copyright (C) 2012 - 2014, Marc Hoersken, <info@marc-hoersken.de>
  * Copyright (C) 2012, Mark Salisbury, <mark.salisbury@hp.com>
- * Copyright (C) 2012 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -156,17 +156,6 @@ schannel_connect_step1(struct connectdata *conn, int sockindex)
       infof(data, "schannel: disable server certificate revocation checks\n");
     }
 
-    if(Curl_inet_pton(AF_INET, conn->host.name, &addr)
-#ifdef ENABLE_IPV6
-       || Curl_inet_pton(AF_INET6, conn->host.name, &addr6)
-#endif
-      ) {
-      schannel_cred.dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
-      infof(data, "schannel: using IP address, SNI is being disabled by "
-                  "disabling the servername check against the "
-                  "subject names in server certificates.\n");
-    }
-
     if(!data->set.ssl.verifyhost) {
       schannel_cred.dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
       infof(data, "schannel: verifyhost setting prevents Schannel from "
@@ -195,6 +184,12 @@ schannel_connect_step1(struct connectdata *conn, int sockindex)
       case CURL_SSLVERSION_SSLv2:
         schannel_cred.grbitEnabledProtocols = SP_PROT_SSL2_CLIENT;
         break;
+      default:
+        schannel_cred.grbitEnabledProtocols = SP_PROT_TLS1_0_CLIENT |
+                                              SP_PROT_TLS1_1_CLIENT |
+                                              SP_PROT_TLS1_2_CLIENT |
+                                              SP_PROT_SSL3_CLIENT;
+        break;
     }
 
     /* allocate memory for the re-usable credential handle */
@@ -220,6 +215,15 @@ schannel_connect_step1(struct connectdata *conn, int sockindex)
       Curl_safefree(connssl->cred);
       return CURLE_SSL_CONNECT_ERROR;
     }
+  }
+
+  /* Warn if SNI is disabled due to use of an IP address */
+  if(Curl_inet_pton(AF_INET, conn->host.name, &addr)
+#ifdef ENABLE_IPV6
+     || Curl_inet_pton(AF_INET6, conn->host.name, &addr6)
+#endif
+    ) {
+    infof(data, "schannel: using IP address, SNI is not supported by OS.\n");
   }
 
   /* setup output buffer */
