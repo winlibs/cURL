@@ -94,7 +94,7 @@ static bool verifyconnect(curl_socket_t sockfd, int *error);
 #define KEEPALIVE_FACTOR(x)
 #endif
 
-#if defined(HAVE_WINSOCK_H) && !defined(SIO_KEEPALIVE_VALS)
+#if defined(HAVE_WINSOCK2_H) && !defined(SIO_KEEPALIVE_VALS)
 #define SIO_KEEPALIVE_VALS    _WSAIOW(IOC_VENDOR,4)
 
 struct tcp_keepalive {
@@ -224,7 +224,12 @@ long Curl_timeleft(struct SessionHandle *data,
   }
 
   /* subtract elapsed time */
-  timeout_ms -= Curl_tvdiff(*nowp, data->progress.t_startsingle);
+  if(duringconnect)
+    /* since this most recent connect started */
+    timeout_ms -= Curl_tvdiff(*nowp, data->progress.t_startsingle);
+  else
+    /* since the entire operation started */
+    timeout_ms -= Curl_tvdiff(*nowp, data->progress.t_startop);
   if(!timeout_ms)
     /* avoid returning 0 as that means no timeout! */
     return -1;
@@ -545,15 +550,15 @@ static CURLcode trynextip(struct connectdata *conn,
   conn->tempsock[tempindex] = CURL_SOCKET_BAD;
 
   if(sockindex == FIRSTSOCKET) {
-    Curl_addrinfo *ai;
-    int family;
+    Curl_addrinfo *ai = NULL;
+    int family = AF_UNSPEC;
 
     if(conn->tempaddr[tempindex]) {
       /* find next address in the same protocol family */
       family = conn->tempaddr[tempindex]->ai_family;
       ai = conn->tempaddr[tempindex]->ai_next;
     }
-    else {
+    else if(conn->tempaddr[0]) {
       /* happy eyeballs - try the other protocol family */
       int firstfamily = conn->tempaddr[0]->ai_family;
 #ifdef ENABLE_IPV6
@@ -811,14 +816,16 @@ CURLcode Curl_is_connected(struct connectdata *conn,
       char ipaddress[MAX_IPADR_LEN];
       data->state.os_errno = error;
       SET_SOCKERRNO(error);
-      Curl_printable_address(conn->tempaddr[i], ipaddress, MAX_IPADR_LEN);
-      infof(data, "connect to %s port %ld failed: %s\n",
-            ipaddress, conn->port, Curl_strerror(conn, error));
+      if(conn->tempaddr[i]) {
+        Curl_printable_address(conn->tempaddr[i], ipaddress, MAX_IPADR_LEN);
+        infof(data, "connect to %s port %ld failed: %s\n",
+              ipaddress, conn->port, Curl_strerror(conn, error));
 
-      conn->timeoutms_per_addr = conn->tempaddr[i]->ai_next == NULL ?
-                                 allow : allow / 2;
+        conn->timeoutms_per_addr = conn->tempaddr[i]->ai_next == NULL ?
+                                   allow : allow / 2;
 
-      code = trynextip(conn, sockindex, i);
+        code = trynextip(conn, sockindex, i);
+      }
     }
   }
 
@@ -1047,7 +1054,7 @@ singleipconnect(struct connectdata *conn,
 
   conn->connecttime = Curl_tvnow();
   if(conn->num_addr > 1)
-    Curl_expire(data, conn->timeoutms_per_addr);
+    Curl_expire_latest(data, conn->timeoutms_per_addr);
 
   /* Connect TCP sockets, bind UDP */
   if(!isconnected && (conn->socktype == SOCK_STREAM)) {
@@ -1314,3 +1321,20 @@ CURLcode Curl_socket(struct connectdata *conn,
   return CURLE_OK;
 
 }
+
+#ifdef CURLDEBUG
+/*
+ * Curl_conncontrol() is used to set the conn->bits.close bit on or off. It
+ * MUST be called with the connclose() or connclose() macros with a stated
+ * reason. The reason is only shown in debug builds but helps to figure out
+ * decision paths when connections are or aren't re-used as expected.
+ */
+void Curl_conncontrol(struct connectdata *conn, bool closeit,
+                      const char *reason)
+{
+  infof(conn->data, "Marked for [%s]: %s\n", closeit?"closure":"keep alive",
+        reason);
+  conn->bits.close = closeit; /* the only place in the source code that should
+                                 assign this bit */
+}
+#endif

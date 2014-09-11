@@ -915,6 +915,7 @@ LIBMETALINK_LIBS
 CURL_CA_BUNDLE
 SSL_ENABLED
 USE_AXTLS
+NSS_LIBS
 USE_NSS
 USE_CYASSL
 USE_POLARSSL
@@ -1133,7 +1134,6 @@ with_zlib
 with_ldap_lib
 with_lber_lib
 enable_ipv6
-with_spnego
 with_gssapi_includes
 with_gssapi_libs
 with_gssapi
@@ -1898,7 +1898,6 @@ Optional Packages:
   --without-zlib          disable use of zlib
   --with-ldap-lib=libname Specify name of ldap lib file
   --with-lber-lib=libname Specify name of lber lib file
-  --with-spnego=DIR       Specify location of SPNEGO library fbopenssl
   --with-gssapi-includes=DIR
                           Specify location of GSS-API headers
   --with-gssapi-libs=DIR  Specify location of GSS-API libs
@@ -5493,7 +5492,6 @@ PKGADD_VENDOR="curl.haxx.se"
     curl_ssh_msg="no      (--with-libssh2)"
    curl_zlib_msg="no      (--with-zlib)"
     curl_gss_msg="no      (--with-gssapi)"
- curl_spnego_msg="no      (--with-spnego)"
 curl_tls_srp_msg="no      (--enable-tls-srp)"
     curl_res_msg="default (--enable-ares / --enable-threaded-resolver)"
    curl_ipv6_msg="no      (--enable-ipv6)"
@@ -7576,7 +7574,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -7621,7 +7619,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -7644,7 +7642,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -7688,7 +7686,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -7711,7 +7709,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -20996,46 +20994,6 @@ esac
 
 
 
-# Check whether --with-spnego was given.
-if test "${with_spnego+set}" = set; then :
-  withval=$with_spnego;
-  SPNEGO_ROOT="$withval"
-  if test x"$SPNEGO_ROOT" != xno; then
-    want_spnego="yes"
-  fi
-
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if SPNEGO support is requested" >&5
-$as_echo_n "checking if SPNEGO support is requested... " >&6; }
-if test x"$want_spnego" = xyes; then
-
-  if test X"$SPNEGO_ROOT" = Xyes; then
-     as_fn_error $? "FBOpenSSL libs and/or directories were not found where specified!" "$LINENO" 5
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-  else
-     if test -z "$SPNEGO_LIB_DIR"; then
-        LDFLAGS="$LDFLAGS -L$SPNEGO_ROOT -lfbopenssl"
-     else
-        LDFLAGS="$LDFLAGS $SPNEGO_LIB_DIR"
-     fi
-
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_SPNEGO 1" >>confdefs.h
-
-     curl_spnego_msg="enabled"
-  fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
 GSSAPI_ROOT="/usr"
 
 # Check whether --with-gssapi-includes was given.
@@ -21078,7 +21036,9 @@ if test x"$want_gss" = xyes; then
 $as_echo "yes" >&6; }
 
   if test -z "$GSSAPI_INCS"; then
-     if test -f "$GSSAPI_ROOT/bin/krb5-config"; then
+     if test -n "$host_alias" -a -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
+        GSSAPI_INCS=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --cflags gssapi`
+     elif test -f "$GSSAPI_ROOT/bin/krb5-config"; then
         GSSAPI_INCS=`$GSSAPI_ROOT/bin/krb5-config --cflags gssapi`
      elif test "$GSSAPI_ROOT" != "yes"; then
         GSSAPI_INCS="-I$GSSAPI_ROOT/include"
@@ -21207,7 +21167,7 @@ if test x"$want_gss" = xyes; then
 
 $as_echo "#define HAVE_GSSAPI 1" >>confdefs.h
 
-
+  HAVE_GSSAPI=1
   curl_gss_msg="enabled (MIT Kerberos/Heimdal)"
 
   if test -n "$gnu_gss"; then
@@ -21219,21 +21179,29 @@ $as_echo "#define HAVE_GSSAPI 1" >>confdefs.h
      *-*-darwin*)
         LIBS="-lgssapi_krb5 -lresolv $LIBS"
         ;;
-     *-hp-hpux*)
-        if test "$GSSAPI_ROOT" != "yes"; then
-           LDFLAGS="$LDFLAGS -L$GSSAPI_ROOT/lib$libsuff"
-        fi
-        LIBS="-lgss $LIBS"
-        ;;
      *)
-        if test -f "$GSSAPI_ROOT/bin/krb5-config"; then
+        if test -n "$host_alias" -a -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
+                                 gss_libs=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --libs gssapi`
+           LIBS="$gss_libs $LIBS"
+        elif test -f "$GSSAPI_ROOT/bin/krb5-config"; then
                                  gss_libs=`$GSSAPI_ROOT/bin/krb5-config --libs gssapi`
            LIBS="$gss_libs $LIBS"
-        elif test "$GSSAPI_ROOT" != "yes"; then
-           LDFLAGS="$LDFLAGS -L$GSSAPI_ROOT/lib$libsuff"
-           LIBS="-lgssapi $LIBS"
         else
-           LIBS="-lgssapi $LIBS"
+           case $host in
+           *-hp-hpux*)
+              gss_libname="gss"
+              ;;
+           *)
+              gss_libname="gssapi"
+              ;;
+           esac
+
+           if test "$GSSAPI_ROOT" != "yes"; then
+              LDFLAGS="$LDFLAGS -L$GSSAPI_ROOT/lib$libsuff"
+              LIBS="-l$gss_libname $LIBS"
+           else
+              LIBS="-l$gss_libname $LIBS"
+           fi
         fi
         ;;
      esac
@@ -23454,6 +23422,19 @@ _ACEOF
 
 
 
+            for ac_header in cyassl/error-ssl.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "cyassl/error-ssl.h" "ac_cv_header_cyassl_error_ssl_h" "$ac_includes_default"
+if test "x$ac_cv_header_cyassl_error_ssl_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_CYASSL_ERROR_SSL_H 1
+_ACEOF
+
+fi
+
+done
+
+
       LIBS="-lcyassl -lm $LIBS"
 
       if test -n "$cyassllib"; then
@@ -23711,6 +23692,9 @@ fi
         { $as_echo "$as_me:${as_lineno-$LINENO}: detected NSS version $version" >&5
 $as_echo "$as_me: detected NSS version $version" >&6;}
 
+                NSS_LIBS=$addlib
+
+
                                         if test "x$cross_compiling" != "xyes"; then
           LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nssprefix/lib$libsuff"
           export LD_LIBRARY_PATH
@@ -23801,11 +23785,12 @@ $as_echo "#define USE_AXTLS 1" >>confdefs.h
       USE_AXTLS="yes"
       curl_ssl_msg="enabled (axTLS)"
 
-
-      LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$LIB_AXTLS"
-      export LD_LIBRARY_PATH
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Added $LIB_AXTLS to LD_LIBRARY_PATH" >&5
+      if test "x$cross_compiling" != "xyes"; then
+        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$LIB_AXTLS"
+        export LD_LIBRARY_PATH
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Added $LIB_AXTLS to LD_LIBRARY_PATH" >&5
 $as_echo "$as_me: Added $LIB_AXTLS to LD_LIBRARY_PATH" >&6;}
+      fi
 
 else
 
@@ -25473,7 +25458,7 @@ done
       IDN_ENABLED=1
 
       curl_idn_msg="enabled"
-      if test -n "$IDN_DIR"; then
+      if test -n "$IDN_DIR" -a "x$cross_compiling" != "xyes"; then
         LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$IDN_DIR"
         export LD_LIBRARY_PATH
         { $as_echo "$as_me:${as_lineno-$LINENO}: Added $IDN_DIR to LD_LIBRARY_PATH" >&5
@@ -25499,9 +25484,7 @@ fi
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build with nghttp2" >&5
-$as_echo_n "checking whether to build with nghttp2... " >&6; }
-OPT_H2="no"
+OPT_H2="yes"
 
 # Check whether --with-nghttp2 was given.
 if test "${with_nghttp2+set}" = set; then :
@@ -25510,37 +25493,24 @@ fi
 
 case "$OPT_H2" in
   no)
-        want_idn="no"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    ;;
-  default)
         want_h2="no"
-    want_h2_path="default"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
     ;;
   yes)
-        want_h2="yes"
+        want_h2="default"
     want_h2_path=""
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
     ;;
   *)
         want_h2="yes"
-    want_h2_path="$withval"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes ($withval)" >&5
-$as_echo "yes ($withval)" >&6; }
+    want_h2_path="$withval/lib/pkgconfig"
     ;;
 esac
 
 curl_h2_msg="disabled (--with-nghttp2)"
-if test X"$OPT_H2" != Xno; then
+if test X"$want_h2" != Xno; then
     CLEANLDFLAGS="$LDFLAGS"
   CLEANCPPFLAGS="$CPPFLAGS"
   CLEANLIBS="$LIBS"
 
-  h2pcdir=${want_h2_path}/lib/pkgconfig
 
 
     PKGCONFIG="no"
@@ -25650,8 +25620,8 @@ fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnghttp2 options with pkg-config" >&5
 $as_echo_n "checking for libnghttp2 options with pkg-config... " >&6; }
             itexists=`
-    if test -n "$h2pcdir"; then
-      PKG_CONFIG_LIBDIR="$h2pcdir"
+    if test -n "$want_h2_path"; then
+      PKG_CONFIG_LIBDIR="$want_h2_path"
       export PKG_CONFIG_LIBDIR
     fi
          $PKGCONFIG --exists libnghttp2 >/dev/null 2>&1 && echo 1`
@@ -25669,8 +25639,8 @@ $as_echo "found" >&6; }
 
   if test "$PKGCONFIG" != "no" ; then
     LIB_H2=`
-    if test -n "$h2pcdir"; then
-      PKG_CONFIG_LIBDIR="$h2pcdir"
+    if test -n "$want_h2_path"; then
+      PKG_CONFIG_LIBDIR="$want_h2_path"
       export PKG_CONFIG_LIBDIR
     fi
 
@@ -25679,8 +25649,8 @@ $as_echo "found" >&6; }
 $as_echo "$as_me: -l is $LIB_H2" >&6;}
 
     CPP_H2=`
-    if test -n "$h2pcdir"; then
-      PKG_CONFIG_LIBDIR="$h2pcdir"
+    if test -n "$want_h2_path"; then
+      PKG_CONFIG_LIBDIR="$want_h2_path"
       export PKG_CONFIG_LIBDIR
     fi
        $PKGCONFIG --cflags-only-I libnghttp2`
@@ -25688,8 +25658,8 @@ $as_echo "$as_me: -l is $LIB_H2" >&6;}
 $as_echo "$as_me: -I is $CPP_H2" >&6;}
 
     LD_H2=`
-    if test -n "$h2pcdir"; then
-      PKG_CONFIG_LIBDIR="$h2pcdir"
+    if test -n "$want_h2_path"; then
+      PKG_CONFIG_LIBDIR="$want_h2_path"
       export PKG_CONFIG_LIBDIR
     fi
 
@@ -25697,17 +25667,13 @@ $as_echo "$as_me: -I is $CPP_H2" >&6;}
     { $as_echo "$as_me:${as_lineno-$LINENO}: -L is $LD_H2" >&5
 $as_echo "$as_me: -L is $LD_H2" >&6;}
 
-  else
-            as_fn_error $? "--with-nghttp2 was specified but could not find libnghttp2 pkg-config file." "$LINENO" 5
-  fi
+    LDFLAGS="$LDFLAGS $LD_H2"
+    CPPFLAGS="$CPPFLAGS $CPP_H2"
+    LIBS="$LIB_H2 $LIBS"
 
-  LDFLAGS="$LDFLAGS $LD_H2"
-  CPPFLAGS="$CPPFLAGS $CPP_H2"
-  LIBS="$LIB_H2 $LIBS"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nghttp2_session_client_new in -lnghttp2" >&5
-$as_echo_n "checking for nghttp2_session_client_new in -lnghttp2... " >&6; }
-if ${ac_cv_lib_nghttp2_nghttp2_session_client_new+:} false; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nghttp2_session_callbacks_set_send_callback in -lnghttp2" >&5
+$as_echo_n "checking for nghttp2_session_callbacks_set_send_callback in -lnghttp2... " >&6; }
+if ${ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -25719,28 +25685,28 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char nghttp2_session_client_new ();
+char nghttp2_session_callbacks_set_send_callback ();
 int main (void)
 {
-return nghttp2_session_client_new ();
+return nghttp2_session_callbacks_set_send_callback ();
  ;
  return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_nghttp2_nghttp2_session_client_new=yes
+  ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback=yes
 else
-  ac_cv_lib_nghttp2_nghttp2_session_client_new=no
+  ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_nghttp2_nghttp2_session_client_new" >&5
-$as_echo "$ac_cv_lib_nghttp2_nghttp2_session_client_new" >&6; }
-if test "x$ac_cv_lib_nghttp2_nghttp2_session_client_new" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback" >&5
+$as_echo "$ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback" >&6; }
+if test "x$ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback" = xyes; then :
 
-     for ac_header in nghttp2/nghttp2.h
+       for ac_header in nghttp2/nghttp2.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "nghttp2/nghttp2.h" "ac_cv_header_nghttp2_nghttp2_h" "$ac_includes_default"
 if test "x$ac_cv_header_nghttp2_nghttp2_h" = xyes; then :
@@ -25748,11 +25714,11 @@ if test "x$ac_cv_header_nghttp2_nghttp2_h" = xyes; then :
 #define HAVE_NGHTTP2_NGHTTP2_H 1
 _ACEOF
  curl_h2_msg="enabled (nghttp2)"
-        NGHTTP2_ENABLED=1
+          NGHTTP2_ENABLED=1
 
 $as_echo "#define USE_NGHTTP2 1" >>confdefs.h
 
-        USE_NGHTTP2=1
+          USE_NGHTTP2=1
 
 
 fi
@@ -25761,12 +25727,18 @@ done
 
 
 else
-        LDFLAGS=$CLEANLDFLAGS
-      CPPFLAGS=$CLEANCPPFLAGS
-      LIBS=$CLEANLIBS
+          LDFLAGS=$CLEANLDFLAGS
+        CPPFLAGS=$CLEANCPPFLAGS
+        LIBS=$CLEANLIBS
 
 fi
 
+
+  else
+        if test X"$want_h2" != Xdefault; then
+                  as_fn_error $? "--with-nghttp2 was specified but could not find libnghttp2 pkg-config file." "$LINENO" 5
+    fi
+  fi
 
 fi
 
@@ -34381,7 +34353,7 @@ $as_echo "no" >&6; }
   tst_allow_poll="unknown"
   #
   case $host_os in
-    darwin*|interix*)
+    darwin[123456789].*|darwin10.*|darwin11.*|darwin12.*|interix*)
                               curl_disallow_poll="yes"
       ;;
   esac
@@ -37866,8 +37838,10 @@ for ac_func in fork \
   getppid \
   getprotobyname \
   getpwuid \
+  getpwuid_r \
   getrlimit \
   gettimeofday \
+  if_nametoindex \
   inet_addr \
   perror \
   pipe \
@@ -39090,8 +39064,18 @@ fi
 if test "x$USE_WINDOWS_SSPI" = "x1"; then
   SUPPORT_FEATURES="$SUPPORT_FEATURES SSPI"
 fi
+
+if test "x$HAVE_GSSAPI" = "x1"; then
+  SUPPORT_FEATURES="$SUPPORT_FEATURES GSS-API"
+fi
+
+if test "x$CURL_DISABLE_CRYPTO_AUTH" != "x1" -a \
+    \( "x$HAVE_GSSAPI" = "x1" -o "x$USE_WINDOWS_SSPI" = "x1" \); then
+  SUPPORT_FEATURES="$SUPPORT_FEATURES SPNEGO"
+fi
+
 if test "x$CURL_DISABLE_HTTP" != "x1" -a \
-	"x$CURL_DISABLE_CRYPTO_AUTH" != "x1"; then
+    "x$CURL_DISABLE_CRYPTO_AUTH" != "x1"; then
   if test "x$USE_SSLEAY" = "x1" -o "x$USE_WINDOWS_SSPI" = "x1" \
       -o "x$GNUTLS_ENABLED" = "x1" -o "x$NSS_ENABLED" = "x1" \
       -o "x$DARWINSSL_ENABLED" = "x1"; then
@@ -39367,7 +39351,7 @@ if test "x$want_curldebug_assumed" = "xyes" &&
   ac_configure_args="$ac_configure_args --enable-curldebug"
 fi
 
-ac_config_files="$ac_config_files Makefile docs/Makefile docs/examples/Makefile docs/libcurl/Makefile include/Makefile include/curl/Makefile src/Makefile lib/Makefile lib/libcurl.vers tests/Makefile tests/certs/Makefile tests/certs/scripts/Makefile tests/data/Makefile tests/server/Makefile tests/libtest/Makefile tests/unit/Makefile packages/Makefile packages/Win32/Makefile packages/Win32/cygwin/Makefile packages/Linux/Makefile packages/Linux/RPM/Makefile packages/Linux/RPM/curl.spec packages/Linux/RPM/curl-ssl.spec packages/Solaris/Makefile packages/EPM/curl.list packages/EPM/Makefile packages/vms/Makefile packages/AIX/Makefile packages/AIX/RPM/Makefile packages/AIX/RPM/curl.spec curl-config libcurl.pc"
+ac_config_files="$ac_config_files Makefile docs/Makefile docs/examples/Makefile docs/libcurl/Makefile docs/libcurl/opts/Makefile include/Makefile include/curl/Makefile src/Makefile lib/Makefile lib/libcurl.vers tests/Makefile tests/certs/Makefile tests/certs/scripts/Makefile tests/data/Makefile tests/server/Makefile tests/libtest/Makefile tests/unit/Makefile packages/Makefile packages/Win32/Makefile packages/Win32/cygwin/Makefile packages/Linux/Makefile packages/Linux/RPM/Makefile packages/Linux/RPM/curl.spec packages/Linux/RPM/curl-ssl.spec packages/Solaris/Makefile packages/EPM/curl.list packages/EPM/Makefile packages/vms/Makefile packages/AIX/Makefile packages/AIX/RPM/Makefile packages/AIX/RPM/curl.spec curl-config libcurl.pc"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -40441,6 +40425,7 @@ do
     "docs/Makefile") CONFIG_FILES="$CONFIG_FILES docs/Makefile" ;;
     "docs/examples/Makefile") CONFIG_FILES="$CONFIG_FILES docs/examples/Makefile" ;;
     "docs/libcurl/Makefile") CONFIG_FILES="$CONFIG_FILES docs/libcurl/Makefile" ;;
+    "docs/libcurl/opts/Makefile") CONFIG_FILES="$CONFIG_FILES docs/libcurl/opts/Makefile" ;;
     "include/Makefile") CONFIG_FILES="$CONFIG_FILES include/Makefile" ;;
     "include/curl/Makefile") CONFIG_FILES="$CONFIG_FILES include/curl/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
@@ -42121,7 +42106,6 @@ done
   SSH support:      ${curl_ssh_msg}
   zlib support:     ${curl_zlib_msg}
   GSS-API support:  ${curl_gss_msg}
-  SPNEGO support:   ${curl_spnego_msg}
   TLS-SRP support:  ${curl_tls_srp_msg}
   resolver:         ${curl_res_msg}
   ipv6 support:     ${curl_ipv6_msg}
@@ -42151,7 +42135,6 @@ $as_echo "$as_me: Configured to build curl/libcurl:
   SSH support:      ${curl_ssh_msg}
   zlib support:     ${curl_zlib_msg}
   GSS-API support:  ${curl_gss_msg}
-  SPNEGO support:   ${curl_spnego_msg}
   TLS-SRP support:  ${curl_tls_srp_msg}
   resolver:         ${curl_res_msg}
   ipv6 support:     ${curl_ipv6_msg}

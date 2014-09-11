@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -24,6 +24,7 @@
  * RFC3501 IMAPv4 protocol
  * RFC4422 Simple Authentication and Security Layer (SASL)
  * RFC4616 PLAIN authentication
+ * RFC4752 The Kerberos V5 ("GSSAPI") SASL Mechanism
  * RFC4959 IMAP Extension for SASL Initial Client Response
  * RFC5092 IMAP URL Scheme
  * RFC6749 OAuth 2.0 Authorization Framework
@@ -131,8 +132,7 @@ const struct Curl_handler Curl_handler_imap = {
   ZERO_NULL,                        /* readwrite */
   PORT_IMAP,                        /* defport */
   CURLPROTO_IMAP,                   /* protocol */
-  PROTOPT_CLOSEACTION | PROTOPT_NEEDSPWD
-  | PROTOPT_NOURLQUERY              /* flags */
+  PROTOPT_CLOSEACTION | PROTOPT_NEEDSPWD  /* flags */
 };
 
 #ifdef USE_SSL
@@ -156,9 +156,9 @@ const struct Curl_handler Curl_handler_imaps = {
   imap_disconnect,                  /* disconnect */
   ZERO_NULL,                        /* readwrite */
   PORT_IMAPS,                       /* defport */
-  CURLPROTO_IMAP | CURLPROTO_IMAPS, /* protocol */
-  PROTOPT_CLOSEACTION | PROTOPT_SSL | PROTOPT_NEEDSPWD
-  | PROTOPT_NOURLQUERY              /* flags */
+  CURLPROTO_IMAPS,                  /* protocol */
+  PROTOPT_CLOSEACTION | PROTOPT_SSL |
+  PROTOPT_NEEDSPWD                  /* flags */
 };
 #endif
 
@@ -258,7 +258,7 @@ static bool imap_matchresp(const char *line, size_t len, const char *cmd)
   /* Does the command name match and is it followed by a space character or at
      the end of line? */
   if(line + cmd_len <= end && Curl_raw_nequal(line, cmd, cmd_len) &&
-     (line[cmd_len] == ' ' || line + cmd_len == end))
+     (line[cmd_len] == ' ' || line + cmd_len + 2 == end))
     return TRUE;
 
   return FALSE;
@@ -329,6 +329,11 @@ static bool imap_endofresp(struct connectdata *conn, char *line, size_t len,
 
       case IMAP_FETCH:
         if(!imap_matchresp(line, len, "FETCH"))
+          return FALSE;
+        break;
+
+      case IMAP_SEARCH:
+        if(!imap_matchresp(line, len, "SEARCH"))
           return FALSE;
         break;
 
@@ -429,6 +434,9 @@ static void state(struct connectdata *conn, imapstate newstate)
     "AUTHENTICATE_DIGESTMD5_RESP",
     "AUTHENTICATE_NTLM",
     "AUTHENTICATE_NTLM_TYPE2MSG",
+    "AUTHENTICATE_GSSAPI",
+    "AUTHENTICATE_GSSAPI_TOKEN",
+    "AUTHENTICATE_GSSAPI_NO_DATA",
     "AUTHENTICATE_XOAUTH2",
     "AUTHENTICATE_CANCEL",
     "AUTHENTICATE_FINAL",
@@ -439,6 +447,7 @@ static void state(struct connectdata *conn, imapstate newstate)
     "FETCH_FINAL",
     "APPEND",
     "APPEND_FINAL",
+    "SEARCH",
     "LOGOUT",
     /* LAST */
   };
@@ -735,9 +744,15 @@ static CURLcode imap_perform_fetch(struct connectdata *conn)
   }
 
   /* Send the FETCH command */
-  result = imap_sendf(conn, "FETCH %s BODY[%s]",
-                      imap->uid,
-                      imap->section ? imap->section : "");
+  if(imap->partial)
+    result = imap_sendf(conn, "FETCH %s BODY[%s]<%s>",
+                        imap->uid,
+                        imap->section ? imap->section : "",
+                        imap->partial);
+  else
+    result = imap_sendf(conn, "FETCH %s BODY[%s]",
+                        imap->uid,
+                        imap->section ? imap->section : "");
 
   if(!result)
     state(conn, IMAP_FETCH);
@@ -764,7 +779,7 @@ static CURLcode imap_perform_append(struct connectdata *conn)
   }
 
   /* Check we know the size of the upload */
-  if(conn->data->set.infilesize < 0) {
+  if(conn->data->state.infilesize < 0) {
     failf(conn->data, "Cannot APPEND with unknown input file size\n");
     return CURLE_UPLOAD_FAILED;
   }
@@ -776,12 +791,38 @@ static CURLcode imap_perform_append(struct connectdata *conn)
 
   /* Send the APPEND command */
   result = imap_sendf(conn, "APPEND %s (\\Seen) {%" CURL_FORMAT_CURL_OFF_T "}",
-                      mailbox, conn->data->set.infilesize);
+                      mailbox, conn->data->state.infilesize);
 
   Curl_safefree(mailbox);
 
   if(!result)
     state(conn, IMAP_APPEND);
+
+  return result;
+}
+
+/***********************************************************************
+ *
+ * imap_perform_search()
+ *
+ * Sends a SEARCH command.
+ */
+static CURLcode imap_perform_search(struct connectdata *conn)
+{
+  CURLcode result = CURLE_OK;
+  struct IMAP *imap = conn->data->req.protop;
+
+  /* Check we have a query string */
+  if(!imap->query) {
+    failf(conn->data, "Cannot SEARCH without a query string.");
+    return CURLE_URL_MALFORMAT;
+  }
+
+  /* Send the SEARCH command */
+  result = imap_sendf(conn, "SEARCH %s", imap->query);
+
+  if(!result)
+    state(conn, IMAP_SEARCH);
 
   return result;
 }
@@ -1110,10 +1151,6 @@ static CURLcode imap_state_auth_digest_resp(struct connectdata *conn,
   char *rplyb64 = NULL;
   size_t len = 0;
 
-  char nonce[64];
-  char realm[128];
-  char algorithm[64];
-
   (void)instate; /* no use for this yet */
 
   if(imapcode != '+') {
@@ -1124,29 +1161,25 @@ static CURLcode imap_state_auth_digest_resp(struct connectdata *conn,
   /* Get the challenge message */
   imap_get_message(data->state.buffer, &chlg64);
 
-  /* Decode the challange message */
-  result = Curl_sasl_decode_digest_md5_message(chlg64, nonce, sizeof(nonce),
-                                               realm, sizeof(realm),
-                                               algorithm, sizeof(algorithm));
-  if(result || strcmp(algorithm, "md5-sess") != 0) {
-    /* Send the cancellation */
-    result = Curl_pp_sendf(&conn->proto.imapc.pp, "%s", "*");
-
-    if(!result)
-      state(conn, IMAP_AUTHENTICATE_CANCEL);
-  }
-  else {
-    /* Create the response message */
-    result = Curl_sasl_create_digest_md5_message(data, nonce, realm,
-                                                 conn->user, conn->passwd,
-                                                 "imap", &rplyb64, &len);
-    if(!result && rplyb64) {
-      /* Send the response */
-      result = Curl_pp_sendf(&conn->proto.imapc.pp, "%s", rplyb64);
+  /* Create the response message */
+  result = Curl_sasl_create_digest_md5_message(data, chlg64,
+                                               conn->user, conn->passwd,
+                                               "imap", &rplyb64, &len);
+  if(result) {
+    if(result == CURLE_BAD_CONTENT_ENCODING) {
+      /* Send the cancellation */
+      result = Curl_pp_sendf(&conn->proto.imapc.pp, "%s", "*");
 
       if(!result)
-        state(conn, IMAP_AUTHENTICATE_DIGESTMD5_RESP);
+        state(conn, IMAP_AUTHENTICATE_CANCEL);
     }
+  }
+  else {
+    /* Send the response */
+    result = Curl_pp_sendf(&conn->proto.imapc.pp, "%s", rplyb64);
+
+    if(!result)
+      state(conn, IMAP_AUTHENTICATE_DIGESTMD5_RESP);
   }
 
   Curl_safefree(rplyb64);
@@ -1262,6 +1295,158 @@ static CURLcode imap_state_auth_ntlm_type2msg_resp(struct connectdata *conn,
   }
 
   Curl_safefree(type3msg);
+
+  return result;
+}
+#endif
+
+#if defined(USE_WINDOWS_SSPI)
+/* For AUTHENTICATE GSSAPI (without initial response) responses */
+static CURLcode imap_state_auth_gssapi_resp(struct connectdata *conn,
+                                            int imapcode,
+                                            imapstate instate)
+{
+  CURLcode result = CURLE_OK;
+  struct SessionHandle *data = conn->data;
+  struct imap_conn *imapc = &conn->proto.imapc;
+  size_t len = 0;
+  char *respmsg = NULL;
+
+  (void)instate; /* no use for this yet */
+
+  if(imapcode != '+') {
+    failf(data, "Access denied: %d", imapcode);
+    result = CURLE_LOGIN_DENIED;
+  }
+  else {
+    /* Create the initial response message */
+    result = Curl_sasl_create_gssapi_user_message(data, conn->user,
+                                                  conn->passwd, "imap",
+                                                  imapc->mutual_auth,
+                                                  NULL, &conn->krb5,
+                                                  &respmsg, &len);
+    if(!result && respmsg) {
+      /* Send the message */
+      result = Curl_pp_sendf(&imapc->pp, "%s", respmsg);
+
+      if(!result)
+        state(conn, IMAP_AUTHENTICATE_GSSAPI_TOKEN);
+    }
+  }
+
+  Curl_safefree(respmsg);
+
+  return result;
+}
+
+/* For AUTHENTICATE GSSAPI user token responses */
+static CURLcode imap_state_auth_gssapi_token_resp(struct connectdata *conn,
+                                                  int imapcode,
+                                                  imapstate instate)
+{
+  CURLcode result = CURLE_OK;
+  struct SessionHandle *data = conn->data;
+  struct imap_conn *imapc = &conn->proto.imapc;
+  char *chlgmsg = NULL;
+  char *respmsg = NULL;
+  size_t len = 0;
+
+  (void)instate; /* no use for this yet */
+
+  if(imapcode != '+') {
+    failf(data, "Access denied: %d", imapcode);
+    result = CURLE_LOGIN_DENIED;
+  }
+  else {
+    /* Get the challenge message */
+    imap_get_message(data->state.buffer, &chlgmsg);
+
+    if(imapc->mutual_auth)
+      /* Decode the user token challenge and create the optional response
+         message */
+      result = Curl_sasl_create_gssapi_user_message(data, NULL, NULL, NULL,
+                                                    imapc->mutual_auth,
+                                                    chlgmsg, &conn->krb5,
+                                                    &respmsg, &len);
+    else
+      /* Decode the security challenge and create the response message */
+      result = Curl_sasl_create_gssapi_security_message(data, chlgmsg,
+                                                        &conn->krb5,
+                                                        &respmsg, &len);
+
+    if(result) {
+      if(result == CURLE_BAD_CONTENT_ENCODING) {
+        /* Send the cancellation */
+        result = Curl_pp_sendf(&imapc->pp, "%s", "*");
+
+        if(!result)
+          state(conn, IMAP_AUTHENTICATE_CANCEL);
+      }
+    }
+    else {
+      /* Send the response */
+      if(respmsg)
+        result = Curl_pp_sendf(&imapc->pp, "%s", respmsg);
+      else
+        result = Curl_pp_sendf(&imapc->pp, "%s", "");
+
+      if(!result)
+        state(conn, (imapc->mutual_auth ? IMAP_AUTHENTICATE_GSSAPI_NO_DATA :
+                                          IMAP_AUTHENTICATE_FINAL));
+    }
+  }
+
+  Curl_safefree(respmsg);
+
+  return result;
+}
+
+/* For AUTHENTICATE GSSAPI no data responses */
+static CURLcode imap_state_auth_gssapi_no_data_resp(struct connectdata *conn,
+                                                    int imapcode,
+                                                    imapstate instate)
+{
+  CURLcode result = CURLE_OK;
+  struct SessionHandle *data = conn->data;
+  char *chlgmsg = NULL;
+  char *respmsg = NULL;
+  size_t len = 0;
+
+  (void)instate; /* no use for this yet */
+
+  if(imapcode != '+') {
+    failf(data, "Access denied: %d", imapcode);
+    result = CURLE_LOGIN_DENIED;
+  }
+  else {
+    /* Get the challenge message */
+    imap_get_message(data->state.buffer, &chlgmsg);
+
+    /* Decode the security challenge and create the response message */
+    result = Curl_sasl_create_gssapi_security_message(data, chlgmsg,
+                                                      &conn->krb5,
+                                                      &respmsg, &len);
+    if(result) {
+      if(result == CURLE_BAD_CONTENT_ENCODING) {
+        /* Send the cancellation */
+        result = Curl_pp_sendf(&conn->proto.imapc.pp, "%s", "*");
+
+        if(!result)
+          state(conn, IMAP_AUTHENTICATE_CANCEL);
+      }
+    }
+    else {
+      /* Send the response */
+      if(respmsg) {
+        result = Curl_pp_sendf(&conn->proto.imapc.pp, "%s", respmsg);
+
+        if(!result)
+          state(conn, IMAP_AUTHENTICATE_FINAL);
+      }
+    }
+  }
+
+  Curl_safefree(respmsg);
 
   return result;
 }
@@ -1448,6 +1633,8 @@ static CURLcode imap_state_select_resp(struct connectdata *conn, int imapcode,
 
       if(imap->custom)
         result = imap_perform_list(conn);
+      else if(imap->query)
+        result = imap_perform_search(conn);
       else
         result = imap_perform_fetch(conn);
     }
@@ -1475,7 +1662,7 @@ static CURLcode imap_state_fetch_resp(struct connectdata *conn, int imapcode,
   (void)instate; /* no use for this yet */
 
   if(imapcode != '*') {
-    Curl_pgrsSetDownloadSize(data, 0);
+    Curl_pgrsSetDownloadSize(data, -1);
     state(conn, IMAP_STOP);
     return CURLE_REMOTE_FILE_NOT_FOUND; /* TODO: Fix error code */
   }
@@ -1587,7 +1774,7 @@ static CURLcode imap_state_append_resp(struct connectdata *conn, int imapcode,
   }
   else {
     /* Set the progress upload size */
-    Curl_pgrsSetUploadSize(data, data->set.infilesize);
+    Curl_pgrsSetUploadSize(data, data->state.infilesize);
 
     /* IMAP upload */
     Curl_setup_transfer(conn, -1, -1, FALSE, NULL, FIRSTSOCKET, NULL);
@@ -1612,6 +1799,31 @@ static CURLcode imap_state_append_final_resp(struct connectdata *conn,
     result = CURLE_UPLOAD_FAILED;
   else
     /* End of DONE phase */
+    state(conn, IMAP_STOP);
+
+  return result;
+}
+
+/* For SEARCH responses */
+static CURLcode imap_state_search_resp(struct connectdata *conn, int imapcode,
+                                       imapstate instate)
+{
+  CURLcode result = CURLE_OK;
+  char *line = conn->data->state.buffer;
+  size_t len = strlen(line);
+
+  (void)instate; /* No use for this yet */
+
+  if(imapcode == '*') {
+    /* Temporarily add the LF character back and send as body to the client */
+    line[len] = '\n';
+    result = Curl_client_write(conn, CLIENTWRITE_BODY, line, len + 1);
+    line[len] = '\0';
+  }
+  else if(imapcode != 'O')
+    result = CURLE_QUOTE_ERROR; /* TODO: Fix error code */
+  else
+    /* End of DO phase */
     state(conn, IMAP_STOP);
 
   return result;
@@ -1699,6 +1911,21 @@ static CURLcode imap_statemach_act(struct connectdata *conn)
       break;
 #endif
 
+#if defined(USE_WINDOWS_SSPI)
+    case IMAP_AUTHENTICATE_GSSAPI:
+      result = imap_state_auth_gssapi_resp(conn, imapcode, imapc->state);
+      break;
+
+    case IMAP_AUTHENTICATE_GSSAPI_TOKEN:
+      result = imap_state_auth_gssapi_token_resp(conn, imapcode, imapc->state);
+      break;
+
+    case IMAP_AUTHENTICATE_GSSAPI_NO_DATA:
+      result = imap_state_auth_gssapi_no_data_resp(conn, imapcode,
+                                                   imapc->state);
+      break;
+#endif
+
     case IMAP_AUTHENTICATE_XOAUTH2:
       result = imap_state_auth_xoauth2_resp(conn, imapcode, imapc->state);
       break;
@@ -1737,6 +1964,10 @@ static CURLcode imap_statemach_act(struct connectdata *conn)
 
     case IMAP_APPEND_FINAL:
       result = imap_state_append_final_resp(conn, imapcode, imapc->state);
+      break;
+
+    case IMAP_SEARCH:
+      result = imap_state_search_resp(conn, imapcode, imapc->state);
       break;
 
     case IMAP_LOGOUT:
@@ -1821,7 +2052,7 @@ static CURLcode imap_connect(struct connectdata *conn, bool *done)
   *done = FALSE; /* default to not done yet */
 
   /* We always support persistent connections in IMAP */
-  conn->bits.close = FALSE;
+  connkeep(conn, "IMAP default");
 
   /* Set the default response time-out */
   pp->response_time = RESP_TIMEOUT;
@@ -1878,7 +2109,7 @@ static CURLcode imap_done(struct connectdata *conn, CURLcode status,
     return CURLE_OK;
 
   if(status) {
-    conn->bits.close = TRUE; /* marked for closure */
+    connclose(conn, "IMAP done with bad status"); /* marked for closure */
     result = status;         /* use the already set error code */
   }
   else if(!data->set.connect_only && !imap->custom &&
@@ -1909,6 +2140,8 @@ static CURLcode imap_done(struct connectdata *conn, CURLcode status,
   Curl_safefree(imap->uidvalidity);
   Curl_safefree(imap->uid);
   Curl_safefree(imap->section);
+  Curl_safefree(imap->partial);
+  Curl_safefree(imap->query);
   Curl_safefree(imap->custom);
   Curl_safefree(imap->custom_params);
 
@@ -1962,7 +2195,11 @@ static CURLcode imap_perform(struct connectdata *conn, bool *connected,
   else if(!imap->custom && selected && imap->uid)
     /* FETCH from the same mailbox */
     result = imap_perform_fetch(conn);
-  else if(imap->mailbox && !selected && (imap->custom || imap->uid))
+  else if(!imap->custom && selected && imap->query)
+    /* SEARCH the current mailbox */
+    result = imap_perform_search(conn);
+  else if(imap->mailbox && !selected &&
+         (imap->custom || imap->uid || imap->query))
     /* SELECT the mailbox */
     result = imap_perform_select(conn);
   else
@@ -2099,8 +2336,8 @@ static CURLcode imap_regular_transfer(struct connectdata *conn,
   /* Set the progress data */
   Curl_pgrsSetUploadCounter(data, 0);
   Curl_pgrsSetDownloadCounter(data, 0);
-  Curl_pgrsSetUploadSize(data, 0);
-  Curl_pgrsSetDownloadSize(data, 0);
+  Curl_pgrsSetUploadSize(data, -1);
+  Curl_pgrsSetDownloadSize(data, -1);
 
   /* Carry out the perform */
   result = imap_perform(conn, &connected, dophase_done);
@@ -2447,8 +2684,8 @@ static CURLcode imap_parse_url_path(struct connectdata *conn)
 
     DEBUGF(infof(conn->data, "IMAP URL parameter '%s' = '%s'\n", name, value));
 
-    /* Process the known hierarchical parameters (UIDVALIDITY, UID and SECTION)
-       stripping of the trailing slash character if it is present.
+    /* Process the known hierarchical parameters (UIDVALIDITY, UID, SECTION and
+       PARTIAL) stripping of the trailing slash character if it is present.
 
        Note: Unknown parameters trigger a URL_MALFORMAT error. */
     if(Curl_raw_equal(name, "UIDVALIDITY") && !imap->uidvalidity) {
@@ -2472,6 +2709,13 @@ static CURLcode imap_parse_url_path(struct connectdata *conn)
       imap->section = value;
       value = NULL;
     }
+    else if(Curl_raw_equal(name, "PARTIAL") && !imap->partial) {
+      if(valuelen > 0 && value[valuelen - 1] == '/')
+        value[valuelen - 1] = '\0';
+
+      imap->partial = value;
+      value = NULL;
+    }
     else {
       Curl_safefree(name);
       Curl_safefree(value);
@@ -2481,6 +2725,21 @@ static CURLcode imap_parse_url_path(struct connectdata *conn)
 
     Curl_safefree(name);
     Curl_safefree(value);
+  }
+
+  /* Does the URL contain a query parameter? Only valid when we have a mailbox
+     and no UID as per RFC-5092 */
+  if(imap->mailbox && !imap->uid && *ptr == '?') {
+    /* Find the length of the query parameter */
+    begin = ++ptr;
+    while(imap_is_bchar(*ptr))
+      ptr++;
+
+    /* Decode the query parameter */
+    result = Curl_urldecode(data, begin, ptr - begin, &imap->query, NULL,
+                            TRUE);
+    if(result)
+      return result;
   }
 
   /* Any extra stuff at the end of the URL is an error */
@@ -2544,6 +2803,25 @@ static CURLcode imap_calc_sasl_details(struct connectdata *conn,
 
   /* Calculate the supported authentication mechanism, by decreasing order of
      security, as well as the initial response where appropriate */
+#if defined(USE_WINDOWS_SSPI)
+    if((imapc->authmechs & SASL_MECH_GSSAPI) &&
+       (imapc->prefmech & SASL_MECH_GSSAPI)) {
+    imapc->mutual_auth = FALSE; /* TODO: Calculate mutual authentication */
+
+    *mech = SASL_MECH_STRING_GSSAPI;
+    *state1 = IMAP_AUTHENTICATE_GSSAPI;
+    *state2 = IMAP_AUTHENTICATE_GSSAPI_TOKEN;
+    imapc->authused = SASL_MECH_GSSAPI;
+
+    if(imapc->ir_supported || data->set.sasl_ir)
+      result = Curl_sasl_create_gssapi_user_message(data, conn->user,
+                                                    conn->passwd, "imap",
+                                                    imapc->mutual_auth,
+                                                    NULL, &conn->krb5,
+                                                    initresp, len);
+  }
+  else
+#endif
 #ifndef CURL_DISABLE_CRYPTO_AUTH
   if((imapc->authmechs & SASL_MECH_DIGEST_MD5) &&
      (imapc->prefmech & SASL_MECH_DIGEST_MD5)) {

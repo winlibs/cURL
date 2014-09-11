@@ -69,7 +69,7 @@ p.roffit {
 <p class="level0">If you want a progress meter for HTTP POST or PUT requests, you need to redirect the response output to a file, using shell redirect (&gt;), -o [file] or similar. 
 <p class="level0">It is not the same case for FTP upload as that operation does not spit out any response data to the terminal. 
 <p class="level0">If you prefer a progress "bar" instead of the regular meter, <a class="emphasis" href="#-">-#</a> is your friend. <a name="OPTIONS"></a><h2 class="nroffsh">OPTIONS</h2>
-<p class="level0">Options start with one or two dashes. Many of the options require an addition value next to it. 
+<p class="level0">Options start with one or two dashes. Many of the options require an additional value next to them. 
 <p class="level0">The short "single-dash" form of the options, -d for example, may be used with or without a space between it and its value, although a space is a recommended separator. The long "double-dash" form, --data for example, requires a space between it and its value. 
 <p class="level0">Short version options that don't need any additional values can be used immediately next to each other, like for example you can specify all the options -O, -L and -v at once as -OLv. 
 <p class="level0">In general, all boolean options are enabled with --<span Class="bold">option</span> and yet again disabled with --<span Class="bold">no-</span>option. That is, you use the exact same option name but prefix it with "no-". However, in this list we mostly only list and show the --option version of them. (This concept with --no options was added in 7.19.0. Previously most options were toggled on/off on repeated use of the same command line option.) 
@@ -296,9 +296,12 @@ p.roffit {
 <p class="level1">If used in combination with -I, the POST data will instead be appended to the URL with a HEAD request. 
 <p class="level1">If this option is used several times, only the first one is used. This is because undoing a GET doesn't make sense, but you should then instead enforce the alternative method you prefer. 
 <p class="level0"><a name="-H"></a><span class="nroffip">-H, --header &lt;header&gt;</span> 
-<p class="level1">(HTTP) Extra header to use when getting a web page. You may specify any number of extra headers. Note that if you should add a custom header that has the same name as one of the internal ones curl would use, your externally set header will be used instead of the internal one. This allows you to make even trickier stuff than curl would normally do. You should not replace internally set headers without knowing perfectly well what you're doing. Remove an internal header by giving a replacement without content on the right side of the colon, as in: -H "Host:". If you send the custom header with no-value then its header must be terminated with a semicolon, such as -H "X-Custom-Header;" to send "X-Custom-Header:". 
+<p class="level1">(HTTP) Extra header to include in the request when sending HTTP to a server. You may specify any number of extra headers. Note that if you should add a custom header that has the same name as one of the internal ones curl would use, your externally set header will be used instead of the internal one. This allows you to make even trickier stuff than curl would normally do. You should not replace internally set headers without knowing perfectly well what you're doing. Remove an internal header by giving a replacement without content on the right side of the colon, as in: -H "Host:". If you send the custom header with no-value then its header must be terminated with a semicolon, such as -H "X-Custom-Header;" to send "X-Custom-Header:". 
 <p class="level1">curl will make sure that each header you add/replace is sent with the proper end-of-line marker, you should thus <span Class="bold">not</span> add that as a part of the header content: do not add newlines or carriage returns, they will only mess things up for you. 
 <p class="level1">See also the <a class="emphasis" href="#-A">-A, --user-agent</a> and <a class="emphasis" href="#-e">-e, --referer</a> options. 
+<p class="level1">Starting in 7.37.0, you need <a class="emphasis" href="#--proxy-header">--proxy-header</a> to send custom headers intended for a proxy. 
+<p class="level1">Example: 
+<p class="level1"># curl -H "X-First-Name: Joe" <a href="http://192.168.0.1/">http://192.168.0.1/</a> 
 <p class="level1">This option can be used multiple times to add/replace/remove multiple headers. 
 <p class="level0"><a name="--hostpubmd5"></a><span class="nroffip">--hostpubmd5 &lt;md5&gt;</span> 
 <p class="level1">(SCP/SFTP) Pass a string containing 32 hexadecimal digits. The string should be the 128 bit MD5 checksum of the remote host's public key, curl will refuse the connection with the host unless the md5sums match. (Added in 7.17.1) 
@@ -356,7 +359,7 @@ p.roffit {
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--krb"></a><span class="nroffip">--krb &lt;level&gt;</span> 
 <p class="level1">(FTP) Enable Kerberos authentication and use. The level must be entered and should be one of 'clear', 'safe', 'confidential', or 'private'. Should you use a level that is not one of these, 'private' will instead be used. 
-<p class="level1">This option requires a library built with kerberos4 or GSSAPI (GSS-Negotiate) support. This is not very common. Use <a class="emphasis" href="#-V">-V, --version</a> to see if your curl supports it. 
+<p class="level1">This option requires a library built with kerberos4 support. This is not very common. Use <a class="emphasis" href="#-V">-V, --version</a> to see if your curl supports it. 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="-l"></a><span class="nroffip">-l, --list-only</span> 
 <p class="level1">(FTP) When listing an FTP directory, this switch forces a name-only view. This is especially useful if the user wants to machine-parse the contents of an FTP directory since the normal directory view doesn't use a standard look or format. When used like this, the option causes a NLST command to be sent to the server instead of LIST. 
@@ -366,11 +369,12 @@ p.roffit {
 <p class="level0"><a name="-L"></a><span class="nroffip">-L, --location</span> 
 <p class="level1">(HTTP/HTTPS) If the server reports that the requested page has moved to a different location (indicated with a Location: header and a 3XX response code), this option will make curl redo the request on the new place. If used together with <a class="emphasis" href="#-i">-i, --include</a> or <a class="emphasis" href="#-I">-I, --head</a>, headers from all requested pages will be shown. When authentication is used, curl only sends its credentials to the initial host. If a redirect takes curl to a different host, it won't be able to intercept the user+password. See also <a class="emphasis" href="#--location-trusted">--location-trusted</a> on how to change this. You can limit the amount of redirects to follow by using the <a class="emphasis" href="#--max-redirs">--max-redirs</a> option. 
 <p class="level1">When curl follows a redirect and the request is not a plain GET (for example POST or PUT), it will do the following request with a GET if the HTTP response was 301, 302, or 303. If the response code was any other 3xx code, curl will re-send the following request using the same unmodified method. 
+<p class="level1">You can tell curl to not change the non-GET request method to GET after a 30x response by using the dedicated options for that: <a class="emphasis" href="#--post301">--post301</a>, <a class="emphasis" href="#--post302">--post302</a> and <span Class="emphasis">-post303</span>. 
 <p class="level0"><a name="--libcurl"></a><span class="nroffip">--libcurl &lt;file&gt;</span> 
 <p class="level1">Append this option to any ordinary curl command line, and you will get a libcurl-using C source code written to the file that does the equivalent of what your command-line operation does! 
 <p class="level1">If this option is used several times, the last given file name will be used. (Added in 7.16.1) 
 <p class="level0"><a name="--limit-rate"></a><span class="nroffip">--limit-rate &lt;speed&gt;</span> 
-<p class="level1">Specify the maximum transfer rate you want curl to use. This feature is useful if you have a limited pipe and you'd like your transfer not to use your entire bandwidth. 
+<p class="level1">Specify the maximum transfer rate you want curl to use - for both downloads and uploads. This feature is useful if you have a limited pipe and you'd like your transfer not to use your entire bandwidth. To make it slower than it otherwise would be. 
 <p class="level1">The given speed is measured in bytes/second, unless a suffix is appended. Appending 'k' or 'K' will count the number as kilobytes, 'm' or M' makes it megabytes, while 'g' or 'G' makes it gigabytes. Examples: 200K, 3m and 1G. 
 <p class="level1">The given rate is the average speed counted during the entire transfer. It means that curl might use higher transfer speeds in short bursts, but over time it uses no more than the given rate. 
 <p class="level1">If you also use the <a class="emphasis" href="#-Y">-Y, --speed-limit</a> option, that option will take precedence and might cripple the rate-limiting slightly, to help keeping the speed-limit logic working. 
@@ -381,6 +385,10 @@ p.roffit {
 <p class="level1">(HTTP/HTTPS) Like <a class="emphasis" href="#-L">-L, --location</a>, but will allow sending the name + password to all hosts that the site may redirect to. This may or may not introduce a security breach if the site redirects you to a site to which you'll send your authentication info (which is plaintext in the case of HTTP Basic authentication). 
 <p class="level0"><a name="-m"></a><span class="nroffip">-m, --max-time &lt;seconds&gt;</span> 
 <p class="level1">Maximum time in seconds that you allow the whole operation to take.  This is useful for preventing your batch jobs from hanging for hours due to slow networks or links going down.  Since 7.32.0, this option accepts decimal values, but the actual timeout will decrease in accuracy as the specified timeout increases in decimal precision.  See also the <a class="emphasis" href="#--connect-timeout">--connect-timeout</a> option. 
+<p class="level1">If this option is used several times, the last one will be used. 
+<p class="level0"><a name="--login-options"></a><span class="nroffip">--login-options &lt;options&gt;</span> 
+<p class="level1">Specify the login options to use during server authentication. 
+<p class="level1">You can use the login options to specify protocol specific options that may be used during authentication. At present only IMAP, POP3 and SMTP support login options. For more information about the login options please see <a href="http://www.ietf.org/rfc/rfc2384.txt">RFC 2384</a>, RFC 5092 and IETF draft draft-earhart-url-smtp-00.txt (Added in 7.34.0). 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--mail-auth"></a><span class="nroffip">--mail-auth &lt;address&gt;</span> 
 <p class="level1">(SMTP) Specify a single address. This will be used to specify the authentication address (identity) of a submitted message that is being relayed to another server. 
@@ -422,9 +430,9 @@ p.roffit {
 <p class="level1">Very similar to <span Class="emphasis">--netrc</span>, but this option makes the .netrc usage <span Class="bold">optional</span> and not mandatory as the <span Class="emphasis">--netrc</span> option does. 
 <p class="level1">
 <p class="level0"><a name="--negotiate"></a><span class="nroffip">--negotiate</span> 
-<p class="level1">(HTTP) Enables GSS-Negotiate authentication. The GSS-Negotiate method was designed by Microsoft and is used in their web applications. It is primarily meant as a support for Kerberos5 authentication but may be also used along with another authentication method. For more information see IETF draft draft-brezak-spnego-http-04.txt. 
-<p class="level1">If you want to enable Negotiate for your proxy authentication, then use <a class="emphasis" href="#--proxy-negotiate">--proxy-negotiate</a>. 
-<p class="level1">This option requires a library built with GSSAPI support. This is not very common. Use <a class="emphasis" href="#-V">-V, --version</a> to see if your version supports GSS-Negotiate. 
+<p class="level1">(HTTP) Enables Negotiate (SPNEGO) authentication. 
+<p class="level1">If you want to enable Negotiate (SPNEGO) for proxy authentication, then use <a class="emphasis" href="#--proxy-negotiate">--proxy-negotiate</a>. 
+<p class="level1">This option requires a library built with GSS-API or SSPI support. Use <span class="emphasis">-V, --version</span> to see if your curl supports GSS-API/SSPI and SPNEGO. 
 <p class="level1">When using this option, you must also provide a fake <a class="emphasis" href="#-u">-u, --user</a> option to activate the authentication code properly. Sending a '-u :' is enough as the user name and password from the <a class="emphasis" href="#-u">-u</a> option aren't actually used. 
 <p class="level1">If this option is used several times, only the first one is used. 
 <p class="level0"><a name="--no-keepalive"></a><span class="nroffip">--no-keepalive</span> 
@@ -457,6 +465,12 @@ p.roffit {
 <p class="level1">(IMAP, POP3, SMTP) Specify the Bearer Token for OAUTH 2.0 server authentication. The Bearer Token is used in conjunction with the user name which can be specified as part of the <a class="emphasis" href="#--url">--url</a> or <a class="emphasis" href="#-u">-u, --user</a> options. 
 <p class="level1">The Bearer Token and user name are formatted according to <a href="http://www.ietf.org/rfc/rfc6750.txt">RFC 6750</a>. 
 <p class="level1">If this option is used several times, the last one will be used. 
+<p class="level0"><a name="--proxy-header"></a><span class="nroffip">--proxy-header &lt;header&gt;</span> 
+<p class="level1">(HTTP) Extra header to include in the request when sending HTTP to a proxy. You may specify any number of extra headers. This is the equivalent option to <a class="emphasis" href="#-H">-H, --header</a> but is for proxy communication only like in CONNECT requests when you want a separate header sent to the proxy to what is sent to the actual remote host. 
+<p class="level1">curl will make sure that each header you add/replace is sent with the proper end-of-line marker, you should thus <span Class="bold">not</span> add that as a part of the header content: do not add newlines or carriage returns, they will only mess things up for you. 
+<p class="level1">Headers specified with this option will not be included in requests that curl knows will not be sent to a proxy. 
+<p class="level1">This option can be used multiple times to add/replace/remove multiple headers. 
+<p class="level1">(Added in 7.37.0) 
 <p class="level0"><a name="-p"></a><span class="nroffip">-p, --proxytunnel</span> 
 <p class="level1">When an HTTP proxy is used (<a class="emphasis" href="#-x">-x, --proxy</a>), this option will cause non-HTTP protocols to attempt to tunnel through the proxy instead of merely using it to do HTTP-like operations. The tunnel approach is made with the HTTP proxy CONNECT request and requires that the proxy allows direct connect to the remote port number curl wants to tunnel through to. 
 <p class="level0"><a name="-P"></a><span class="nroffip">-P, --ftp-port &lt;address&gt;</span> 
@@ -510,7 +524,7 @@ p.roffit {
 <p class="level0"><a name="--proxy-digest"></a><span class="nroffip">--proxy-digest</span> 
 <p class="level1">Tells curl to use HTTP Digest authentication when communicating with the given proxy. Use <a class="emphasis" href="#--digest">--digest</a> for enabling HTTP Digest with a remote host. 
 <p class="level0"><a name="--proxy-negotiate"></a><span class="nroffip">--proxy-negotiate</span> 
-<p class="level1">Tells curl to use HTTP Negotiate authentication when communicating with the given proxy. Use <a class="emphasis" href="#--negotiate">--negotiate</a> for enabling HTTP Negotiate with a remote host. (Added in 7.17.1) 
+<p class="level1">Tells curl to use HTTP Negotiate (SPNEGO) authentication when communicating with the given proxy. Use <a class="emphasis" href="#--negotiate">--negotiate</a> for enabling HTTP Negotiate (SPNEGO) with a remote host. (Added in 7.17.1) 
 <p class="level0"><a name="--proxy-ntlm"></a><span class="nroffip">--proxy-ntlm</span> 
 <p class="level1">Tells curl to use HTTP NTLM authentication when communicating with the given proxy. Use <a class="emphasis" href="#--ntlm">--ntlm</a> for enabling NTLM with a remote host. 
 <p class="level0"><a name="--proxy10"></a><span class="nroffip">--proxy1.0 &lt;proxyhost[:port]&gt;</span> 
@@ -623,7 +637,7 @@ p.roffit {
 <p class="level1">The default service name for a socks server is rcmd/server-fqdn. This option allows you to change it. 
 <p class="level1">Examples: --socks5 proxy-name <a class="emphasis" href="#--socks5-gssapi-service">--socks5-gssapi-service</a> sockd would use sockd/proxy-name --socks5 proxy-name <a class="emphasis" href="#--socks5-gssapi-service">--socks5-gssapi-service</a> sockd/real-name would use sockd/real-name for cases where the proxy-name does not match the principal name.  (Added in 7.19.4). 
 <p class="level0"><a name="--socks5-gssapi-nec"></a><span class="nroffip">--socks5-gssapi-nec</span> 
-<p class="level1">As part of the gssapi negotiation a protection mode is negotiated. <a href="http://www.ietf.org/rfc/rfc1961.txt">RFC 1961</a> says in section 4.3/4.4 it should be protected, but the NEC reference implementation does not.  The option <a class="emphasis" href="#--socks5-gssapi-nec">--socks5-gssapi-nec</a> allows the unprotected exchange of the protection mode negotiation. (Added in 7.19.4). 
+<p class="level1">As part of the GSS-API negotiation a protection mode is negotiated. <a href="http://www.ietf.org/rfc/rfc1961.txt">RFC 1961</a> says in section 4.3/4.4 it should be protected, but the NEC reference implementation does not.  The option <a class="emphasis" href="#--socks5-gssapi-nec">--socks5-gssapi-nec</a> allows the unprotected exchange of the protection mode negotiation. (Added in 7.19.4). 
 <p class="level0"><a name="--stderr"></a><span class="nroffip">--stderr &lt;file&gt;</span> 
 <p class="level1">Redirect all writes to stderr to the specified file instead. If the file name is a plain '-', it is instead written to stdout. 
 <p class="level1">If this option is used several times, the last one will be used. 
@@ -671,15 +685,18 @@ p.roffit {
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--trace-time"></a><span class="nroffip">--trace-time</span> 
 <p class="level1">Prepends a time stamp to each trace or verbose line that curl displays. (Added in 7.14.0) 
-<p class="level0"><a name="-u"></a><span class="nroffip">-u, --user &lt;user:password;options&gt;</span> 
-<p class="level1">Specify the user name, password and optional login options to use for server authentication. Overrides <a class="emphasis" href="#-n">-n, --netrc</a> and <a class="emphasis" href="#--netrc-optional">--netrc-optional</a>. 
-<p class="level1">If you simply specify the user name, with or without the login options, curl will prompt for a password. 
-<p class="level1">If you use an SSPI-enabled curl binary and perform NTLM authentication, you can force curl to select the user name and password from your environment by simply specifying a single colon with this option: "-u :" or by specifying the login options on their own, for example "-u ;auth=NTLM". 
-<p class="level1">You can use the optional login options part to specify protocol specific options that may be used during authentication. At present only IMAP, POP3 and SMTP support login options as part of the user login information. For more information about the login options please see <a href="http://www.ietf.org/rfc/rfc2384.txt">RFC 2384</a>, RFC 5092 and IETF draft draft-earhart-url-smtp-00.txt (Added in 7.31.0).  
+<p class="level0"><a name="-u"></a><span class="nroffip">-u, --user &lt;user:password&gt;</span> 
+<p class="level1">Specify the user name and password to use for server authentication. Overrides <a class="emphasis" href="#-n">-n, --netrc</a> and <a class="emphasis" href="#--netrc-optional">--netrc-optional</a>. 
+<p class="level1">If you simply specify the user name, curl will prompt for a password. 
+<p class="level1">The user name and passwords are split up on the first colon, which makes it impossible to use a colon in the user name with this option. The password can, still. 
+<p class="level1">When using Kerberos V5 with a Windows based server you should include the Windows domain name in the user name, in order for the server to succesfully obtain a Kerberos Ticket. If you don't then the initial authentication handshake may fail. 
+<p class="level1">When using NTLM, the user name can be specified simply as the user name, without the domain, if there is a single domain and forest in your setup for example. 
+<p class="level1">To specify the domain name use either Down-Level Logon Name or UPN (User Principal Name) formats. For example, EXAMPLE\user and user@example.com respectively. 
+<p class="level1">If you use a Windows SSPI-enabled curl binary and perform Kerberos V5, Negotiate or NTLM authentication then you can tell curl to select the user name and password from your environment by specifying a single colon with this option: "-u :". 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="-U"></a><span class="nroffip">-U, --proxy-user &lt;user:password&gt;</span> 
 <p class="level1">Specify the user name and password to use for proxy authentication. 
-<p class="level1">If you use an SSPI-enabled curl binary and do NTLM authentication, you can force curl to pick up the user name and password from your environment by simply specifying a single colon with this option: "-U :". 
+<p class="level1">If you use a Windows SSPI-enabled curl binary and do either Negotiate or NTLM authentication then you can tell curl to select the user name and password from your environment by specifying a single colon with this option: "-U :". 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--url"></a><span class="nroffip">--url &lt;URL&gt;</span> 
 <p class="level1">Specify a URL to fetch. This option is mostly handy when you want to specify URL(s) in a config file. 
@@ -777,20 +794,20 @@ p.roffit {
 <p class="level2">Automatic decompression of compressed files over HTTP is supported. 
 <p class="level1"><a name="NTLM"></a><span class="nroffip">NTLM</span> 
 <p class="level2">NTLM authentication is supported. 
-<p class="level1"><a name="GSS-Negotiate"></a><span class="nroffip">GSS-Negotiate</span> 
-<p class="level2">Negotiate authentication and krb5 for FTP is supported. 
 <p class="level1"><a name="Debug"></a><span class="nroffip">Debug</span> 
 <p class="level2">This curl uses a libcurl built with Debug. This enables more error-tracking and memory debugging etc. For curl-developers only! 
 <p class="level1"><a name="AsynchDNS"></a><span class="nroffip">AsynchDNS</span> 
 <p class="level2">This curl uses asynchronous name resolves. 
 <p class="level1"><a name="SPNEGO"></a><span class="nroffip">SPNEGO</span> 
-<p class="level2">SPNEGO Negotiate authentication is supported. 
+<p class="level2">SPNEGO authentication is supported. 
 <p class="level1"><a name="Largefile"></a><span class="nroffip">Largefile</span> 
 <p class="level2">This curl supports transfers of large files, files larger than 2GB. 
 <p class="level1"><a name="IDN"></a><span class="nroffip">IDN</span> 
 <p class="level2">This curl supports IDN - international domain names. 
+<p class="level1"><a name="GSS-API"></a><span class="nroffip">GSS-API</span> 
+<p class="level2">GSS-API is supported. 
 <p class="level1"><a name="SSPI"></a><span class="nroffip">SSPI</span> 
-<p class="level2">SSPI is supported. If you use NTLM and set a blank user name, curl will authenticate with your current user and password. 
+<p class="level2">SSPI is supported. 
 <p class="level1"><a name="TLS-SRP"></a><span class="nroffip">TLS-SRP</span> 
 <p class="level2">SRP (Secure Remote Password) authentication is supported for TLS. 
 <p class="level1"><a name="Metalink"></a><span class="nroffip">Metalink</span> 

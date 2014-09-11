@@ -112,7 +112,7 @@ SSL_LIBS     = libeay32.lib ssleay32.lib
 USE_SSL      = true
 SSL          = dll
 !ELSEIF "$(WITH_SSL)"=="static"
-SSL_LIBS     = libeay32.lib ssleay32.lib gdi32.lib user32.lib
+SSL_LIBS     = libeay32.lib ssleay32.lib gdi32.lib user32.lib crypt32.lib
 USE_SSL      = true
 SSL          = static
 !ENDIF
@@ -184,17 +184,6 @@ USE_SSPI  = true
 
 !IF "$(USE_SSPI)"=="true"
 SSPI_CFLAGS = $(SSPI_CFLAGS) /DUSE_WINDOWS_SSPI
-!ENDIF
-
-
-!IFNDEF USE_SPNEGO
-USE_SPNEGO  = true
-!ELSEIF "$(USE_SPNEGO)"=="yes"
-USE_SPNEGO  = true
-!ENDIF
-
-!IF "$(USE_SPNEGO)"=="true"
-SPNEGO_CFLAGS = $(SPNEGO_CFLAGS) /DHAVE_SPNEGO
 !ENDIF
 
 
@@ -330,10 +319,6 @@ CFLAGS = $(CFLAGS) $(IPV6_CFLAGS)
 CFLAGS = $(CFLAGS) $(SSPI_CFLAGS)
 !ENDIF
 
-!IF "$(USE_SPNEGO)"=="true"
-CFLAGS = $(CFLAGS) $(SPNEGO_CFLAGS)
-!ENDIF
-
 !IF "$(GEN_PDB)"=="true"
 CFLAGS = $(CFLAGS) $(CFLAGS_PDB) /Fd"$(LIB_DIROBJ)\$(PDB)"
 LFLAGS = $(LFLAGS) $(LFLAGS_PDB)
@@ -396,7 +381,6 @@ $(TARGET): $(LIB_OBJS) $(LIB_DIROBJ) $(DISTDIR)
 	@echo Using IDN:  $(USE_IDN)
 	@echo Using IPv6: $(USE_IPV6)
 	@echo Using SSPI: $(USE_SSPI)
-	@echo Using SPNEGO: $(USE_SPNEGO)
 	@echo Using WinSSL: $(USE_WINSSL)
 	@echo CFLAGS:     $(CFLAGS)
 	@echo LFLAGS:     $(LFLAGS)
@@ -466,7 +450,8 @@ CURL_LIBCURL_LIBNAME=$(LIB_NAME_IMP)
 CURL_FROM_LIBCURL=$(CURL_DIROBJ)\tool_hugehelp.obj \
  $(CURL_DIROBJ)\nonblock.obj \
  $(CURL_DIROBJ)\rawstr.obj \
- $(CURL_DIROBJ)\strtoofft.obj
+ $(CURL_DIROBJ)\strtoofft.obj \
+ $(CURL_DIROBJ)\warnless.obj
  
 $(PROGRAM_NAME): $(CURL_DIROBJ) $(CURL_FROM_LIBCURL) $(EXE_OBJS)
 	$(CURL_LINK) $(CURL_LFLAGS) $(CURL_LIBCURL_LIBNAME) $(WIN_LIBS) $(CURL_FROM_LIBCURL) $(EXE_OBJS)
@@ -483,6 +468,8 @@ $(CURL_DIROBJ)\rawstr.obj: ../lib/rawstr.c
 	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/rawstr.c
 $(CURL_DIROBJ)\strtoofft.obj: ../lib/strtoofft.c
 	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/strtoofft.c
+$(CURL_DIROBJ)\warnless.obj: ../lib/warnless.c
+	$(CURL_CC) $(CURL_CFLAGS) /Fo"$@" ../lib/warnless.c
 $(CURL_DIROBJ)\curl.res: $(CURL_SRC_DIR)\curl.rc
 	rc $(CURL_RC_FLAGS)
 

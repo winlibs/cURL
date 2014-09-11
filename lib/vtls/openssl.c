@@ -62,6 +62,7 @@
 #include <openssl/dh.h>
 #include <openssl/err.h>
 #include <openssl/md5.h>
+#include <openssl/conf.h>
 #else
 #include <rand.h>
 #include <x509v3.h>
@@ -258,7 +259,7 @@ static int ossl_seed(struct SessionHandle *data)
   return nread;
 }
 
-int Curl_ossl_seed(struct SessionHandle *data)
+static int Curl_ossl_seed(struct SessionHandle *data)
 {
   /* we have the "SSL is seeded" boolean static to prevent multiple
      time-consuming seedings in vain */
@@ -538,6 +539,7 @@ int cert_stuff(struct connectdata *conn,
 
       if(!cert_done)
         return 0; /* failure! */
+      break;
 #else
       failf(data, "file type P12 for certificate not supported");
       return 0;
@@ -739,6 +741,17 @@ int Curl_ossl_init(void)
     return 0;
 
   OpenSSL_add_all_algorithms();
+
+
+  /* OPENSSL_config(NULL); is "strongly recommended" to use but unfortunately
+     that function makes an exit() call on wrongly formatted config files
+     which makes it hard to use in some situations. OPENSSL_config() itself
+     calls CONF_modules_load_file() and we use that instead and we ignore
+     its return code! */
+
+  (void)CONF_modules_load_file(NULL, NULL,
+                               CONF_MFLAGS_DEFAULT_SECTION|
+                               CONF_MFLAGS_IGNORE_MISSING_FILE);
 
   return 1;
 }
@@ -1430,15 +1443,20 @@ select_next_proto_cb(SSL *ssl,
   (void)ssl;
 
   if(retval == 1) {
-    infof(conn->data, "NPN, negotiated HTTP2\n");
-    conn->negnpn = NPN_HTTP2_DRAFT09;
+    infof(conn->data, "NPN, negotiated HTTP2 (%s)\n",
+          NGHTTP2_PROTO_VERSION_ID);
+    conn->negnpn = NPN_HTTP2;
   }
   else if(retval == 0) {
     infof(conn->data, "NPN, negotiated HTTP1.1\n");
     conn->negnpn = NPN_HTTP1_1;
   }
   else {
-    infof(conn->data, "NPN, no overlap, negotiated nothing\n");
+    infof(conn->data, "NPN, no overlap, use HTTP1.1\n",
+          NGHTTP2_PROTO_VERSION_ID);
+    *out = (unsigned char*)"http/1.1";
+    *outlen = sizeof("http/1.1") - 1;
+    conn->negnpn = NPN_HTTP1_1;
   }
 
   return SSL_TLSEXT_ERR_OK;
@@ -1498,6 +1516,8 @@ ossl_connect_step1(struct connectdata *conn,
 
   /* Make funny stuff to get random input */
   Curl_ossl_seed(data);
+
+  data->set.ssl.certverifyresult = !X509_V_OK;
 
   /* check to see if we've been told to use an explicit SSL/TLS version */
 
@@ -1891,11 +1911,6 @@ ossl_connect_step2(struct connectdata *conn, int sockindex)
   struct SessionHandle *data = conn->data;
   int err;
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
-#ifdef HAS_ALPN
-  char* neg_protocol;
-  int len = 0;
-#endif
-
   DEBUGASSERT(ssl_connect_2 == connssl->connecting_state
              || ssl_connect_2_reading == connssl->connecting_state
              || ssl_connect_2_writing == connssl->connecting_state);
@@ -1997,13 +2012,15 @@ ossl_connect_step2(struct connectdata *conn, int sockindex)
      * negotiated
      */
     if(data->set.ssl_enable_alpn) {
+      const unsigned char* neg_protocol;
+      unsigned int len;
       SSL_get0_alpn_selected(connssl->handle, &neg_protocol, &len);
       if(len != 0) {
         infof(data, "ALPN, server accepted to use %.*s\n", len, neg_protocol);
 
         if(len == NGHTTP2_PROTO_VERSION_ID_LEN &&
            memcmp(NGHTTP2_PROTO_VERSION_ID, neg_protocol, len) == 0) {
-             conn->negnpn = NPN_HTTP2_DRAFT09;
+             conn->negnpn = NPN_HTTP2;
         }
         else if(len == ALPN_HTTP_1_1_LENGTH && memcmp(ALPN_HTTP_1_1,
             neg_protocol, ALPN_HTTP_1_1_LENGTH) == 0) {
@@ -2119,7 +2136,7 @@ static int X509V3_ext(struct SessionHandle *data,
         sep=", ";
         j++; /* skip the newline */
       };
-      while((biomem->data[j] == ' ') && (j<(size_t)biomem->length))
+      while((j<(size_t)biomem->length) && (biomem->data[j] == ' '))
         j++;
       if(j<(size_t)biomem->length)
         ptr+=snprintf(ptr, sizeof(buf)-(ptr-buf), "%s%c", sep,
@@ -2160,8 +2177,6 @@ static void dumpcert(struct SessionHandle *data, X509 *x, int numcert)
   PEM_write_bio_X509(bio_out, x);
 
   BIO_get_mem_ptr(bio_out, &biomem);
-
-  infof(data, "%s\n", biomem->data);
 
   Curl_ssl_push_certinfo_len(data, numcert,
                              "Cert", biomem->data, biomem->length);
@@ -2365,8 +2380,6 @@ static CURLcode servercert(struct connectdata *conn,
   if(data->set.ssl.certinfo)
     /* we've been asked to gather certificate info! */
     (void)get_cert_chain(conn, connssl);
-
-  data->set.ssl.certverifyresult = !X509_V_OK;
 
   connssl->server_cert = SSL_get_peer_certificate(connssl->handle);
   if(!connssl->server_cert) {
@@ -2749,6 +2762,7 @@ static ssize_t ossl_send(struct connectdata *conn,
     *curlcode = CURLE_SEND_ERROR;
     return -1;
   }
+  *curlcode = CURLE_OK;
   return (ssize_t)rc; /* number of bytes */
 }
 
@@ -2810,8 +2824,9 @@ size_t Curl_ossl_version(char *buffer, size_t size)
 
 #if(SSLEAY_VERSION_NUMBER >= 0x905000)
   {
-    char sub[2];
+    char sub[3];
     unsigned long ssleay_value;
+    sub[2]='\0';
     sub[1]='\0';
     ssleay_value=SSLeay();
     if(ssleay_value < 0x906000) {
@@ -2820,14 +2835,31 @@ size_t Curl_ossl_version(char *buffer, size_t size)
     }
     else {
       if(ssleay_value&0xff0) {
-        sub[0]=(char)(((ssleay_value>>4)&0xff) + 'a' -1);
+        int minor_ver = (ssleay_value >> 4) & 0xff;
+        if(minor_ver > 26) {
+          /* handle extended version introduced for 0.9.8za */
+          sub[1] = (char) ((minor_ver - 1) % 26 + 'a' + 1);
+          sub[0] = 'z';
+        }
+        else {
+          sub[0]=(char)(((ssleay_value>>4)&0xff) + 'a' -1);
+        }
       }
       else
         sub[0]='\0';
     }
 
-    return snprintf(buffer, size, "OpenSSL/%lx.%lx.%lx%s",
-                    (ssleay_value>>28)&0xf,
+    return snprintf(buffer, size, "%s/%lx.%lx.%lx%s",
+#ifdef OPENSSL_IS_BORINGSSL
+                    "BoringSSL"
+#else
+#ifdef LIBRESSL_VERSION_NUMBER
+                    "LibreSSL"
+#else
+                    "OpenSSL"
+#endif
+#endif
+                    , (ssleay_value>>28)&0xf,
                     (ssleay_value>>20)&0xff,
                     (ssleay_value>>12)&0xff,
                     sub);
@@ -2862,11 +2894,14 @@ size_t Curl_ossl_version(char *buffer, size_t size)
 #endif /* YASSL_VERSION */
 }
 
-void Curl_ossl_random(struct SessionHandle *data, unsigned char *entropy,
-                      size_t length)
+/* can be called with data == NULL */
+int Curl_ossl_random(struct SessionHandle *data, unsigned char *entropy,
+                     size_t length)
 {
-  Curl_ossl_seed(data); /* Initiate the seed if not already done */
+  if(data)
+    Curl_ossl_seed(data); /* Initiate the seed if not already done */
   RAND_bytes(entropy, curlx_uztosi(length));
+  return 0; /* 0 as in no problem */
 }
 
 void Curl_ossl_md5sum(unsigned char *tmp, /* input */

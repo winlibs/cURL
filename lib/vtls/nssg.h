@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -51,9 +51,9 @@ int Curl_nss_seed(struct SessionHandle *data);
 /* initialize NSS library if not already */
 CURLcode Curl_nss_force_init(struct SessionHandle *data);
 
-void Curl_nss_random(struct SessionHandle *data,
-                     unsigned char *entropy,
-                     size_t length);
+int Curl_nss_random(struct SessionHandle *data,
+                    unsigned char *entropy,
+                    size_t length);
 
 void Curl_nss_md5sum(unsigned char *tmp, /* input */
                      size_t tmplen,
@@ -61,13 +61,13 @@ void Curl_nss_md5sum(unsigned char *tmp, /* input */
                      size_t md5len);
 
 /* this backend provides these functions: */
-#define have_curlssl_random 1
 #define have_curlssl_md5sum 1
 
 /* API setup for NSS */
 #define curlssl_init Curl_nss_init
 #define curlssl_cleanup Curl_nss_cleanup
 #define curlssl_connect Curl_nss_connect
+#define curlssl_connect_nonblocking Curl_nss_connect_nonblocking
 
 /* NSS has its own session ID cache */
 #define curlssl_session_free(x) Curl_nop_stmt
@@ -83,6 +83,7 @@ void Curl_nss_md5sum(unsigned char *tmp, /* input */
 #define curlssl_data_pending(x,y) (x=x, y=y, 0)
 #define curlssl_random(x,y,z) Curl_nss_random(x,y,z)
 #define curlssl_md5sum(a,b,c,d) Curl_nss_md5sum(a,b,c,d)
+#define CURL_SSL_BACKEND CURLSSLBACKEND_NSS
 
 #endif /* USE_NSS */
 #endif /* HEADER_CURL_NSSG_H */

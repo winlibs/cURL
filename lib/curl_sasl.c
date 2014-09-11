@@ -40,6 +40,8 @@
 #include "curl_sasl.h"
 #include "warnless.h"
 #include "curl_memory.h"
+#include "strtok.h"
+#include "rawstr.h"
 
 #ifdef USE_NSS
 #include "vtls/nssg.h" /* for Curl_nss_force_init() */
@@ -51,7 +53,19 @@
 /* The last #include file should be: */
 #include "memdebug.h"
 
-#ifndef CURL_DISABLE_CRYPTO_AUTH
+#if defined(USE_WINDOWS_SSPI)
+extern void Curl_sasl_gssapi_cleanup(struct kerberos5data *krb5);
+#endif
+
+#if !defined(CURL_DISABLE_CRYPTO_AUTH) && !defined(USE_WINDOWS_SSPI)
+#define DIGEST_QOP_VALUE_AUTH             (1 << 0)
+#define DIGEST_QOP_VALUE_AUTH_INT         (1 << 1)
+#define DIGEST_QOP_VALUE_AUTH_CONF        (1 << 2)
+
+#define DIGEST_QOP_VALUE_STRING_AUTH      "auth"
+#define DIGEST_QOP_VALUE_STRING_AUTH_INT  "auth-int"
+#define DIGEST_QOP_VALUE_STRING_AUTH_CONF "auth-conf"
+
 /* Retrieves the value for a corresponding key from the challenge string
  * returns TRUE if the key could be found, FALSE if it does not exists
  */
@@ -75,6 +89,58 @@ static bool sasl_digest_get_key_value(const char *chlg,
   value[i] = '\0';
 
   return TRUE;
+}
+
+static CURLcode sasl_digest_get_qop_values(const char *options, int *value)
+{
+  char *tmp;
+  char *token;
+  char *tok_buf;
+
+  /* Initialise the output */
+  *value = 0;
+
+  /* Tokenise the list of qop values. Use a temporary clone of the buffer since
+     strtok_r() ruins it. */
+  tmp = strdup(options);
+  if(!tmp)
+    return CURLE_OUT_OF_MEMORY;
+
+  token = strtok_r(tmp, ",", &tok_buf);
+  while(token != NULL) {
+    if(Curl_raw_equal(token, DIGEST_QOP_VALUE_STRING_AUTH))
+      *value |= DIGEST_QOP_VALUE_AUTH;
+    else if(Curl_raw_equal(token, DIGEST_QOP_VALUE_STRING_AUTH_INT))
+      *value |= DIGEST_QOP_VALUE_AUTH_INT;
+    else if(Curl_raw_equal(token, DIGEST_QOP_VALUE_STRING_AUTH_CONF))
+      *value |= DIGEST_QOP_VALUE_AUTH_CONF;
+
+    token = strtok_r(NULL, ",", &tok_buf);
+  }
+
+  Curl_safefree(tmp);
+
+  return CURLE_OK;
+}
+#endif
+
+#if !defined(USE_WINDOWS_SSPI)
+/*
+ * Curl_sasl_build_spn()
+ *
+ * This is used to build a SPN string in the format service/host.
+ *
+ * Parameters:
+ *
+ * serivce  [in] - The service type such as www, smtp, pop or imap.
+ * instance [in] - The instance name such as the host nme or realm.
+ *
+ * Returns a pointer to the newly allocated SPN.
+ */
+char *Curl_sasl_build_spn(const char *service, const char *host)
+{
+  /* Generate and return our SPN */
+  return aprintf("%s/%s", service, host);
 }
 #endif
 
@@ -263,10 +329,12 @@ CURLcode Curl_sasl_create_cram_md5_message(struct SessionHandle *data,
   return result;
 }
 
+#ifndef USE_WINDOWS_SSPI
 /*
- * Curl_sasl_decode_digest_md5_message()
+ * sasl_decode_digest_md5_message()
  *
- * This is used to decode an already encoded DIGEST-MD5 challenge message.
+ * This is used internally to decode an already encoded DIGEST-MD5 challenge
+ * message into the seperate attributes.
  *
  * Parameters:
  *
@@ -277,19 +345,23 @@ CURLcode Curl_sasl_create_cram_md5_message(struct SessionHandle *data,
  * rlen    [in]     - The length of the realm buffer.
  * alg     [in/out] - The buffer where the algorithm will be stored.
  * alen    [in]     - The length of the algorithm buffer.
+ * qop     [in/out] - The buffer where the qop-options will be stored.
+ * qlen    [in]     - The length of the qop buffer.
  *
  * Returns CURLE_OK on success.
  */
-CURLcode Curl_sasl_decode_digest_md5_message(const char *chlg64,
-                                             char *nonce, size_t nlen,
-                                             char *realm, size_t rlen,
-                                             char *alg, size_t alen)
+static CURLcode sasl_decode_digest_md5_message(const char *chlg64,
+                                               char *nonce, size_t nlen,
+                                               char *realm, size_t rlen,
+                                               char *alg, size_t alen,
+                                               char *qop, size_t qlen)
 {
   CURLcode result = CURLE_OK;
   unsigned char *chlg = NULL;
   size_t chlglen = 0;
   size_t chlg64len = strlen(chlg64);
 
+  /* Decode the base-64 encoded challenge message */
   if(chlg64len && *chlg64 != '=') {
     result = Curl_base64_decode(chlg64, &chlg, &chlglen);
     if(result)
@@ -318,6 +390,12 @@ CURLcode Curl_sasl_decode_digest_md5_message(const char *chlg64,
     return CURLE_BAD_CONTENT_ENCODING;
   }
 
+  /* Retrieve qop-options string from the challenge */
+  if(!sasl_digest_get_key_value((char *)chlg, "qop=\"", qop, qlen, '\"')) {
+    Curl_safefree(chlg);
+    return CURLE_BAD_CONTENT_ENCODING;
+  }
+
   Curl_safefree(chlg);
 
   return CURLE_OK;
@@ -332,8 +410,7 @@ CURLcode Curl_sasl_decode_digest_md5_message(const char *chlg64,
  * Parameters:
  *
  * data    [in]     - The session handle.
- * nonce   [in]     - The nonce.
- * realm   [in]     - The realm.
+ * chlg64  [in]     - Pointer to the base64 encoded challenge message.
  * userp   [in]     - The user name.
  * passdwp [in]     - The user's password.
  * service [in]     - The service type such as www, smtp, pop or imap.
@@ -344,16 +421,12 @@ CURLcode Curl_sasl_decode_digest_md5_message(const char *chlg64,
  * Returns CURLE_OK on success.
  */
 CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
-                                             const char *nonce,
-                                             const char *realm,
+                                             const char *chlg64,
                                              const char *userp,
                                              const char *passwdp,
                                              const char *service,
                                              char **outptr, size_t *outlen)
 {
-#ifndef DEBUGBUILD
-  static const char table16[] = "0123456789abcdef";
-#endif
   CURLcode result = CURLE_OK;
   size_t i;
   MD5_context *ctxt;
@@ -362,18 +435,48 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
   char HA1_hex[2 * MD5_DIGEST_LEN + 1];
   char HA2_hex[2 * MD5_DIGEST_LEN + 1];
   char resp_hash_hex[2 * MD5_DIGEST_LEN + 1];
-
+  char nonce[64];
+  char realm[128];
+  char algorithm[64];
+  char qop_options[64];
+  int qop_values;
+  char cnonce[33];
+  unsigned int entropy[4];
   char nonceCount[] = "00000001";
-  char cnonce[]     = "12345678"; /* will be changed */
   char method[]     = "AUTHENTICATE";
-  char qop[]        = "auth";
-  char uri[128];
+  char qop[]        = DIGEST_QOP_VALUE_STRING_AUTH;
+  char *spn         = NULL;
 
-#ifndef DEBUGBUILD
-  /* Generate 64 bits of random data */
-  for(i = 0; i < 8; i++)
-    cnonce[i] = table16[Curl_rand(data)%16];
-#endif
+  /* Decode the challange message */
+  result = sasl_decode_digest_md5_message(chlg64, nonce, sizeof(nonce),
+                                          realm, sizeof(realm),
+                                          algorithm, sizeof(algorithm),
+                                          qop_options, sizeof(qop_options));
+  if(result)
+    return result;
+
+  /* We only support md5 sessions */
+  if(strcmp(algorithm, "md5-sess") != 0)
+    return CURLE_BAD_CONTENT_ENCODING;
+
+  /* Get the qop-values from the qop-options */
+  result = sasl_digest_get_qop_values(qop_options, &qop_values);
+  if(result)
+    return result;
+
+  /* We only support auth quality-of-protection */
+  if(!(qop_values & DIGEST_QOP_VALUE_AUTH))
+    return CURLE_BAD_CONTENT_ENCODING;
+
+  /* Generate 16 bytes of random data */
+  entropy[0] = Curl_rand(data);
+  entropy[1] = Curl_rand(data);
+  entropy[2] = Curl_rand(data);
+  entropy[3] = Curl_rand(data);
+
+  /* Convert the random data into a 32 byte hex string */
+  snprintf(cnonce, sizeof(cnonce), "%08x%08x%08x%08x",
+           entropy[0], entropy[1], entropy[2], entropy[3]);
 
   /* So far so good, now calculate A1 and H(A1) according to RFC 2831 */
   ctxt = Curl_MD5_init(Curl_DIGEST_MD5);
@@ -407,19 +510,24 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
   for(i = 0; i < MD5_DIGEST_LEN; i++)
     snprintf(&HA1_hex[2 * i], 3, "%02x", digest[i]);
 
-  /* Prepare the URL string */
-  snprintf(uri, sizeof(uri), "%s/%s", service, realm);
+  /* Generate our SPN */
+  spn = Curl_sasl_build_spn(service, realm);
+  if(!spn)
+    return CURLE_OUT_OF_MEMORY;
 
   /* Calculate H(A2) */
   ctxt = Curl_MD5_init(Curl_DIGEST_MD5);
-  if(!ctxt)
+  if(!ctxt) {
+    Curl_safefree(spn);
+
     return CURLE_OUT_OF_MEMORY;
+  }
 
   Curl_MD5_update(ctxt, (const unsigned char *) method,
                   curlx_uztoui(strlen(method)));
   Curl_MD5_update(ctxt, (const unsigned char *) ":", 1);
-  Curl_MD5_update(ctxt, (const unsigned char *) uri,
-                  curlx_uztoui(strlen(uri)));
+  Curl_MD5_update(ctxt, (const unsigned char *) spn,
+                  curlx_uztoui(strlen(spn)));
   Curl_MD5_final(ctxt, digest);
 
   for(i = 0; i < MD5_DIGEST_LEN; i++)
@@ -427,8 +535,11 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
 
   /* Now calculate the response hash */
   ctxt = Curl_MD5_init(Curl_DIGEST_MD5);
-  if(!ctxt)
+  if(!ctxt) {
+    Curl_safefree(spn);
+
     return CURLE_OUT_OF_MEMORY;
+  }
 
   Curl_MD5_update(ctxt, (const unsigned char *) HA1_hex, 2 * MD5_DIGEST_LEN);
   Curl_MD5_update(ctxt, (const unsigned char *) ":", 1);
@@ -454,9 +565,11 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
 
   /* Generate the response */
   response = aprintf("username=\"%s\",realm=\"%s\",nonce=\"%s\","
-                     "cnonce=\"%s\",nc=\"%s\",digest-uri=\"%s\",response=%s",
+                     "cnonce=\"%s\",nc=\"%s\",digest-uri=\"%s\",response=%s,"
+                     "qop=%s",
                      userp, realm, nonce,
-                     cnonce, nonceCount, uri, resp_hash_hex);
+                     cnonce, nonceCount, spn, resp_hash_hex, qop);
+  Curl_safefree(spn);
   if(!response)
     return CURLE_OUT_OF_MEMORY;
 
@@ -467,7 +580,9 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
 
   return result;
 }
-#endif
+#endif  /* !USE_WINDOWS_SSPI */
+
+#endif  /* CURL_DISABLE_CRYPTO_AUTH */
 
 #ifdef USE_NTLM
 /*
@@ -607,12 +722,17 @@ CURLcode Curl_sasl_create_xoauth2_message(struct SessionHandle *data,
  */
 void Curl_sasl_cleanup(struct connectdata *conn, unsigned int authused)
 {
+#if defined(USE_WINDOWS_SSPI)
+  /* Cleanup the gssapi structure */
+  if(authused == SASL_MECH_GSSAPI) {
+    Curl_sasl_gssapi_cleanup(&conn->krb5);
+  }
 #ifdef USE_NTLM
   /* Cleanup the ntlm structure */
-  if(authused == SASL_MECH_NTLM) {
+  else if(authused == SASL_MECH_NTLM) {
     Curl_ntlm_sspi_cleanup(&conn->ntlm);
   }
-  (void)conn;
+#endif
 #else
   /* Reserved for future use */
   (void)conn;

@@ -5,8 +5,8 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2012 - 2013, Nick Zitzmann, <nickzman@gmail.com>.
- * Copyright (C) 2012 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012 - 2014, Nick Zitzmann, <nickzman@gmail.com>.
+ * Copyright (C) 2012 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -27,6 +27,10 @@
  */
 
 #include "curl_setup.h"
+
+#include "urldata.h" /* for the SessionHandle definition */
+#include "curl_base64.h"
+#include "strtok.h"
 
 #ifdef USE_DARWINSSL
 
@@ -779,6 +783,7 @@ CF_INLINE void GetDarwinVersionNumber(int *major, int *minor)
   char *os_version;
   size_t os_version_len;
   char *os_version_major, *os_version_minor/*, *os_version_point*/;
+  char *tok_buf;
 
   /* Get the Darwin kernel version from the kernel using sysctl(): */
   mib[0] = CTL_KERN;
@@ -794,9 +799,9 @@ CF_INLINE void GetDarwinVersionNumber(int *major, int *minor)
   }
 
   /* Parse the version: */
-  os_version_major = strtok(os_version, ".");
-  os_version_minor = strtok(NULL, ".");
-  /*os_version_point = strtok(NULL, ".");*/
+  os_version_major = strtok_r(os_version, ".", &tok_buf);
+  os_version_minor = strtok_r(NULL, ".", &tok_buf);
+  /*os_version_point = strtok_r(NULL, ".", &tok_buf);*/
   *major = atoi(os_version_major);
   *minor = atoi(os_version_minor);
   free(os_version);
@@ -952,7 +957,7 @@ static OSStatus CopyIdentityFromPKCS12File(const char *cPath,
 
     /* Here we go: */
     status = SecPKCS12Import(pkcs_data, options, &items);
-    if(status == noErr) {
+    if(status == noErr && items && CFArrayGetCount(items)) {
       CFDictionaryRef identity_and_trust = CFArrayGetValueAtIndex(items, 0L);
       const void *temp_identity = CFDictionaryGetValue(identity_and_trust,
         kSecImportItemIdentity);
@@ -960,8 +965,10 @@ static OSStatus CopyIdentityFromPKCS12File(const char *cPath,
       /* Retain the identity; we don't care about any other data... */
       CFRetain(temp_identity);
       *out_cert_and_key = (SecIdentityRef)temp_identity;
-      CFRelease(items);
     }
+
+    if(items)
+      CFRelease(items);
     CFRelease(options);
     CFRelease(pkcs_data);
   }
@@ -1296,9 +1303,11 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
 #else
   if(SSLSetSessionOption != NULL) {
 #endif /* CURL_BUILD_MAC */
+    bool break_on_auth = !data->set.ssl.verifypeer ||
+      data->set.str[STRING_SSL_CAFILE];
     err = SSLSetSessionOption(connssl->ssl_ctx,
                               kSSLSessionOptionBreakOnServerAuth,
-                              data->set.ssl.verifypeer?false:true);
+                              break_on_auth);
     if(err != noErr) {
       failf(data, "SSL: SSLSetSessionOption() failed: OSStatus %d", err);
       return CURLE_SSL_CONNECT_ERROR;
@@ -1322,6 +1331,21 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
     return CURLE_SSL_CONNECT_ERROR;
   }
 #endif /* CURL_BUILD_MAC_10_6 || CURL_BUILD_IOS */
+
+  if(data->set.str[STRING_SSL_CAFILE]) {
+    bool is_cert_file = is_file(data->set.str[STRING_SSL_CAFILE]);
+
+    if(!is_cert_file) {
+      failf(data, "SSL: can't load CA certificate file %s",
+            data->set.str[STRING_SSL_CAFILE]);
+      return CURLE_SSL_CACERT_BADFILE;
+    }
+    if(!data->set.ssl.verifypeer) {
+      failf(data, "SSL: CA certificate set, but certificate verification "
+            "is disabled");
+      return CURLE_SSL_CONNECT_ERROR;
+    }
+  }
 
   /* Configure hostname check. SNI is used if available.
    * Both hostname check and SNI require SSLSetPeerDomainName().
@@ -1503,6 +1527,294 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
   return CURLE_OK;
 }
 
+static long pem_to_der(const char *in, unsigned char **out, size_t *outlen)
+{
+  char *sep_start, *sep_end, *cert_start, *cert_end;
+  size_t i, j, err;
+  size_t len;
+  unsigned char *b64;
+
+  /* Jump through the separators at the beginning of the certificate. */
+  sep_start = strstr(in, "-----");
+  if(sep_start == NULL)
+    return 0;
+  cert_start = strstr(sep_start + 1, "-----");
+  if(cert_start == NULL)
+    return -1;
+
+  cert_start += 5;
+
+  /* Find separator after the end of the certificate. */
+  cert_end = strstr(cert_start, "-----");
+  if(cert_end == NULL)
+    return -1;
+
+  sep_end = strstr(cert_end + 1, "-----");
+  if(sep_end == NULL)
+    return -1;
+  sep_end += 5;
+
+  len = cert_end - cert_start;
+  b64 = malloc(len + 1);
+  if(!b64)
+    return -1;
+
+  /* Create base64 string without linefeeds. */
+  for(i = 0, j = 0; i < len; i++) {
+    if(cert_start[i] != '\r' && cert_start[i] != '\n')
+      b64[j++] = cert_start[i];
+  }
+  b64[j] = '\0';
+
+  err = Curl_base64_decode((const char *)b64, out, outlen);
+  free(b64);
+  if(err) {
+    free(*out);
+    return -1;
+  }
+
+  return sep_end - in;
+}
+
+static int read_cert(const char *file, unsigned char **out, size_t *outlen)
+{
+  int fd;
+  ssize_t n, len = 0, cap = 512;
+  unsigned char buf[cap], *data;
+
+  fd = open(file, 0);
+  if(fd < 0)
+    return -1;
+
+  data = malloc(cap);
+  if(!data) {
+    close(fd);
+    return -1;
+  }
+
+  for(;;) {
+    n = read(fd, buf, sizeof(buf));
+    if(n < 0) {
+      close(fd);
+      free(data);
+      return -1;
+    }
+    else if(n == 0) {
+      close(fd);
+      break;
+    }
+
+    if(len + n >= cap) {
+      cap *= 2;
+      data = realloc(data, cap);
+      if(!data) {
+        close(fd);
+        return -1;
+      }
+    }
+
+    memcpy(data + len, buf, n);
+    len += n;
+  }
+  data[len] = '\0';
+
+  *out = data;
+  *outlen = len;
+
+  return 0;
+}
+
+static int sslerr_to_curlerr(struct SessionHandle *data, int err)
+{
+  switch(err) {
+    case errSSLXCertChainInvalid:
+      failf(data, "SSL certificate problem: Invalid certificate chain");
+      return CURLE_SSL_CACERT;
+    case errSSLUnknownRootCert:
+      failf(data, "SSL certificate problem: Untrusted root certificate");
+      return CURLE_SSL_CACERT;
+    case errSSLNoRootCert:
+      failf(data, "SSL certificate problem: No root certificate");
+      return CURLE_SSL_CACERT;
+    case errSSLCertExpired:
+      failf(data, "SSL certificate problem: Certificate chain had an "
+            "expired certificate");
+      return CURLE_SSL_CACERT;
+    case errSSLBadCert:
+      failf(data, "SSL certificate problem: Couldn't understand the server "
+            "certificate format");
+      return CURLE_SSL_CONNECT_ERROR;
+    case errSSLHostNameMismatch:
+      failf(data, "SSL certificate peer hostname mismatch");
+      return CURLE_PEER_FAILED_VERIFICATION;
+    default:
+      failf(data, "SSL unexpected certificate error %d", err);
+      return CURLE_SSL_CACERT;
+  }
+}
+
+static int append_cert_to_array(struct SessionHandle *data,
+                                unsigned char *buf, size_t buflen,
+                                CFMutableArrayRef array)
+{
+    CFDataRef certdata = CFDataCreate(kCFAllocatorDefault, buf, buflen);
+    if(!certdata) {
+      failf(data, "SSL: failed to allocate array for CA certificate");
+      return CURLE_OUT_OF_MEMORY;
+    }
+
+    SecCertificateRef cacert =
+      SecCertificateCreateWithData(kCFAllocatorDefault, certdata);
+    CFRelease(certdata);
+    if(!cacert) {
+      failf(data, "SSL: failed to create SecCertificate from CA certificate");
+      return CURLE_SSL_CACERT;
+    }
+
+    /* Check if cacert is valid. */
+    CFStringRef subject = CopyCertSubject(cacert);
+    if(subject) {
+      char subject_cbuf[128];
+      memset(subject_cbuf, 0, 128);
+      if(!CFStringGetCString(subject,
+                            subject_cbuf,
+                            128,
+                            kCFStringEncodingUTF8)) {
+        CFRelease(cacert);
+        failf(data, "SSL: invalid CA certificate subject");
+        return CURLE_SSL_CACERT;
+      }
+      CFRelease(subject);
+    }
+    else {
+      CFRelease(cacert);
+      failf(data, "SSL: invalid CA certificate");
+      return CURLE_SSL_CACERT;
+    }
+
+    CFArrayAppendValue(array, cacert);
+    CFRelease(cacert);
+
+    return CURLE_OK;
+}
+
+static int verify_cert(const char *cafile, struct SessionHandle *data,
+                       SSLContextRef ctx)
+{
+  int n = 0, rc;
+  long res;
+  unsigned char *certbuf, *der;
+  size_t buflen, derlen, offset = 0;
+
+  if(read_cert(cafile, &certbuf, &buflen) < 0) {
+    failf(data, "SSL: failed to read or invalid CA certificate");
+    return CURLE_SSL_CACERT;
+  }
+
+  /*
+   * Certbuf now contains the contents of the certificate file, which can be
+   * - a single DER certificate,
+   * - a single PEM certificate or
+   * - a bunch of PEM certificates (certificate bundle).
+   *
+   * Go through certbuf, and convert any PEM certificate in it into DER
+   * format.
+   */
+  CFMutableArrayRef array = CFArrayCreateMutable(kCFAllocatorDefault, 0,
+                                                 &kCFTypeArrayCallBacks);
+  if(array == NULL) {
+    free(certbuf);
+    failf(data, "SSL: out of memory creating CA certificate array");
+    return CURLE_OUT_OF_MEMORY;
+  }
+
+  while(offset < buflen) {
+    n++;
+
+    /*
+     * Check if the certificate is in PEM format, and convert it to DER. If
+     * this fails, we assume the certificate is in DER format.
+     */
+    res = pem_to_der((const char *)certbuf + offset, &der, &derlen);
+    if(res < 0) {
+      free(certbuf);
+      CFRelease(array);
+      failf(data, "SSL: invalid CA certificate #%d (offset %d) in bundle",
+            n, offset);
+      return CURLE_SSL_CACERT;
+    }
+    offset += res;
+
+    if(res == 0 && offset == 0) {
+      /* This is not a PEM file, probably a certificate in DER format. */
+      rc = append_cert_to_array(data, certbuf, buflen, array);
+      free(certbuf);
+      if(rc != CURLE_OK) {
+        CFRelease(array);
+        return rc;
+      }
+      break;
+    }
+    else if(res == 0) {
+      /* No more certificates in the bundle. */
+      free(certbuf);
+      break;
+    }
+
+    rc = append_cert_to_array(data, der, derlen, array);
+    free(der);
+    if(rc != CURLE_OK) {
+      free(certbuf);
+      CFRelease(array);
+      return rc;
+    }
+  }
+
+  SecTrustRef trust;
+  OSStatus ret = SSLCopyPeerTrust(ctx, &trust);
+  if(trust == NULL) {
+    failf(data, "SSL: error getting certificate chain");
+    CFRelease(array);
+    return CURLE_OUT_OF_MEMORY;
+  }
+  else if(ret != noErr) {
+    CFRelease(array);
+    return sslerr_to_curlerr(data, ret);
+  }
+
+  ret = SecTrustSetAnchorCertificates(trust, array);
+  if(ret != noErr) {
+    CFRelease(trust);
+    return sslerr_to_curlerr(data, ret);
+  }
+  ret = SecTrustSetAnchorCertificatesOnly(trust, true);
+  if(ret != noErr) {
+    CFRelease(trust);
+    return sslerr_to_curlerr(data, ret);
+  }
+
+  SecTrustResultType trust_eval = 0;
+  ret = SecTrustEvaluate(trust, &trust_eval);
+  CFRelease(array);
+  CFRelease(trust);
+  if(ret != noErr) {
+    return sslerr_to_curlerr(data, ret);
+  }
+
+  switch (trust_eval) {
+    case kSecTrustResultUnspecified:
+    case kSecTrustResultProceed:
+      return CURLE_OK;
+
+    case kSecTrustResultRecoverableTrustFailure:
+    case kSecTrustResultDeny:
+    default:
+      failf(data, "SSL: certificate verification failed (result: %d)",
+            trust_eval);
+      return CURLE_PEER_FAILED_VERIFICATION;
+  }
+}
+
 static CURLcode
 darwinssl_connect_step2(struct connectdata *conn, int sockindex)
 {
@@ -1529,6 +1841,12 @@ darwinssl_connect_step2(struct connectdata *conn, int sockindex)
       /* The below is errSSLServerAuthCompleted; it's not defined in
         Leopard's headers */
       case -9841:
+        if(data->set.str[STRING_SSL_CAFILE]) {
+          int res = verify_cert(data->set.str[STRING_SSL_CAFILE], data,
+                                connssl->ssl_ctx);
+          if(res != CURLE_OK)
+            return res;
+        }
         /* the documentation says we need to call SSLHandshake() again */
         return darwinssl_connect_step2(conn, sockindex);
 
@@ -2031,9 +2349,8 @@ bool Curl_darwinssl_data_pending(const struct connectdata *conn,
     return false;
 }
 
-void Curl_darwinssl_random(struct SessionHandle *data,
-                           unsigned char *entropy,
-                           size_t length)
+int Curl_darwinssl_random(unsigned char *entropy,
+                          size_t length)
 {
   /* arc4random_buf() isn't available on cats older than Lion, so let's
      do this manually for the benefit of the older cats. */
@@ -2047,7 +2364,7 @@ void Curl_darwinssl_random(struct SessionHandle *data,
     random_number >>= 8;
   }
   i = random_number = 0;
-  (void)data;
+  return 0;
 }
 
 void Curl_darwinssl_md5sum(unsigned char *tmp, /* input */

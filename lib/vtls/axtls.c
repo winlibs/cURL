@@ -481,6 +481,7 @@ Curl_axtls_connect(struct connectdata *conn,
       return map_error_to_curl(ssl_fcn_return);
     }
     usleep(10000);
+    /* TODO: check for timeout as this could hang indefinitely otherwise */
   }
   infof (conn->data, "handshake completed successfully\n");
 
@@ -661,6 +662,23 @@ void Curl_axtls_session_free(void *ptr)
 size_t Curl_axtls_version(char *buffer, size_t size)
 {
   return snprintf(buffer, size, "axTLS/%s", ssl_version());
+}
+
+int Curl_axtls_random(struct SessionHandle *data,
+                      unsigned char *entropy,
+                      size_t length)
+{
+  static bool ssl_seeded = FALSE;
+  (void)data;
+  if(!ssl_seeded) {
+    ssl_seeded = TRUE;
+    /* Initialize the seed if not already done. This call is not exactly thread
+     * safe (and neither is the ssl_seeded check), but the worst effect of a
+     * race condition is that some global resources will leak. */
+    RNG_initialize();
+  }
+  get_random(length, entropy);
+  return 0;
 }
 
 #endif /* USE_AXTLS */

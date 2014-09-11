@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2009 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2009 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -44,6 +44,9 @@ typedef enum {
   SMTP_AUTH_DIGESTMD5_RESP,
   SMTP_AUTH_NTLM,
   SMTP_AUTH_NTLM_TYPE2MSG,
+  SMTP_AUTH_GSSAPI,
+  SMTP_AUTH_GSSAPI_TOKEN,
+  SMTP_AUTH_GSSAPI_NO_DATA,
   SMTP_AUTH_XOAUTH2,
   SMTP_AUTH_CANCEL,
   SMTP_AUTH_FINAL,
@@ -82,6 +85,8 @@ struct smtp_conn {
   bool tls_supported;      /* StartTLS capability supported by server */
   bool size_supported;     /* If server supports SIZE extension according to
                               RFC 1870 */
+  bool auth_supported;     /* AUTH capability supported by server */
+  bool mutual_auth;        /* Mutual authentication enabled (GSSAPI only) */
 };
 
 extern const struct Curl_handler Curl_handler_smtp;

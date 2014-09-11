@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -39,10 +39,14 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+#ifdef HAVE_PWD_H
+#include <pwd.h>
+#endif
 
 #include "urldata.h"
 #include "sendf.h"
 #include "select.h"
+#include "curl_ntlm_msgs.h"
 #include "curl_ntlm_wb.h"
 #include "url.h"
 #include "strerror.h"
@@ -116,6 +120,10 @@ static CURLcode ntlm_wb_init(struct connectdata *conn, const char *userp)
   char *slash, *domain = NULL;
   const char *ntlm_auth = NULL;
   char *ntlm_auth_alloc = NULL;
+#if defined(HAVE_GETPWUID_R) && defined(HAVE_GETEUID)
+  struct passwd pw, *pw_res;
+  char pwbuf[1024];
+#endif
   int error;
 
   /* Return if communication with ntlm_auth already set up */
@@ -124,6 +132,30 @@ static CURLcode ntlm_wb_init(struct connectdata *conn, const char *userp)
     return CURLE_OK;
 
   username = userp;
+  /* The real ntlm_auth really doesn't like being invoked with an
+     empty username. It won't make inferences for itself, and expects
+     the client to do so (mostly because it's really designed for
+     servers like squid to use for auth, and client support is an
+     afterthought for it). So try hard to provide a suitable username
+     if we don't already have one. But if we can't, provide the
+     empty one anyway. Perhaps they have an implementation of the
+     ntlm_auth helper which *doesn't* need it so we might as well try */
+  if(!username || !username[0]) {
+    username = getenv("NTLMUSER");
+    if(!username || !username[0])
+      username = getenv("LOGNAME");
+    if(!username || !username[0])
+      username = getenv("USER");
+#if defined(HAVE_GETPWUID_R) && defined(HAVE_GETEUID)
+    if((!username || !username[0]) &&
+       !getpwuid_r(geteuid(), &pw, pwbuf, sizeof(pwbuf), &pw_res) &&
+       pw_res) {
+      username = pw.pw_name;
+    }
+#endif
+    if(!username || !username[0])
+      username = userp;
+  }
   slash = strpbrk(username, "\\/");
   if(slash) {
     if((domain = strdup(username)) == NULL)
@@ -226,10 +258,11 @@ done:
 static CURLcode ntlm_wb_response(struct connectdata *conn,
                                  const char *input, curlntlm state)
 {
-  ssize_t size;
-  char buf[200]; /* enough, type 1, 3 message length is less then 200 */
-  char *tmpbuf = buf;
-  size_t len_in = strlen(input), len_out = sizeof(buf);
+  char *buf = malloc(NTLM_BUFSIZE);
+  size_t len_in = strlen(input), len_out = 0;
+
+  if(!buf)
+    return CURLE_OUT_OF_MEMORY;
 
   while(len_in > 0) {
     ssize_t written = swrite(conn->ntlm_auth_hlpr_socket, input, len_in);
@@ -244,8 +277,11 @@ static CURLcode ntlm_wb_response(struct connectdata *conn,
     len_in -= written;
   }
   /* Read one line */
-  while(len_out > 0) {
-    size = sread(conn->ntlm_auth_hlpr_socket, tmpbuf, len_out);
+  while(1) {
+    ssize_t size;
+    char *newbuf;
+
+    size = sread(conn->ntlm_auth_hlpr_socket, buf + len_out, NTLM_BUFSIZE);
     if(size == -1) {
       if(errno == EINTR)
         continue;
@@ -253,22 +289,28 @@ static CURLcode ntlm_wb_response(struct connectdata *conn,
     }
     else if(size == 0)
       goto done;
-    else if(tmpbuf[size - 1] == '\n') {
-      tmpbuf[size - 1] = '\0';
+
+    len_out += size;
+    if(buf[len_out - 1] == '\n') {
+      buf[len_out - 1] = '\0';
       goto wrfinish;
     }
-    tmpbuf += size;
-    len_out -= size;
+    newbuf = realloc(buf, len_out + NTLM_BUFSIZE);
+    if(!newbuf) {
+      free(buf);
+      return CURLE_OUT_OF_MEMORY;
+    }
+    buf = newbuf;
   }
   goto done;
 wrfinish:
   /* Samba/winbind installed but not configured */
   if(state == NTLMSTATE_TYPE1 &&
-     size == 3 &&
+     len_out == 3 &&
      buf[0] == 'P' && buf[1] == 'W')
     return CURLE_REMOTE_ACCESS_DENIED;
   /* invalid response */
-  if(size < 4)
+  if(len_out < 4)
     goto done;
   if(state == NTLMSTATE_TYPE1 &&
      (buf[0]!='Y' || buf[1]!='R' || buf[2]!=' '))
@@ -278,9 +320,11 @@ wrfinish:
      (buf[0]!='A' || buf[1]!='F' || buf[2]!=' '))
     goto done;
 
-  conn->response_header = aprintf("NTLM %.*s", size - 4, buf + 3);
+  conn->response_header = aprintf("NTLM %.*s", len_out - 4, buf + 3);
+  free(buf);
   return CURLE_OK;
 done:
+  free(buf);
   return CURLE_REMOTE_ACCESS_DENIED;
 }
 

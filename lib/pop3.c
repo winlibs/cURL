@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -27,6 +27,7 @@
  * RFC2831 DIGEST-MD5 authentication
  * RFC4422 Simple Authentication and Security Layer (SASL)
  * RFC4616 PLAIN authentication
+ * RFC4752 The Kerberos V5 ("GSSAPI") SASL Mechanism
  * RFC5034 POP3 SASL Authentication Mechanism
  * RFC6749 OAuth 2.0 Authorization Framework
  * Draft   LOGIN SASL Mechanism <draft-murchison-sasl-login-00.txt>
@@ -156,7 +157,7 @@ const struct Curl_handler Curl_handler_pop3s = {
   pop3_disconnect,                  /* disconnect */
   ZERO_NULL,                        /* readwrite */
   PORT_POP3S,                       /* defport */
-  CURLPROTO_POP3 | CURLPROTO_POP3S, /* protocol */
+  CURLPROTO_POP3S,                  /* protocol */
   PROTOPT_CLOSEACTION | PROTOPT_SSL
   | PROTOPT_NOURLQUERY              /* flags */
 };
@@ -320,6 +321,9 @@ static void state(struct connectdata *conn, pop3state newstate)
     "AUTH_DIGESTMD5_RESP",
     "AUTH_NTLM",
     "AUTH_NTLM_TYPE2MSG",
+    "AUTH_GSSAPI",
+    "AUTH_GSSAPI_TOKEN",
+    "AUTH_GSSAPI_NO_DATA",
     "AUTH_XOAUTH2",
     "AUTH_CANCEL",
     "AUTH_FINAL",
@@ -978,10 +982,6 @@ static CURLcode pop3_state_auth_digest_resp(struct connectdata *conn,
   char *rplyb64 = NULL;
   size_t len = 0;
 
-  char nonce[64];
-  char realm[128];
-  char algorithm[64];
-
   (void)instate; /* no use for this yet */
 
   if(pop3code != '+') {
@@ -992,29 +992,25 @@ static CURLcode pop3_state_auth_digest_resp(struct connectdata *conn,
   /* Get the challenge message */
   pop3_get_message(data->state.buffer, &chlg64);
 
-  /* Decode the challange message */
-  result = Curl_sasl_decode_digest_md5_message(chlg64, nonce, sizeof(nonce),
-                                               realm, sizeof(realm),
-                                               algorithm, sizeof(algorithm));
-  if(result || strcmp(algorithm, "md5-sess") != 0) {
-    /* Send the cancellation */
-    result = Curl_pp_sendf(&conn->proto.pop3c.pp, "%s", "*");
-
-    if(!result)
-      state(conn, POP3_AUTH_CANCEL);
-  }
-  else {
-    /* Create the response message */
-    result = Curl_sasl_create_digest_md5_message(data, nonce, realm,
-                                                 conn->user, conn->passwd,
-                                                 "pop", &rplyb64, &len);
-    if(!result && rplyb64) {
-      /* Send the response */
-      result = Curl_pp_sendf(&conn->proto.pop3c.pp, "%s", rplyb64);
+  /* Create the response message */
+  result = Curl_sasl_create_digest_md5_message(data, chlg64,
+                                               conn->user, conn->passwd,
+                                               "pop", &rplyb64, &len);
+  if(result) {
+    if(result == CURLE_BAD_CONTENT_ENCODING) {
+      /* Send the cancellation */
+      result = Curl_pp_sendf(&conn->proto.pop3c.pp, "%s", "*");
 
       if(!result)
-        state(conn, POP3_AUTH_DIGESTMD5_RESP);
+        state(conn, POP3_AUTH_CANCEL);
     }
+  }
+  else {
+    /* Send the response */
+    result = Curl_pp_sendf(&conn->proto.pop3c.pp, "%s", rplyb64);
+
+    if(!result)
+      state(conn, POP3_AUTH_DIGESTMD5_RESP);
   }
 
   Curl_safefree(rplyb64);
@@ -1130,6 +1126,158 @@ static CURLcode pop3_state_auth_ntlm_type2msg_resp(struct connectdata *conn,
   }
 
   Curl_safefree(type3msg);
+
+  return result;
+}
+#endif
+
+#if defined(USE_WINDOWS_SSPI)
+/* For AUTH GSSAPI (without initial response) responses */
+static CURLcode pop3_state_auth_gssapi_resp(struct connectdata *conn,
+                                            int pop3code,
+                                            pop3state instate)
+{
+  CURLcode result = CURLE_OK;
+  struct SessionHandle *data = conn->data;
+  struct pop3_conn *pop3c = &conn->proto.pop3c;
+  size_t len = 0;
+  char *respmsg = NULL;
+
+  (void)instate; /* no use for this yet */
+
+  if(pop3code != '+') {
+    failf(data, "Access denied: %d", pop3code);
+    result = CURLE_LOGIN_DENIED;
+  }
+  else {
+    /* Create the initial response message */
+    result = Curl_sasl_create_gssapi_user_message(data, conn->user,
+                                                  conn->passwd, "pop",
+                                                  pop3c->mutual_auth,
+                                                  NULL, &conn->krb5,
+                                                  &respmsg, &len);
+    if(!result && respmsg) {
+      /* Send the message */
+      result = Curl_pp_sendf(&pop3c->pp, "%s", respmsg);
+
+      if(!result)
+        state(conn, POP3_AUTH_GSSAPI_TOKEN);
+    }
+  }
+
+  Curl_safefree(respmsg);
+
+  return result;
+}
+
+/* For AUTH GSSAPI user token responses */
+static CURLcode pop3_state_auth_gssapi_token_resp(struct connectdata *conn,
+                                                  int pop3code,
+                                                  pop3state instate)
+{
+  CURLcode result = CURLE_OK;
+  struct SessionHandle *data = conn->data;
+  struct pop3_conn *pop3c = &conn->proto.pop3c;
+  char *chlgmsg = NULL;
+  char *respmsg = NULL;
+  size_t len = 0;
+
+  (void)instate; /* no use for this yet */
+
+  if(pop3code != '+') {
+    failf(data, "Access denied: %d", pop3code);
+    result = CURLE_LOGIN_DENIED;
+  }
+  else {
+    /* Get the challenge message */
+    pop3_get_message(data->state.buffer, &chlgmsg);
+
+    if(pop3c->mutual_auth)
+      /* Decode the user token challenge and create the optional response
+         message */
+      result = Curl_sasl_create_gssapi_user_message(data, NULL, NULL, NULL,
+                                                    pop3c->mutual_auth,
+                                                    chlgmsg, &conn->krb5,
+                                                    &respmsg, &len);
+    else
+      /* Decode the security challenge and create the response message */
+      result = Curl_sasl_create_gssapi_security_message(data, chlgmsg,
+                                                        &conn->krb5,
+                                                        &respmsg, &len);
+
+    if(result) {
+      if(result == CURLE_BAD_CONTENT_ENCODING) {
+        /* Send the cancellation */
+        result = Curl_pp_sendf(&pop3c->pp, "%s", "*");
+
+        if(!result)
+          state(conn, POP3_AUTH_CANCEL);
+      }
+    }
+    else {
+      /* Send the response */
+      if(respmsg)
+        result = Curl_pp_sendf(&pop3c->pp, "%s", respmsg);
+      else
+        result = Curl_pp_sendf(&pop3c->pp, "%s", "");
+
+      if(!result)
+        state(conn, (pop3c->mutual_auth ? POP3_AUTH_GSSAPI_NO_DATA :
+                                          POP3_AUTH_FINAL));
+    }
+  }
+
+  Curl_safefree(respmsg);
+
+  return result;
+}
+
+/* For AUTH GSSAPI no data responses */
+static CURLcode pop3_state_auth_gssapi_no_data_resp(struct connectdata *conn,
+                                                    int pop3code,
+                                                    pop3state instate)
+{
+  CURLcode result = CURLE_OK;
+  struct SessionHandle *data = conn->data;
+  char *chlgmsg = NULL;
+  char *respmsg = NULL;
+  size_t len = 0;
+
+  (void)instate; /* no use for this yet */
+
+  if(pop3code != '+') {
+    failf(data, "Access denied: %d", pop3code);
+    result = CURLE_LOGIN_DENIED;
+  }
+  else {
+    /* Get the challenge message */
+    pop3_get_message(data->state.buffer, &chlgmsg);
+
+    /* Decode the security challenge and create the security message */
+    result = Curl_sasl_create_gssapi_security_message(data, chlgmsg,
+                                                      &conn->krb5,
+                                                      &respmsg, &len);
+    if(result) {
+      if(result == CURLE_BAD_CONTENT_ENCODING) {
+        /* Send the cancellation */
+        result = Curl_pp_sendf(&conn->proto.pop3c.pp, "%s", "*");
+
+        if(!result)
+          state(conn, POP3_AUTH_CANCEL);
+      }
+    }
+    else {
+      /* Send the response */
+      if(respmsg) {
+        result = Curl_pp_sendf(&conn->proto.pop3c.pp, "%s", respmsg);
+
+        if(!result)
+          state(conn, POP3_AUTH_FINAL);
+      }
+    }
+  }
+
+  Curl_safefree(respmsg);
 
   return result;
 }
@@ -1443,6 +1591,21 @@ static CURLcode pop3_statemach_act(struct connectdata *conn)
       break;
 #endif
 
+#if defined(USE_WINDOWS_SSPI)
+    case POP3_AUTH_GSSAPI:
+      result = pop3_state_auth_gssapi_resp(conn, pop3code, pop3c->state);
+      break;
+
+    case POP3_AUTH_GSSAPI_TOKEN:
+      result = pop3_state_auth_gssapi_token_resp(conn, pop3code, pop3c->state);
+      break;
+
+    case POP3_AUTH_GSSAPI_NO_DATA:
+      result = pop3_state_auth_gssapi_no_data_resp(conn, pop3code,
+                                                   pop3c->state);
+      break;
+#endif
+
     case POP3_AUTH_XOAUTH2:
       result = pop3_state_auth_xoauth2_resp(conn, pop3code, pop3c->state);
       break;
@@ -1555,7 +1718,7 @@ static CURLcode pop3_connect(struct connectdata *conn, bool *done)
   *done = FALSE; /* default to not done yet */
 
   /* We always support persistent connections in POP3 */
-  conn->bits.close = FALSE;
+  connkeep(conn, "POP3 default");
 
   /* Set the default response time-out */
   pp->response_time = RESP_TIMEOUT;
@@ -1609,7 +1772,7 @@ static CURLcode pop3_done(struct connectdata *conn, CURLcode status,
     return CURLE_OK;
 
   if(status) {
-    conn->bits.close = TRUE; /* marked for closure */
+    connclose(conn, "POP3 done with bad status");
     result = status;         /* use the already set error code */
   }
 
@@ -1772,8 +1935,8 @@ static CURLcode pop3_regular_transfer(struct connectdata *conn,
   /* Set the progress data */
   Curl_pgrsSetUploadCounter(data, 0);
   Curl_pgrsSetDownloadCounter(data, 0);
-  Curl_pgrsSetUploadSize(data, 0);
-  Curl_pgrsSetDownloadSize(data, 0);
+  Curl_pgrsSetUploadSize(data, -1);
+  Curl_pgrsSetDownloadSize(data, -1);
 
   /* Carry out the perform */
   result = pop3_perform(conn, &connected, dophase_done);
@@ -1958,6 +2121,25 @@ static CURLcode pop3_calc_sasl_details(struct connectdata *conn,
 
   /* Calculate the supported authentication mechanism, by decreasing order of
      security, as well as the initial response where appropriate */
+#if defined(USE_WINDOWS_SSPI)
+  if((pop3c->authmechs & SASL_MECH_GSSAPI) &&
+      (pop3c->prefmech & SASL_MECH_GSSAPI)) {
+    pop3c->mutual_auth = FALSE; /* TODO: Calculate mutual authentication */
+
+    *mech = SASL_MECH_STRING_GSSAPI;
+    *state1 = POP3_AUTH_GSSAPI;
+    *state2 = POP3_AUTH_GSSAPI_TOKEN;
+    pop3c->authused = SASL_MECH_GSSAPI;
+
+    if(data->set.sasl_ir)
+      result = Curl_sasl_create_gssapi_user_message(data, conn->user,
+                                                    conn->passwd, "pop",
+                                                    pop3c->mutual_auth,
+                                                    NULL, &conn->krb5,
+                                                    initresp, len);
+  }
+  else
+#endif
 #ifndef CURL_DISABLE_CRYPTO_AUTH
   if((pop3c->authmechs & SASL_MECH_DIGEST_MD5) &&
       (pop3c->prefmech & SASL_MECH_DIGEST_MD5)) {

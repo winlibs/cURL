@@ -80,6 +80,7 @@ FAQ
   4.17 Non-functional connect timeouts on Windows
   4.18 file:// URLs containing drive letters (Windows, NetWare)
   4.19 Why doesn't cURL return an error when the network cable is unplugged?
+  4.20 curl doesn't return error for HTTP non-200 responses!
 
  5. libcurl Issues
   5.1 Is libcurl thread-safe?
@@ -99,6 +100,7 @@ FAQ
   5.15 How do I get an FTP directory listing?
   5.16 I want a different time-out!
   5.17 Can I write a server with libcurl?
+  5.18 Does libcurl use threads?
 
  6. License Issues
   6.1 I have a GPL program, can I use the libcurl library?
@@ -135,11 +137,11 @@ FAQ
     POP3S, RTMP, RTSP, SCP, SFTP, SMTP, SMTPS, TELNET and TFTP.
 
     libcurl supports HTTPS certificates, HTTP POST, HTTP PUT, FTP uploading,
-    kerberos, HTTP form based upload, proxies, cookies, user+password
+    Kerberos, SPNEGO, HTTP form based upload, proxies, cookies, user+password
     authentication, file transfer resume, http proxy tunneling and more!
 
     libcurl is highly portable, it builds and works identically on numerous
-    platforms, including Solaris, NetBSD, FreeBSD, OpenBSD, Darwin, HPUX,
+    platforms, including Solaris, NetBSD, FreeBSD, OpenBSD, Darwin, HP-UX,
     IRIX, AIX, Tru64, Linux, UnixWare, HURD, Windows, Amiga, OS/2, BeOS, Mac
     OS X, Ultrix, QNX, OpenVMS, RISC OS, Novell NetWare, DOS, Symbian, OSF,
     Android, Minix, IBM TPF and more...
@@ -237,10 +239,10 @@ FAQ
   1.6 What do you get for making curl?
 
   Project cURL is entirely free and open. No person gets paid for developing
-  (lib)curl on full or even part time. We do this voluntarily on our spare
-  time. Occasionally companies pay individual developers to work on curl, but
-  that's up to each company and developer. It is not controlled by nor
-  supervised in any way by the project.
+  curl on full time. We do this voluntarily, mostly on spare time.
+  Occasionally companies pay individual developers to work on curl, but that's
+  up to each company and developer. It is not controlled by nor supervised in
+  any way by the project.
 
   We still get help from companies. Haxx provides web site, bandwidth, mailing
   lists etc, sourceforge.net hosts project services we take advantage from,
@@ -1085,7 +1087,31 @@ FAQ
   immediately if its lone network connection goes down.  That can be achieved
   by having the application monitor the network connection on its own using an
   OS-specific mechanism, then signalling libcurl to abort (see also item 5.13).
-  
+
+  4.20 curl doesn't return error for HTTP non-200 responses!
+
+  Correct. Unless you use -f (--fail).
+
+  When doing HTTP transfers, curl will perform exactly what you're asking it
+  to do and if successful it will not return an error. You can use curl to
+  test your web server's "file not found" page (that gets 404 back), you can
+  use it to check your authentication protected web pages (that get a 401
+  back) and so on.
+
+  The specific HTTP response code does not constitute a problem or error for
+  curl. It simply sends and delivers HTTP as you asked and if that worked,
+  everything is fine and dandy. The response code is generally providing more
+  higher level error information that curl doesn't care about. The error was
+  not in the HTTP transfer.
+
+  If you want your command line to treat error codes in the 400 and up range
+  as errors and thus return a non-zero value and possibly show an error
+  message, curl has a dedicated option for that: -f (CURLOPT_FAILONERROR in
+  libcurl speak).
+
+  You can also use the -w option and the variable %{response_code} to extract
+  the exact response code that was return in the response.
+
 
 5. libcurl Issues
 
@@ -1098,6 +1124,12 @@ FAQ
   your system has such.  Note that you must never share the same handle in
   multiple threads.
 
+  libcurl's implementation of timeouts might use signals (depending on what it
+  was built to use for name resolving), and signal handling is generally not
+  thread-safe.  Multi-threaded Applicationss that call libcurl from different
+  threads (on different handles) might want to use CURLOPT_NOSIGNAL, e.g.:
+
+    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, true);
 
   If you use a OpenSSL-powered libcurl in a multi-threaded environment, you
   need to provide one or two locking functions:
@@ -1365,6 +1397,19 @@ FAQ
   server for. And there are really good stand-alone ones that have been tested
   and proven for many years. There's no need for you to reinvent them!
 
+  5.18 Does libcurl use threads?
+
+  Put simply: no, libcurl will execute in the same thread you call it in. All
+  callbacks will be called in the same thread as the one you call libcurl in.
+
+  If you want to avoid your thread to be blocked by the libcurl call, you make
+  sure you use the non-blocking API which will do transfers asynchronously -
+  but still in the same single thread.
+
+  libcurl will potentially internally use threads for name resolving, if it
+  was built to work like that, but in those cases it'll create the child
+  threads by itself and they will only be used and then killed internally by
+  libcurl and never exposed to the outside.
 
 6. License Issues
 

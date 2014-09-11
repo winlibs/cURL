@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -29,7 +29,7 @@
 
 /* see http://tools.ietf.org/html/draft-ietf-tls-applayerprotoneg-04 */
 #define ALPN_HTTP_1_1_LENGTH 8
-#define ALPN_HTTP_1_1 "http/1.0"
+#define ALPN_HTTP_1_1 "http/1.1"
 
 bool Curl_ssl_config_matches(struct ssl_config_data* data,
                              struct ssl_config_data* needle);
@@ -38,6 +38,8 @@ bool Curl_clone_ssl_config(struct ssl_config_data* source,
 void Curl_free_ssl_config(struct ssl_config_data* sslc);
 
 unsigned int Curl_rand(struct SessionHandle *);
+
+int Curl_ssl_backend(void);
 
 #ifdef USE_SSL
 int Curl_ssl_init(void);
@@ -88,9 +90,10 @@ void Curl_ssl_kill_session(struct curl_ssl_session *session);
 /* delete a session from the cache */
 void Curl_ssl_delsessionid(struct connectdata *conn, void *ssl_sessionid);
 
-/* get N random bytes into the buffer */
-void Curl_ssl_random(struct SessionHandle *data, unsigned char *buffer,
-                     size_t length);
+/* get N random bytes into the buffer, return 0 if a find random is filled
+   in */
+int Curl_ssl_random(struct SessionHandle *data, unsigned char *buffer,
+                    size_t length);
 void Curl_ssl_md5sum(unsigned char *tmp, /* input */
                      size_t tmplen,
                      unsigned char *md5sum, /* output */
@@ -98,9 +101,6 @@ void Curl_ssl_md5sum(unsigned char *tmp, /* input */
 
 #define SSL_SHUTDOWN_TIMEOUT 10000 /* ms */
 
-#ifdef have_curlssl_random
-#define HAVE_CURL_SSL_RANDOM
-#endif
 #ifdef have_curlssl_md5sum
 #define HAVE_CURL_SSL_MD5SUM
 #endif
@@ -125,6 +125,8 @@ void Curl_ssl_md5sum(unsigned char *tmp, /* input */
 #define Curl_ssl_free_certinfo(x) Curl_nop_stmt
 #define Curl_ssl_connect_nonblocking(x,y,z) CURLE_NOT_BUILT_IN
 #define Curl_ssl_kill_session(x) Curl_nop_stmt
+#define Curl_ssl_random(x,y,z) CURLE_NOT_BUILT_IN
+#define CURL_SSL_BACKEND CURLSSLBACKEND_NONE
 #endif
 
 #endif /* HEADER_CURL_VTLS_H */

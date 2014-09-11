@@ -17,7 +17,7 @@
  1.4 signal-based resolver timeouts
  1.5 get rid of PATH_MAX
  1.6 Modified buffer size approach
- 1.7 Detect when called from witin callbacks
+ 1.7 Detect when called from within callbacks
  1.8 Allow SSL (HTTPS) to proxy
 
  2. libcurl - multi interface
@@ -25,7 +25,7 @@
  2.2 Fix HTTP Pipelining for PUT
 
  3. Documentation
- 3.1  More and better
+ 3.1 Update date and version in man pages
 
  4. FTP
  4.1 HOST
@@ -33,6 +33,7 @@
  4.3 Earlier bad letter detection
  4.4 REST for large files
  4.5 ASCII support
+ 4.6 GSSAPI via Windows SSPI
 
  5. HTTP
  5.1 Better persistency for HTTP 1.0
@@ -40,6 +41,7 @@
  5.3 Rearrange request header order
  5.4 SPDY
  5.5 auth= in URLs
+ 5.6 Digest via Windows SSPI
 
  6. TELNET
  6.1 ditch stdin
@@ -80,6 +82,7 @@
 
  14. SASL
  14.1 Other authentication mechanisms
+ 14.2 GSSAPI via GSS-API libraries
  
  15. Client
  15.1 sync
@@ -88,7 +91,6 @@
  15.4 simultaneous parallel transfers
  15.5 provide formpost headers
  15.6 warning when setting an option
- 15.7 IPv6 addresses with globbing
 
  16. Build
  16.1 roffit
@@ -98,9 +100,10 @@
  17.2 nicer lacking perl message
  17.3 more protocols supported
  17.4 more platforms supported
+ 17.5 Add support for concurrent connections
 
  18. Next SONAME bump
- 18.1 http-style HEAD output for ftp
+ 18.1 http-style HEAD output for FTP
  18.2 combine error codes
  18.3 extend CURLOPT_SOCKOPTFUNCTION prototype
 
@@ -174,7 +177,7 @@
  Dynamically allocate buffer size depending on protocol in use in combination
  with freeing it after each individual transfer? Other suggestions?
 
-1.7 Detect when called from witin callbacks
+1.7 Detect when called from within callbacks
 
  We should set a state variable before calling callbacks, so that we
  subsequently can add code within libcurl that returns error if called within
@@ -186,6 +189,8 @@
  by Chrome already:
  http://www.chromium.org/developers/design-documents/secure-web-proxy
 
+ ...and by Firefox soon:
+ https://bugzilla.mozilla.org/show_bug.cgi?id=378637
 
 2. libcurl - multi interface
 
@@ -211,18 +216,20 @@
 
 3. Documentation
 
-3.1  More and better
+3.1 Update date and version in man pages
 
- Exactly
+ 'maketgz' or another suitable script could update the .TH sections of the man
+ pages at release time to use the current date and curl/libcurl version
+ number.
 
 4. FTP
 
 4.1 HOST
 
- HOST is a suggested command in the works for a client to tell which host name
- to use, to offer FTP servers named-based virtual hosting:
+ HOST is a command for a client to tell which host name to use, to offer FTP
+ servers named-based virtual hosting:
 
- http://tools.ietf.org/html/draft-hethmon-mcmurray-ftp-hosts-11
+ http://tools.ietf.org/html/rfc7151
 
 4.2 Alter passive/active on failure and retry
 
@@ -233,7 +240,7 @@
 
 4.3 Earlier bad letter detection
 
- Make the detection of (bad) %0d and %0a codes in FTP url parts earlier in the
+ Make the detection of (bad) %0d and %0a codes in FTP URL parts earlier in the
  process to avoid doing a resolve and connect in vain.
 
 4.4 REST for large files
@@ -246,6 +253,12 @@
 
  FTP ASCII transfers do not follow RFC959. They don't convert the data
  accordingly.
+
+4.6 GSSAPI via Windows SSPI
+
+In addition to currently supporting the SASL GSSAPI mechanism (Kerberos V5)
+via third-party GSS-API libraries, such as Heimdal or MIT Kerberos, also add
+support for GSSAPI authentication via Windows SSPI.
 
 5. HTTP
 
@@ -287,10 +300,16 @@
 
  For example:
 
- http://test:pass;auth=NTLM@example.com would be equivalent to specifing --user
+ http://test:pass;auth=NTLM@example.com would be equivalent to specifying --user
  test:pass;auth=NTLM or --user test:pass --ntlm from the command line. 
 
  Additionally this should be implemented for proxy base URLs as well.
+
+5.6 Digest via Windows SSPI
+
+ libcurl already supports HTTP Digest Authentication via native routines as well
+ as SASL Digest via both Windows SSPI and native routines. In addition to this
+ libcurl should also support HTTP Digest Authentication via Windows SSPI.
 
 6. TELNET
 
@@ -352,7 +371,7 @@ to provide the data to send.
  Currently the LDAP module only supports ldap_simple_bind_s() in order to bind
  to an LDAP server. However, this function sends username and password details
  using the simple authentication mechanism (as clear text). However, it should
- be possible to use ldap_bind_s() instead specifing the security context
+ be possible to use ldap_bind_s() instead specifying the security context
  information ourselves.
 
 11. New protocols
@@ -383,7 +402,7 @@ to provide the data to send.
 12.4 Cache OpenSSL contexts
 
  "Look at SSL cafile - quick traces look to me like these are done on every
- request as well, when they should only be necessary once per ssl context (or
+ request as well, when they should only be necessary once per SSL context (or
  once per handle)". The major improvement we can rather easily do is to make
  sure we don't create and kill a new SSL "context" for every request, but
  instead make one for every connection and re-use that SSL context in the same
@@ -436,7 +455,13 @@ to provide the data to send.
 
 14.1 Other authentication mechanisms
 
- Add support for GSSAPI to SMTP, POP3 and IMAP.
+ Add support for other authentication mechanisms such as EXTERNAL, OLP,
+ GSS-SPNEGO and others.
+ 
+14.2 GSSAPI via GSS-API libraries
+
+ Add support for GSSAPI authentication via third-party GSS-API libraries, such
+ as Heimdal and MIT Kerberos.
 
 15. Client
 
@@ -489,13 +514,6 @@ to provide the data to send.
   This can be useful to tell when support for a particular feature hasn't been
   compiled into the library.
 
-15.7 IPv6 addresses with globbing
-
-  Currently the command line client needs to get url globbing disabled (with
-  -g) for it to support IPv6 numerical addresses. This is a rather silly flaw
-  that should be corrected. It probably involves a smarter detection of the
-  '[' and ']' letters.
-
 16. Build
 
 16.1 roffit
@@ -518,7 +536,7 @@ to provide the data to send.
 
 17.3 more protocols supported
 
- Extend the test suite to include more protocols. The telnet could just do ftp
+ Extend the test suite to include more protocols. The telnet could just do FTP
  or http operations (for which we have test servers).
 
 17.4 more platforms supported
@@ -526,12 +544,26 @@ to provide the data to send.
  Make the test suite work on more platforms. OpenBSD and Mac OS. Remove
  fork()s and it should become even more portable.
 
+17.5 Add support for concurrent connections
+
+ Tests 836, 882 and 938 were designed to verify that separate connections aren't
+ used when using different login credentials in protocols that shouldn't re-use
+ a connection under such circumstances.
+
+ Unfortunately, ftpserver.pl doesn't appear to support multiple concurrent
+ connections. The read while() loop seems to loop until it receives a disconnect
+ from the client, where it then enters the waiting for connections loop. When
+ the client opens a second connection to the server, the first connection hasn't
+ been dropped (unless it has been forced - which we shouldn't do in these tests)
+ and thus the wait for connections loop is never entered to receive the second
+ connection.
+
 18. Next SONAME bump
 
-18.1 http-style HEAD output for ftp
+18.1 http-style HEAD output for FTP
 
  #undef CURL_FTP_HTTPSTYLE_HEAD in lib/ftp.c to remove the HTTP-style headers
- from being output in NOBODY requests over ftp
+ from being output in NOBODY requests over FTP
 
 18.2 combine error codes
 
@@ -629,7 +661,7 @@ to provide the data to send.
  but instead often restricts how the form functions can or can't be modified.
 
  Changing them to return a private handle will benefit the implementation and
- allow us much greater freedoms while still maintining a solid API and ABI.
+ allow us much greater freedoms while still maintaining a solid API and ABI.
 
 19.9 have form functions use CURL handle argument
 
@@ -643,7 +675,7 @@ to provide the data to send.
 
  Rather than use the URL to specify the mail client string to present in the
  HELO and EHLO commands, libcurl should support a new CURLOPT specifically for
- specifing this data as the URL is non-standard and to be honest a bit of a
+ specifying this data as the URL is non-standard and to be honest a bit of a
  hack ;-)
 
  Please see the following thread for more information:

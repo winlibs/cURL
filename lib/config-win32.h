@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -53,6 +53,11 @@
 #define HAVE_GETOPT_H 1
 #endif
 
+/* Define to 1 if you have the <inttypes.h> header file. */
+#if defined(_MSC_VER) && (_MSC_VER >= 1800)
+#define HAVE_INTTYPES_H 1
+#endif
+
 /* Define if you have the <io.h> header file. */
 #define HAVE_IO_H 1
 
@@ -86,6 +91,11 @@
 
 /* Define if you have the <ssl.h> header file. */
 /* #define HAVE_SSL_H 1 */
+
+/* Define to 1 if you have the <stdbool.h> header file. */
+#if defined(_MSC_VER) && (_MSC_VER >= 1800)
+#define HAVE_STDBOOL_H 1
+#endif
 
 /* Define if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
@@ -159,6 +169,11 @@
 
 /* Define if you can safely include both <sys/time.h> and <time.h>. */
 /* #define TIME_WITH_SYS_TIME 1 */
+
+/* Define to 1 if bool is an available type. */
+#if defined(_MSC_VER) && (_MSC_VER >= 1800)
+#define HAVE_BOOL_T 1
+#endif
 
 /* ---------------------------------------------------------------- */
 /*                             FUNCTIONS                            */
@@ -250,7 +265,8 @@
 #define HAVE_STRSTR 1
 
 /* Define if you have the strtoll function. */
-#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__POCC__)
+#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__POCC__) || \
+    (defined(_MSC_VER) && (_MSC_VER >= 1800))
 #define HAVE_STRTOLL 1
 #endif
 
@@ -465,7 +481,8 @@
 #endif
 
 /* Define if the compiler supports the 'long long' data type. */
-#if defined(__MINGW32__) || defined(__WATCOMC__)
+#if defined(__MINGW32__) || defined(__WATCOMC__) || \
+    (defined(_MSC_VER) && (_MSC_VER >= 1310))
 #define HAVE_LONGLONG 1
 #endif
 

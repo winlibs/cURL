@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -208,7 +208,7 @@ const struct Curl_handler Curl_handler_ftps = {
   ftp_disconnect,                  /* disconnect */
   ZERO_NULL,                       /* readwrite */
   PORT_FTPS,                       /* defport */
-  CURLPROTO_FTP | CURLPROTO_FTPS,  /* protocol */
+  CURLPROTO_FTPS,                  /* protocol */
   PROTOPT_SSL | PROTOPT_DUAL | PROTOPT_CLOSEACTION |
   PROTOPT_NEEDSPWD | PROTOPT_NOURLQUERY /* flags */
 };
@@ -507,7 +507,7 @@ static CURLcode InitiateTransfer(struct connectdata *conn)
     /* When we know we're uploading a specified file, we can get the file
        size prior to the actual upload. */
 
-    Curl_pgrsSetUploadSize(data, data->set.infilesize);
+    Curl_pgrsSetUploadSize(data, data->state.infilesize);
 
     /* set the SO_SNDBUF for the secondary socket for those who need it */
     Curl_sndbufset(conn->sock[SECONDARYSOCKET]);
@@ -877,13 +877,30 @@ static int ftp_domore_getsock(struct connectdata *conn, curl_socket_t *socks,
    */
 
   if(FTP_STOP == ftpc->state) {
+    int bits = GETSOCK_READSOCK(0);
+
     /* if stopped and still in this state, then we're also waiting for a
        connect on the secondary connection */
     socks[0] = conn->sock[FIRSTSOCKET];
-    socks[1] = conn->sock[SECONDARYSOCKET];
 
-    return GETSOCK_READSOCK(FIRSTSOCKET) |
-      GETSOCK_WRITESOCK(SECONDARYSOCKET);
+    if(!conn->data->set.ftp_use_port) {
+      int s;
+      int i;
+      /* PORT is used to tell the server to connect to us, and during that we
+         don't do happy eyeballs, but we do if we connect to the server */
+      for(s=1, i=0; i<2; i++) {
+        if(conn->tempsock[i] != CURL_SOCKET_BAD) {
+          socks[s] = conn->tempsock[i];
+          bits |= GETSOCK_WRITESOCK(s++);
+        }
+      }
+    }
+    else {
+      socks[1] = conn->sock[SECONDARYSOCKET];
+      bits |= GETSOCK_WRITESOCK(1);
+    }
+
+    return bits;
   }
   else
     return Curl_pp_getsock(&conn->proto.ftpc.pp, socks, numsocks);
@@ -1666,10 +1683,10 @@ static CURLcode ftp_state_ul_setup(struct connectdata *conn,
       }
     }
     /* now, decrease the size of the read */
-    if(data->set.infilesize>0) {
-      data->set.infilesize -= data->state.resume_from;
+    if(data->state.infilesize>0) {
+      data->state.infilesize -= data->state.resume_from;
 
-      if(data->set.infilesize <= 0) {
+      if(data->state.infilesize <= 0) {
         infof(data, "File already completely uploaded\n");
 
         /* no data to transfer */
@@ -3147,7 +3164,7 @@ static CURLcode ftp_connect(struct connectdata *conn,
   *done = FALSE; /* default to not done yet */
 
   /* We always support persistent connections on ftp */
-  conn->bits.close = FALSE;
+  connkeep(conn, "FTP default");
 
   pp->response_time = RESP_TIMEOUT; /* set default response time-out */
   pp->statemach_act = ftp_statemach_act;
@@ -3231,7 +3248,7 @@ static CURLcode ftp_done(struct connectdata *conn, CURLcode status,
     ftpc->ctl_valid = FALSE;
     ftpc->cwdfail = TRUE; /* set this TRUE to prevent us to remember the
                              current path, as this connection is going */
-    conn->bits.close = TRUE; /* marked for closure */
+    connclose(conn, "FTP ended with bad error code");
     result = status;      /* use the already set error code */
     break;
   }
@@ -3255,7 +3272,7 @@ static CURLcode ftp_done(struct connectdata *conn, CURLcode status,
     if(!result)
       result = CURLE_OUT_OF_MEMORY;
     ftpc->ctl_valid = FALSE; /* mark control connection as bad */
-    conn->bits.close = TRUE; /* mark for connection closure */
+    connclose(conn, "FTP: out of memory!"); /* mark for connection closure */
     ftpc->prevpath = NULL; /* no path remembering */
   }
   else {
@@ -3298,7 +3315,7 @@ static CURLcode ftp_done(struct connectdata *conn, CURLcode status,
         failf(data, "Failure sending ABOR command: %s",
               curl_easy_strerror(result));
         ftpc->ctl_valid = FALSE; /* mark control connection as bad */
-        conn->bits.close = TRUE; /* mark for connection closure */
+        connclose(conn, "ABOR command failed"); /* connection closure */
       }
     }
 
@@ -3337,7 +3354,7 @@ static CURLcode ftp_done(struct connectdata *conn, CURLcode status,
     if(!nread && (CURLE_OPERATION_TIMEDOUT == result)) {
       failf(data, "control connection looks dead");
       ftpc->ctl_valid = FALSE; /* mark control connection as bad */
-      conn->bits.close = TRUE; /* mark for closure */
+      connclose(conn, "Timeout or similar in FTP DONE operation"); /* close */
     }
 
     if(result)
@@ -3347,7 +3364,7 @@ static CURLcode ftp_done(struct connectdata *conn, CURLcode status,
       /* we have just sent ABOR and there is no reliable way to check if it was
        * successful or not; we have to close the connection now */
       infof(data, "partial download completed, closing connection\n");
-      conn->bits.close = TRUE; /* mark for closure */
+      connclose(conn, "Partial download with no ability to check");
       return result;
     }
 
@@ -3365,13 +3382,13 @@ static CURLcode ftp_done(struct connectdata *conn, CURLcode status,
        use checking further */
     ;
   else if(data->set.upload) {
-    if((-1 != data->set.infilesize) &&
-       (data->set.infilesize != *ftp->bytecountp) &&
+    if((-1 != data->state.infilesize) &&
+       (data->state.infilesize != *ftp->bytecountp) &&
        !data->set.crlf &&
        (ftp->transfer == FTPTRANSFER_BODY)) {
       failf(data, "Uploaded unaligned file size (%" CURL_FORMAT_CURL_OFF_T
             " out of %" CURL_FORMAT_CURL_OFF_T " bytes)",
-            *ftp->bytecountp, data->set.infilesize);
+            *ftp->bytecountp, data->state.infilesize);
       result = CURLE_PARTIAL_FILE;
     }
   }
@@ -4116,7 +4133,7 @@ static CURLcode ftp_quit(struct connectdata *conn)
       failf(conn->data, "Failure sending QUIT command: %s",
             curl_easy_strerror(result));
       conn->proto.ftpc.ctl_valid = FALSE; /* mark control connection as bad */
-      conn->bits.close = TRUE; /* mark for connection closure */
+      connclose(conn, "QUIT command failed"); /* mark for connection closure */
       state(conn, FTP_STOP);
       return result;
     }
@@ -4453,8 +4470,8 @@ CURLcode ftp_regular_transfer(struct connectdata *conn,
 
   Curl_pgrsSetUploadCounter(data, 0);
   Curl_pgrsSetDownloadCounter(data, 0);
-  Curl_pgrsSetUploadSize(data, 0);
-  Curl_pgrsSetDownloadSize(data, 0);
+  Curl_pgrsSetUploadSize(data, -1);
+  Curl_pgrsSetDownloadSize(data, -1);
 
   ftpc->ctl_valid = TRUE; /* starts good */
 

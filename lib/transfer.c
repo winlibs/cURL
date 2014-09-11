@@ -99,7 +99,7 @@ CURLcode Curl_fillreadbuffer(struct connectdata *conn, int bytes, int *nreadp)
 #ifdef CURL_DOES_CONVERSIONS
   bool sending_http_headers = FALSE;
 
-  if(conn->handler->protocol&(CURLPROTO_HTTP|CURLPROTO_RTSP)) {
+  if(conn->handler->protocol&(PROTO_FAMILY_HTTP|CURLPROTO_RTSP)) {
     const struct HTTP *http = data->req.protop;
 
     if(http->sending == HTTPSEND_REQUEST)
@@ -319,7 +319,7 @@ static int data_pending(const struct connectdata *conn)
        TRUE. The thing is if we read everything, then http2_recv won't
        be called and we cannot signal the HTTP/2 stream has closed. As
        a workaround, we return nonzero here to call http2_recv. */
-    ((conn->handler->protocol&CURLPROTO_HTTP) && conn->httpversion == 20 &&
+    ((conn->handler->protocol&PROTO_FAMILY_HTTP) && conn->httpversion == 20 &&
      conn->proto.httpc.closed);
 #else
     Curl_ssl_data_pending(conn, FIRSTSOCKET);
@@ -527,7 +527,7 @@ static CURLcode readwrite_data(struct SessionHandle *data,
       if(0 == k->bodywrites && !is_empty_data) {
         /* These checks are only made the first time we are about to
            write a piece of the body */
-        if(conn->handler->protocol&(CURLPROTO_HTTP|CURLPROTO_RTSP)) {
+        if(conn->handler->protocol&(PROTO_FAMILY_HTTP|CURLPROTO_RTSP)) {
           /* HTTP-only checks */
 
           if(data->req.newurl) {
@@ -569,7 +569,7 @@ static CURLcode readwrite_data(struct SessionHandle *data,
               infof(data, "Simulate a HTTP 304 response!\n");
               /* we abort the transfer before it is completed == we ruin the
                  re-use ability. Close the connection */
-              conn->bits.close = TRUE;
+              connclose(conn, "Simulated 304 handling");
               return CURLE_OK;
             }
           } /* we have a time condition */
@@ -723,7 +723,7 @@ static CURLcode readwrite_data(struct SessionHandle *data,
             if(!k->ignorebody) {
 
 #ifndef CURL_DISABLE_POP3
-              if(conn->handler->protocol&CURLPROTO_POP3)
+              if(conn->handler->protocol&PROTO_FAMILY_POP3)
                 result = Curl_pop3_write(conn, k->str, nread);
               else
 #endif /* CURL_DISABLE_POP3 */
@@ -854,7 +854,7 @@ static CURLcode readwrite_upload(struct SessionHandle *data,
           break;
         }
 
-        if(conn->handler->protocol&(CURLPROTO_HTTP|CURLPROTO_RTSP)) {
+        if(conn->handler->protocol&(PROTO_FAMILY_HTTP|CURLPROTO_RTSP)) {
           if(http->sending == HTTPSEND_REQUEST)
             /* We're sending the HTTP request headers, not the data.
                Remember that so we don't change the line endings. */
@@ -892,7 +892,7 @@ static CURLcode readwrite_upload(struct SessionHandle *data,
       data->req.upload_present = nread;
 
 #ifndef CURL_DISABLE_SMTP
-      if(conn->handler->protocol & CURLPROTO_SMTP) {
+      if(conn->handler->protocol & PROTO_FAMILY_SMTP) {
         result = Curl_smtp_escape_eob(conn, nread);
         if(result)
           return result;
@@ -926,7 +926,7 @@ static CURLcode readwrite_upload(struct SessionHandle *data,
             if(!data->set.crlf) {
               /* we're here only because FTP is in ASCII mode...
                  bump infilesize for the LF we just added */
-              data->set.infilesize++;
+              data->state.infilesize++;
             }
           }
           else
@@ -967,7 +967,7 @@ static CURLcode readwrite_upload(struct SessionHandle *data,
 
     k->writebytecount += bytes_written;
 
-    if(k->writebytecount == data->set.infilesize) {
+    if(k->writebytecount == data->state.infilesize) {
       /* we have sent all data we were supposed to */
       k->upload_done = TRUE;
       infof(data, "We are completely uploaded and fine\n");
@@ -1719,54 +1719,50 @@ CURLcode Curl_follow(struct SessionHandle *data,
      */
     break;
   case 301: /* Moved Permanently */
-    /* (quote from RFC2616, section 10.3.2):
+    /* (quote from RFC7231, section 6.4.2)
      *
-     * When automatically redirecting a POST request after receiving a 301
-     * status code, some existing HTTP/1.0 user agents will erroneously change
-     * it into a GET request.
+     * Note: For historical reasons, a user agent MAY change the request
+     * method from POST to GET for the subsequent request.  If this
+     * behavior is undesired, the 307 (Temporary Redirect) status code
+     * can be used instead.
      *
      * ----
      *
-     * As most of the important user agents do this obvious RFC2616 violation,
-     * many webservers expect this. So these servers often answers to a POST
-     * request with an error page.  To be sure that libcurl gets the page that
+     * Many webservers expect this, so these servers often answers to a POST
+     * request with an error page. To be sure that libcurl gets the page that
      * most user agents would get, libcurl has to force GET.
      *
-     * This behavior can be overridden with CURLOPT_POSTREDIR.
+     * This behaviour is forbidden by RFC1945 and the obsolete RFC2616, and
+     * can be overridden with CURLOPT_POSTREDIR.
      */
     if((data->set.httpreq == HTTPREQ_POST
         || data->set.httpreq == HTTPREQ_POST_FORM)
        && !(data->set.keep_post & CURL_REDIR_POST_301)) {
-      infof(data,
-            "Violate RFC 2616/10.3.2 and switch from POST to GET\n");
+      infof(data, "Switch from POST to GET\n");
       data->set.httpreq = HTTPREQ_GET;
     }
     break;
   case 302: /* Found */
-    /* (From 10.3.3)
-
-    Note: RFC 1945 and RFC 2068 specify that the client is not allowed
-    to change the method on the redirected request.  However, most
-    existing user agent implementations treat 302 as if it were a 303
-    response, performing a GET on the Location field-value regardless
-    of the original request method. The status codes 303 and 307 have
-    been added for servers that wish to make unambiguously clear which
-    kind of reaction is expected of the client.
-
-    (From 10.3.4)
-
-    Note: Many pre-HTTP/1.1 user agents do not understand the 303
-    status. When interoperability with such clients is a concern, the
-    302 status code may be used instead, since most user agents react
-    to a 302 response as described here for 303.
-
-    This behavior can be overridden with CURLOPT_POSTREDIR
-    */
+    /* (quote from RFC7231, section 6.4.3)
+     *
+     * Note: For historical reasons, a user agent MAY change the request
+     * method from POST to GET for the subsequent request.  If this
+     * behavior is undesired, the 307 (Temporary Redirect) status code
+     * can be used instead.
+     *
+     * ----
+     *
+     * Many webservers expect this, so these servers often answers to a POST
+     * request with an error page. To be sure that libcurl gets the page that
+     * most user agents would get, libcurl has to force GET.
+     *
+     * This behaviour is forbidden by RFC1945 and the obsolete RFC2616, and
+     * can be overridden with CURLOPT_POSTREDIR.
+     */
     if((data->set.httpreq == HTTPREQ_POST
         || data->set.httpreq == HTTPREQ_POST_FORM)
        && !(data->set.keep_post & CURL_REDIR_POST_302)) {
-      infof(data,
-            "Violate RFC 2616/10.3.3 and switch from POST to GET\n");
+      infof(data, "Switch from POST to GET\n");
       data->set.httpreq = HTTPREQ_GET;
     }
     break;
@@ -1818,7 +1814,7 @@ Curl_reconnect_request(struct connectdata **connp)
 
   infof(data, "Re-used connection seems dead, get a new one\n");
 
-  conn->bits.close = TRUE; /* enforce close of this connection */
+  connclose(conn, "Reconnect dead connection"); /* enforce close */
   result = Curl_done(&conn, result, FALSE); /* we are so done with this */
 
   /* conn may no longer be a good pointer, clear it to avoid mistakes by
@@ -1873,7 +1869,7 @@ CURLcode Curl_retry_request(struct connectdata *conn,
   /* if we're talking upload, we can't do the checks below, unless the protocol
      is HTTP as when uploading over HTTP we will still get a response */
   if(data->set.upload &&
-     !(conn->handler->protocol&(CURLPROTO_HTTP|CURLPROTO_RTSP)))
+     !(conn->handler->protocol&(PROTO_FAMILY_HTTP|CURLPROTO_RTSP)))
     return CURLE_OK;
 
   if(/* workaround for broken TLS servers */ data->state.ssl_connect_retry ||
@@ -1891,7 +1887,7 @@ CURLcode Curl_retry_request(struct connectdata *conn,
     if(!*url)
       return CURLE_OUT_OF_MEMORY;
 
-    conn->bits.close = TRUE; /* close this connection */
+    connclose(conn, "retry"); /* close this connection */
     conn->bits.retry = TRUE; /* mark this as a connection we're about
                                 to retry. Marking it this way should
                                 prevent i.e HTTP transfers to return
@@ -1899,7 +1895,7 @@ CURLcode Curl_retry_request(struct connectdata *conn,
                                 transferred! */
 
 
-    if(conn->handler->protocol&CURLPROTO_HTTP) {
+    if(conn->handler->protocol&PROTO_FAMILY_HTTP) {
       struct HTTP *http = data->req.protop;
       if(http->writebytecount)
         return Curl_readrewind(conn);
@@ -1972,7 +1968,7 @@ Curl_setup_transfer(
          state info where we wait for the 100-return code
       */
       if((data->state.expect100header) &&
-         (conn->handler->protocol&CURLPROTO_HTTP) &&
+         (conn->handler->protocol&PROTO_FAMILY_HTTP) &&
          (http->sending == HTTPSEND_BODY)) {
         /* wait with write until we either got 100-continue or a timeout */
         k->exp100 = EXP100_AWAITING_CONTINUE;

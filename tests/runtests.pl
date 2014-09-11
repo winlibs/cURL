@@ -311,6 +311,8 @@ if (!$USER) {
 
 # enable memory debugging if curl is compiled with it
 $ENV{'CURL_MEMDEBUG'} = $memdump;
+$ENV{'CURL_ENTROPY'}="12345678";
+$ENV{'CURL_FORCETIME'}=1; # for debug NTLM magic
 $ENV{'HOME'}=$pwd;
 
 sub catch_zap {
@@ -585,7 +587,7 @@ sub torture {
         else {
             $ret = runclient($testcmd);
         }
-        #logmsg "$_ Returned " . $ret >> 8 . "\n";
+        #logmsg "$_ Returned " . ($ret >> 8) . "\n";
 
         # Now clear the variable again
         delete $ENV{'CURL_MEMLIMIT'} if($ENV{'CURL_MEMLIMIT'});
@@ -599,7 +601,7 @@ sub torture {
 
         # verify that it returns a proper error code, doesn't leak memory
         # and doesn't core dump
-        if($ret & 255) {
+        if(($ret & 255) || ($ret >> 8) >= 128) {
             logmsg " system() returned $ret\n";
             $fail=1;
         }
@@ -1035,7 +1037,7 @@ sub verifyhttptls {
         close(FILE);
     }
 
-    if($data && ($data =~ /GNUTLS/) && open(FILE, "<$pidfile")) {
+    if($data && ($data =~ /(GNUTLS|GnuTLS)/) && open(FILE, "<$pidfile")) {
         $pid=0+<FILE>;
         close(FILE);
         if($pid > 0) {
@@ -1450,6 +1452,7 @@ sub runhttptlsserver {
     $flags .= "--http ";
     $flags .= "--debug 1 " if($debugprotocol);
     $flags .= "--port $port ";
+    $flags .= "--priority NORMAL:+SRP ";
     $flags .= "--srppasswd $srcdir/certs/srp-verifier-db ";
     $flags .= "--srppasswdconf $srcdir/certs/srp-verifier-conf";
 
@@ -2205,37 +2208,10 @@ sub cleardir {
 }
 
 #######################################################################
-# filter out the specified pattern from the given input file and store the
-# results in the given output file
-#
-sub filteroff {
-    my $infile=$_[0];
-    my $filter=$_[1];
-    my $ofile=$_[2];
-
-    open(IN, "<$infile")
-        || return 1;
-
-    open(OUT, ">$ofile")
-        || return 1;
-
-    # logmsg "FILTER: off $filter from $infile to $ofile\n";
-
-    while(<IN>) {
-        $_ =~ s/$filter//;
-        print OUT $_;
-    }
-    close(IN);
-    close(OUT);
-    return 0;
-}
-
-#######################################################################
 # compare test results with the expected output, we might filter off
 # some pattern that is allowed to differ, output test results
 #
 sub compare {
-    # filter off patterns _before_ this comparison!
     my ($testnum, $testname, $subject, $firstref, $secondref)=@_;
 
     my $result = compareparts($firstref, $secondref);
@@ -3014,6 +2990,11 @@ sub singletest {
         my @keywords = getpart("info", "keywords");
         my $match;
         my $k;
+
+        if(!$keywords[0]) {
+            $why = "missing the <keywords> section!";
+        }
+
         for $k (@keywords) {
             chomp $k;
             if ($disabled_keywords{$k}) {
@@ -3132,14 +3113,14 @@ sub singletest {
         if(!$short) {
             if($skipped{$why} <= 3) {
                 # show only the first three skips for each reason
-                logmsg sprintf("test %03d SKIPPED: $why\n", $testnum);
+                logmsg sprintf("test %04d SKIPPED: $why\n", $testnum);
             }
         }
 
         timestampskippedevents($testnum);
         return -1;
     }
-    logmsg sprintf("test %03d...", $testnum) if(!$automakestyle);
+    logmsg sprintf("test %04d...", $testnum) if(!$automakestyle);
 
     # extract the reply data
     my @reply = getpart("reply", "data");
@@ -3647,40 +3628,6 @@ sub singletest {
         $ok .= "-"; # stdout not checked
     }
 
-    if(!$replyattr{'nocheck'} && (@reply || $replyattr{'sendzero'})) {
-        # verify the received data
-        my @out = loadarray($CURLOUT);
-        # get the mode attribute
-        my $filemode=$replyattr{'mode'};
-        if($filemode && ($filemode eq "text") && $has_textaware) {
-            # text mode when running on windows: fix line endings
-            map s/\r\n/\n/g, @reply;
-            map s/\n/\r\n/g, @reply;
-        }
-
-        $res = compare($testnum, $testname, "data", \@out, \@reply);
-        if ($res) {
-            return 1;
-        }
-        $ok .= "d";
-    }
-    else {
-        $ok .= "-"; # data not checked
-    }
-
-    if(@upload) {
-        # verify uploaded data
-        my @out = loadarray("$LOGDIR/upload.$testnum");
-        $res = compare($testnum, $testname, "upload", \@out, \@upload);
-        if ($res) {
-            return 1;
-        }
-        $ok .= "u";
-    }
-    else {
-        $ok .= "-"; # upload not checked
-    }
-
     if(@protocol) {
         # Verify the sent request
         my @out = loadarray($SERVERIN);
@@ -3726,6 +3673,40 @@ sub singletest {
     }
     else {
         $ok .= "-"; # protocol not checked
+    }
+
+    if(!$replyattr{'nocheck'} && (@reply || $replyattr{'sendzero'})) {
+        # verify the received data
+        my @out = loadarray($CURLOUT);
+        # get the mode attribute
+        my $filemode=$replyattr{'mode'};
+        if($filemode && ($filemode eq "text") && $has_textaware) {
+            # text mode when running on windows: fix line endings
+            map s/\r\n/\n/g, @reply;
+            map s/\n/\r\n/g, @reply;
+        }
+
+        $res = compare($testnum, $testname, "data", \@out, \@reply);
+        if ($res) {
+            return 1;
+        }
+        $ok .= "d";
+    }
+    else {
+        $ok .= "-"; # data not checked
+    }
+
+    if(@upload) {
+        # verify uploaded data
+        my @out = loadarray("$LOGDIR/upload.$testnum");
+        $res = compare($testnum, $testname, "upload", \@out, \@upload);
+        if ($res) {
+            return 1;
+        }
+        $ok .= "u";
+    }
+    else {
+        $ok .= "-"; # upload not checked
     }
 
     if(@proxyprot) {
@@ -4857,20 +4838,21 @@ if(!$listonly) {
 }
 
 #######################################################################
-# Fetch all disabled tests
+# Fetch all disabled tests, if there are any
 #
 
-open(D, "<$TESTDIR/DISABLED");
-while(<D>) {
-    if(/^ *\#/) {
-        # allow comments
-        next;
+if(open(D, "<$TESTDIR/DISABLED")) {
+    while(<D>) {
+        if(/^ *\#/) {
+            # allow comments
+            next;
+        }
+        if($_ =~ /(\d+)/) {
+            $disabled{$1}=$1; # disable this test number
+        }
     }
-    if($_ =~ /(\d+)/) {
-        $disabled{$1}=$1; # disable this test number
-    }
+    close(D);
 }
-close(D);
 
 #######################################################################
 # If 'all' tests are requested, find out all test numbers

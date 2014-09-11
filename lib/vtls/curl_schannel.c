@@ -193,7 +193,8 @@ schannel_connect_step1(struct connectdata *conn, int sockindex)
     }
 
     /* allocate memory for the re-usable credential handle */
-    connssl->cred = malloc(sizeof(struct curl_schannel_cred));
+    connssl->cred = (struct curl_schannel_cred *)
+                     malloc(sizeof(struct curl_schannel_cred));
     if(!connssl->cred) {
       failf(data, "schannel: unable to allocate memory");
       return CURLE_OUT_OF_MEMORY;
@@ -236,7 +237,8 @@ schannel_connect_step1(struct connectdata *conn, int sockindex)
                        ISC_REQ_STREAM;
 
   /* allocate memory for the security context handle */
-  connssl->ctxt = malloc(sizeof(struct curl_schannel_ctxt));
+  connssl->ctxt = (struct curl_schannel_ctxt *)
+                   malloc(sizeof(struct curl_schannel_ctxt));
   if(!connssl->ctxt) {
     failf(data, "schannel: unable to allocate memory");
     return CURLE_OUT_OF_MEMORY;
@@ -309,6 +311,9 @@ schannel_connect_step2(struct connectdata *conn, int sockindex)
 
   infof(data, "schannel: SSL/TLS connection with %s port %hu (step 2/3)\n",
         conn->host.name, conn->remote_port);
+
+  if(!connssl->cred || !connssl->ctxt)
+    return CURLE_SSL_CONNECT_ERROR;
 
   /* buffer to store previously received and encrypted data */
   if(connssl->encdata_buffer == NULL) {
@@ -507,6 +512,9 @@ schannel_connect_step3(struct connectdata *conn, int sockindex)
 
   infof(data, "schannel: SSL/TLS connection with %s port %hu (step 3/3)\n",
         conn->host.name, conn->remote_port);
+
+  if(!connssl->cred)
+    return CURLE_SSL_CONNECT_ERROR;
 
   /* check if the required context attributes are met */
   if(connssl->ret_flags != connssl->req_flags) {
@@ -757,7 +765,7 @@ schannel_send(struct connectdata *conn, int sockindex,
 
       this_write = 0;
 
-      timeleft = Curl_timeleft(conn->data, NULL, TRUE);
+      timeleft = Curl_timeleft(conn->data, NULL, FALSE);
       if(timeleft < 0) {
         /* we already got the timeout */
         failf(conn->data, "schannel: timed out sending data "
@@ -1205,6 +1213,23 @@ size_t Curl_schannel_version(char *buffer, size_t size)
   size = snprintf(buffer, size, "WinSSL");
 
   return size;
+}
+
+int Curl_schannel_random(unsigned char *entropy, size_t length)
+{
+  HCRYPTPROV hCryptProv = 0;
+
+  if(!CryptAcquireContext(&hCryptProv, NULL, NULL, PROV_RSA_FULL,
+                          CRYPT_VERIFYCONTEXT | CRYPT_SILENT))
+    return 1;
+
+  if(!CryptGenRandom(hCryptProv, (DWORD)length, entropy)) {
+    CryptReleaseContext(hCryptProv, 0UL);
+    return 1;
+  }
+
+  CryptReleaseContext(hCryptProv, 0UL);
+  return 0;
 }
 
 #ifdef _WIN32_WCE

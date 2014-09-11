@@ -250,14 +250,17 @@ static curl_version_info_data version_info = {
 #if defined(USE_NTLM) && defined(NTLM_WB_ENABLED)
   | CURL_VERSION_NTLM_WB
 #endif
+#ifdef USE_SPNEGO
+  | CURL_VERSION_SPNEGO
+#endif
+#ifdef HAVE_GSSAPI
+  | CURL_VERSION_GSSAPI
+#endif
 #ifdef USE_WINDOWS_SSPI
   | CURL_VERSION_SSPI
 #endif
 #ifdef HAVE_LIBZ
   | CURL_VERSION_LIBZ
-#endif
-#ifdef USE_HTTP_NEGOTIATE
-  | CURL_VERSION_GSSNEGOTIATE
 #endif
 #ifdef DEBUGBUILD
   | CURL_VERSION_DEBUG
@@ -267,9 +270,6 @@ static curl_version_info_data version_info = {
 #endif
 #ifdef CURLRES_ASYNCH
   | CURL_VERSION_ASYNCHDNS
-#endif
-#ifdef HAVE_SPNEGO
-  | CURL_VERSION_SPNEGO
 #endif
 #if (CURL_SIZEOF_CURL_OFF_T > 4) && \
     ( (SIZEOF_OFF_T > 4) || defined(USE_WIN32_LARGE_FILES) )

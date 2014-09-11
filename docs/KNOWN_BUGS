@@ -25,14 +25,6 @@ may have been fixed since this was written!
 84. CURLINFO_SSL_VERIFYRESULT is only implemented for the OpenSSL and NSS
   backends, so relying on this information in a generic app is flaky.
 
-83. curl is unable to load non-default openssl engines, because openssl isn't
-  initialized properly. This seems to require OpenSSL_config() or
-  CONF_modules_load_file() to be used by libcurl but the first seems to not
-  work and we've gotten not reports from tests with the latter. Possibly we
-  need to discuss with OpenSSL developers how this is supposed to be done. We
-  need users with actual external openssl engines for testing to work on this.
-  http://curl.haxx.se/bug/view.cgi?id=1208
-
 82. When building with the Windows Borland compiler, it fails because the
   "tlib" tool doesn't support hyphens (minus signs) in file names and we have
   such in the build.
@@ -58,10 +50,6 @@ may have been fixed since this was written!
   zero bytes files - it makes for example the command line client not creating
   any file at all. Like when using FTP.
   http://curl.haxx.se/bug/view.cgi?id=1063
-
-77. CURLOPT_FORBID_REUSE on a handle prevents NTLM from working since it
-  "abuses" the underlying connection re-use system and if connections are
-  forced to close they break the NTLM support.
 
 76. The SOCKET type in Win64 is 64 bits large (and thus so is curl_socket_t on
   that platform), and long is only 32 bits. It makes it impossible for
@@ -179,18 +167,6 @@ may have been fixed since this was written!
   run that might be needed only for building libcurl. Further, curl-config
   --cflags suffers from the same effects with CFLAGS/CPPFLAGS.
 
-30. You need to use -g to the command line tool in order to use RFC2732-style
-  IPv6 numerical addresses in URLs.
-
-29. IPv6 URLs with zone ID is not nicely supported.
-  http://www.ietf.org/internet-drafts/draft-fenner-literal-zone-02.txt (expired)
-  specifies the use of a plus sign instead of a percent when specifying zone
-  IDs in URLs to get around the problem of percent signs being
-  special. According to the reporter, Firefox deals with the URL _with_ a
-  percent letter (which seems like a blatant URL spec violation).
-  libcurl supports zone IDs where the percent sign is URL-escaped (i.e. %25):
-  http://curl.haxx.se/bug/view.cgi?id=555
-
 26. NTLM authentication using SSPI (on Windows) when (lib)curl is running in
   "system context" will make it use wrong(?) user name - at least when compared
   to what winhttp does. See http://curl.haxx.se/bug/view.cgi?id=535
@@ -236,9 +212,9 @@ may have been fixed since this was written!
   acknowledged after the actual TCP connect (during the SOCKS "negotiate"
   phase).
 
-10. To get HTTP Negotiate authentication to work fine, you need to provide a
-  (fake) user name (this concerns both curl and the lib) because the code
-  wrongly only considers authentication if there's a user name provided.
+10. To get HTTP Negotiate (SPNEGO) authentication to work fine, you need to
+  provide a (fake) user name (this concerns both curl and the lib) because the
+  code wrongly only considers authentication if there's a user name provided.
   http://curl.haxx.se/bug/view.cgi?id=440 How?
   http://curl.haxx.se/mail/lib-2004-08/0182.html
 

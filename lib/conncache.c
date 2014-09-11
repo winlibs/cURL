@@ -149,6 +149,7 @@ CURLcode Curl_conncache_add_conn(struct conncache *connc,
     return result;
   }
 
+  conn->connection_id = connc->next_connection_id++;
   connc->num_connections++;
 
   return CURLE_OK;
@@ -201,6 +202,7 @@ void Curl_conncache_foreach(struct conncache *connc,
     struct connectdata *conn;
 
     bundle = he->ptr;
+    he = Curl_hash_next_element(&iter);
 
     curr = bundle->conn_list->head;
     while(curr) {
@@ -212,8 +214,6 @@ void Curl_conncache_foreach(struct conncache *connc,
       if(1 == func(conn, param))
         return;
     }
-
-    he = Curl_hash_next_element(&iter);
   }
 }
 

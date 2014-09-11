@@ -2,8 +2,9 @@
 <info>
 <keywords>
 IMAP
-IMAP AUTH DIGEST-MD5
-IMAP AUTH PLAIN
+SASL
+SASL AUTH DIGEST-MD5
+SASL AUTH PLAIN
 SASL DOWNGRADE
 RFC2831
 </keywords>
@@ -37,6 +38,7 @@ body
 imap
 </server>
 <features>
+!SSPI
 debug
 crypto
 </features>

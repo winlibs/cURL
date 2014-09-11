@@ -2,7 +2,8 @@
 <info>
 <keywords>
 IMAP
-IMAP AUTH DIGEST-MD5
+SASL
+SASL AUTH DIGEST-MD5
 SASL CANCELLATION
 RFC2831
 </keywords>
@@ -26,6 +27,7 @@ REPLY * A002 NO AUTH exchange cancelled by client
 imap
 </server>
 <features>
+!SSPI
 debug
 crypto
 </features>

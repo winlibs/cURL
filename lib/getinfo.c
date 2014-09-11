@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -53,6 +53,7 @@ CURLcode Curl_initinfo(struct SessionHandle *data)
   pro->t_redirect = 0;
 
   info->httpcode = 0;
+  info->httpproxycode = 0;
   info->httpversion = 0;
   info->filetime = -1; /* -1 is an illegal time and thus means unknown */
   info->timecond = FALSE;
@@ -284,6 +285,7 @@ static CURLcode getinfo_slist(struct SessionHandle *data, CURLINFO info,
       struct curl_tlssessioninfo *tsi = &data->tsi;
       struct connectdata *conn = data->easy_conn;
       unsigned int sockindex = 0;
+      void *internals = NULL;
 
       *tsip = tsi;
       tsi->backend = CURLSSLBACKEND_NONE;
@@ -302,30 +304,28 @@ static CURLcode getinfo_slist(struct SessionHandle *data, CURLINFO info,
 
       /* Return the TLS session information from the relevant backend */
 #ifdef USE_SSLEAY
-      tsi->backend = CURLSSLBACKEND_OPENSSL;
-      tsi->internals = conn->ssl[sockindex].ctx;
+      internals = conn->ssl[sockindex].ctx;
 #endif
 #ifdef USE_GNUTLS
-      tsi->backend = CURLSSLBACKEND_GNUTLS;
-      tsi->internals = conn->ssl[sockindex].session;
+      internals = conn->ssl[sockindex].session;
 #endif
 #ifdef USE_NSS
-      tsi->backend = CURLSSLBACKEND_NSS;
-      tsi->internals = conn->ssl[sockindex].handle;
+      internals = conn->ssl[sockindex].handle;
 #endif
 #ifdef USE_QSOSSL
-      tsi->backend = CURLSSLBACKEND_QSOSSL;
-      tsi->internals = conn->ssl[sockindex].handle;
+      internals = conn->ssl[sockindex].handle;
 #endif
 #ifdef USE_GSKIT
-      tsi->backend = CURLSSLBACKEND_GSKIT;
-      tsi->internals = conn->ssl[sockindex].handle;
+      internals = conn->ssl[sockindex].handle;
 #endif
+      if(internals) {
+        tsi->backend = Curl_ssl_backend();
+        tsi->internals = internals;
+      }
       /* NOTE: For other SSL backends, it is not immediately clear what data
          to return from 'struct ssl_connect_data'; thus, for now we keep the
          backend as CURLSSLBACKEND_NONE in those cases, which should be
          interpreted as "not supported" */
-      break;
     }
     break;
   default:

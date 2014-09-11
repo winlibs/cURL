@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -43,6 +43,9 @@ int Curl_cyassl_init(void);
 CURLcode Curl_cyassl_connect_nonblocking(struct connectdata *conn,
                                          int sockindex,
                                          bool *done);
+int Curl_cyassl_random(struct SessionHandle *data,
+                       unsigned char *entropy,
+                       size_t length);
 
 /* API setup for CyaSSL */
 #define curlssl_init Curl_cyassl_init
@@ -59,6 +62,8 @@ CURLcode Curl_cyassl_connect_nonblocking(struct connectdata *conn,
 #define curlssl_version Curl_cyassl_version
 #define curlssl_check_cxn(x) (x=x, -1)
 #define curlssl_data_pending(x,y) Curl_cyassl_data_pending(x,y)
+#define curlssl_random(x,y,z) Curl_cyassl_random(x,y,z)
+#define CURL_SSL_BACKEND CURLSSLBACKEND_CYASSL
 
 #endif /* USE_CYASSL */
 #endif /* HEADER_CURL_CYASSL_H */

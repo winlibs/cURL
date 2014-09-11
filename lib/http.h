@@ -39,9 +39,13 @@ extern const struct Curl_handler Curl_handler_https;
 bool Curl_compareheader(const char *headerline,  /* line to check */
                         const char *header,   /* header keyword _with_ colon */
                         const char *content); /* content string to find */
-char *Curl_checkheaders(struct SessionHandle *data, const char *thisheader);
+
+char *Curl_checkheaders(const struct connectdata *conn,
+                        const char *thisheader);
 char *Curl_copy_header_value(const char *header);
 
+char *Curl_checkProxyheaders(const struct connectdata *conn,
+                             const char *thisheader);
 /* ------------------------------------------------------------------------- */
 /*
  * The add_buffer series of functions are used to build one large memory chunk
@@ -67,7 +71,8 @@ CURLcode Curl_add_buffer_send(Curl_send_buffer *in,
 CURLcode Curl_add_timecondition(struct SessionHandle *data,
                                 Curl_send_buffer *buf);
 CURLcode Curl_add_custom_headers(struct connectdata *conn,
-                                   Curl_send_buffer *req_buffer);
+                                 bool is_connect,
+                                 Curl_send_buffer *req_buffer);
 
 /* protocol-specific functions set up to be called by the main engine */
 CURLcode Curl_http(struct connectdata *conn, bool *done);
@@ -164,7 +169,9 @@ struct http_conn {
   sending send_underlying; /* underlying send Curl_send callback */
   recving recv_underlying; /* underlying recv Curl_recv callback */
   bool closed; /* TRUE on HTTP2 stream close */
-  Curl_send_buffer *header_recvbuf; /* store response headers */
+  Curl_send_buffer *header_recvbuf; /* store response headers.  We
+                                       store non-final and final
+                                       response headers into it. */
   size_t nread_header_recvbuf; /* number of bytes in header_recvbuf
                                   fed into upper layer */
   int32_t stream_id; /* stream we are interested in */
@@ -180,6 +187,7 @@ struct http_conn {
   const uint8_t *upload_mem; /* points to a buffer to read from */
   size_t upload_len; /* size of the buffer 'upload_mem' points to */
   size_t upload_left; /* number of bytes left to upload */
+  int status_code; /* HTTP status code */
 #else
   int unused; /* prevent a compiler warning */
 #endif

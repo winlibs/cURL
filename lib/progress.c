@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -159,8 +159,8 @@ void Curl_pgrsResetTimesSizes(struct SessionHandle *data)
   data->progress.t_pretransfer = 0.0;
   data->progress.t_starttransfer = 0.0;
 
-  Curl_pgrsSetDownloadSize(data, 0);
-  Curl_pgrsSetUploadSize(data, 0);
+  Curl_pgrsSetDownloadSize(data, -1);
+  Curl_pgrsSetUploadSize(data, -1);
 }
 
 void Curl_pgrsTime(struct SessionHandle *data, timerid timer)
@@ -172,8 +172,12 @@ void Curl_pgrsTime(struct SessionHandle *data, timerid timer)
   case TIMER_NONE:
     /* mistake filter */
     break;
+  case TIMER_STARTOP:
+    /* This is set at the start of a transfer */
+    data->progress.t_startop = now;
+    break;
   case TIMER_STARTSINGLE:
-    /* This is set at the start of a single fetch */
+    /* This is set at the start of each single fetch */
     data->progress.t_startsingle = now;
     break;
 
@@ -230,20 +234,26 @@ void Curl_pgrsSetUploadCounter(struct SessionHandle *data, curl_off_t size)
 
 void Curl_pgrsSetDownloadSize(struct SessionHandle *data, curl_off_t size)
 {
-  data->progress.size_dl = size;
-  if(size >= 0)
+  if(size >= 0) {
+    data->progress.size_dl = size;
     data->progress.flags |= PGRS_DL_SIZE_KNOWN;
-  else
+  }
+  else {
+    data->progress.size_dl = 0;
     data->progress.flags &= ~PGRS_DL_SIZE_KNOWN;
+  }
 }
 
 void Curl_pgrsSetUploadSize(struct SessionHandle *data, curl_off_t size)
 {
-  data->progress.size_ul = size;
-  if(size >= 0)
+  if(size >= 0) {
+    data->progress.size_ul = size;
     data->progress.flags |= PGRS_UL_SIZE_KNOWN;
-  else
+  }
+  else {
+    data->progress.size_ul = 0;
     data->progress.flags &= ~PGRS_UL_SIZE_KNOWN;
+  }
 }
 
 /*

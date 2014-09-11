@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -197,14 +197,28 @@ unsigned int Curl_rand(struct SessionHandle *data)
   static unsigned int randseed;
   static bool seeded = FALSE;
 
-#ifndef have_curlssl_random
-  (void)data;
-#else
-  if(data) {
-    Curl_ssl_random(data, (unsigned char *)&r, sizeof(r));
-    return r;
+#ifdef CURLDEBUG
+  char *force_entropy = getenv("CURL_ENTROPY");
+  if(force_entropy) {
+    if(!seeded) {
+      size_t elen = strlen(force_entropy);
+      size_t clen = sizeof(randseed);
+      size_t min = elen < clen ? elen : clen;
+      memcpy((char *)&randseed, force_entropy, min);
+      seeded = TRUE;
+    }
+    else
+      randseed++;
+    return randseed;
   }
 #endif
+
+  /* data may be NULL! */
+  if(!Curl_ssl_random(data, (unsigned char *)&r, sizeof(r)))
+    return r;
+
+  /* If Curl_ssl_random() returns non-zero it couldn't offer randomness and we
+     instead perform a "best effort" */
 
 #ifdef RANDOM_FILE
   if(!seeded) {
@@ -222,6 +236,7 @@ unsigned int Curl_rand(struct SessionHandle *data)
 
   if(!seeded) {
     struct timeval now = curlx_tvnow();
+    infof(data, "WARNING: Using weak random seed\n");
     randseed += (unsigned int)now.tv_usec + (unsigned int)now.tv_sec;
     randseed = randseed * 1103515245 + 12345;
     randseed = randseed * 1103515245 + 12345;
@@ -232,6 +247,11 @@ unsigned int Curl_rand(struct SessionHandle *data)
   /* Return an unsigned 32-bit pseudo-random number. */
   r = randseed = randseed * 1103515245 + 12345;
   return (r << 16) | ((r >> 16) & 0xFFFF);
+}
+
+int Curl_ssl_backend(void)
+{
+  return (int)CURL_SSL_BACKEND;
 }
 
 #ifdef USE_SSL
@@ -665,16 +685,12 @@ CURLcode Curl_ssl_push_certinfo(struct SessionHandle *data,
   return Curl_ssl_push_certinfo_len(data, certnum, label, value, valuelen);
 }
 
-/* these functions are only provided by some SSL backends */
-
-#ifdef have_curlssl_random
-void Curl_ssl_random(struct SessionHandle *data,
+int Curl_ssl_random(struct SessionHandle *data,
                      unsigned char *entropy,
                      size_t length)
 {
-  curlssl_random(data, entropy, length);
+  return curlssl_random(data, entropy, length);
 }
-#endif
 
 #ifdef have_curlssl_md5sum
 void Curl_ssl_md5sum(unsigned char *tmp, /* input */

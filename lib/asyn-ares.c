@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -235,7 +235,7 @@ int Curl_resolver_getsock(struct connectdata *conn,
   milli = (timeout->tv_sec * 1000) + (timeout->tv_usec/1000);
   if(milli == 0)
     milli += 10;
-  Curl_expire(conn->data, milli);
+  Curl_expire_latest(conn->data, milli);
 
   return max;
 }
@@ -421,7 +421,7 @@ CURLcode Curl_resolver_wait_resolv(struct connectdata *conn,
        cleaning up this connection properly.
        TODO: remove this action from here, it is not a name resolver decision.
     */
-    conn->bits.close = TRUE;
+    connclose(conn, "c-ares resolve failed");
 
   return rc;
 }
@@ -669,7 +669,7 @@ CURLcode Curl_set_dns_local_ip4(struct SessionHandle *data,
 CURLcode Curl_set_dns_local_ip6(struct SessionHandle *data,
                                 const char *local_ip6)
 {
-#if (ARES_VERSION >= 0x010704)
+#if (ARES_VERSION >= 0x010704) && defined(ENABLE_IPV6)
   unsigned char a6[INET6_ADDRSTRLEN];
 
   if((!local_ip6) || (local_ip6[0] == 0)) {

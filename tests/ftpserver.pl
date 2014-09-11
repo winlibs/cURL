@@ -436,6 +436,28 @@ sub startsf {
     }
 }
 
+#**********************************************************************
+# Returns the given test's reply data
+#
+sub getreplydata {
+    my ($testno) = @_;
+    my $testpart = "";
+
+    $testno =~ s/^([^0-9]*)//;
+    if($testno > 10000) {
+       $testpart = $testno % 10000;
+       $testno = int($testno / 10000);
+    }
+
+    loadtest("$srcdir/data/test$testno");
+
+    my @data = getpart("reply", "data$testpart");
+    if((!@data) && ($testpart ne "")) {
+        @data = getpart("reply", "data");
+    }
+
+    return @data;
+}
 
 sub sockfilt {
     my $l;
@@ -445,7 +467,6 @@ sub sockfilt {
     }
 }
 
-
 sub sockfiltsecondary {
     my $l;
     foreach $l (@_) {
@@ -454,10 +475,10 @@ sub sockfiltsecondary {
     }
 }
 
-
+#**********************************************************************
 # Send data to the client on the control stream, which happens to be plain
 # stdout.
-
+#
 sub sendcontrol {
     if(!$ctrldelay) {
         # spit it all out at once
@@ -496,18 +517,19 @@ sub senddata {
         }
         return;
     }
+
     foreach $l (@_) {
-      if(!$datadelay) {
-        # spit it all out at once
-        sockfiltsecondary $l;
-      }
-      else {
-          # pause between each byte
-          for (split(//,$l)) {
-              sockfiltsecondary $_;
-              select(undef, undef, undef, 0.01);
-          }
-      }
+        if(!$datadelay) {
+            # spit it all out at once
+            sockfiltsecondary $l;
+        }
+        else {
+            # pause between each byte
+            for (split(//,$l)) {
+                sockfiltsecondary $_;
+                select(undef, undef, undef, 0.01);
+            }
+        }
     }
 }
 
@@ -1005,18 +1027,7 @@ sub VRFY_smtp {
         sendcontrol "501 Unrecognized parameter\r\n";
     }
     else {
-        my $testno = $smtp_client;
-
-        $testno =~ s/^([^0-9]*)//;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        my @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($smtp_client);
 
         for my $d (@data) {
             sendcontrol $d;
@@ -1035,18 +1046,7 @@ sub EXPN_smtp {
         sendcontrol "501 Unrecognized parameter\r\n";
     }
     else {
-        my $testno = $smtp_client;
-
-        $testno =~ s/^([^0-9]*)//;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        my @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($smtp_client);
 
         for my $d (@data) {
             sendcontrol $d;
@@ -1084,8 +1084,6 @@ sub fix_imap_params {
 }
 
 sub CAPABILITY_imap {
-    my ($testno) = @_;
-
     if((!@capabilities) && (!@auth_mechs)) {
         sendcontrol "$cmdid BAD Command\r\n";
     }
@@ -1184,20 +1182,10 @@ sub FETCH_imap {
             logmsg "return proof we are we\n";
         }
         else {
+            # send mail content
             logmsg "retrieve a mail\n";
 
-            my $testno = $selected;
-            $testno =~ s/^([^0-9]*)//;
-            my $testpart = "";
-            if ($testno > 10000) {
-                $testpart = $testno % 10000;
-                $testno = int($testno / 10000);
-            }
-
-            # send mail content
-            loadtest("$srcdir/data/test$testno");
-
-            @data = getpart("reply", "data$testpart");
+            @data = getreplydata($selected);
         }
 
         for (@data) {
@@ -1343,18 +1331,7 @@ sub LIST_imap {
         logmsg "return proof we are we\n";
     }
     else {
-        my $testno = $reference;
-
-        $testno =~ s/^([^0-9]*)//;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        my @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($reference);
 
         for my $d (@data) {
             sendcontrol $d;
@@ -1377,18 +1354,7 @@ sub LSUB_imap {
         sendcontrol "$cmdid BAD Command Argument\r\n";
     }
     else {
-        my $testno = $reference;
-
-        $testno =~ s/^([^0-9]*)//;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        my @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($reference);
 
         for my $d (@data) {
             sendcontrol $d;
@@ -1401,25 +1367,16 @@ sub LSUB_imap {
 }
 
 sub EXAMINE_imap {
-    my ($testno) = @_;
-    fix_imap_params($testno);
+    my ($mailbox) = @_;
+    fix_imap_params($mailbox);
 
-    logmsg "EXAMINE_imap got $testno\n";
+    logmsg "EXAMINE_imap got $mailbox\n";
 
-    if ($testno eq "") {
+    if ($mailbox eq "") {
         sendcontrol "$cmdid BAD Command Argument\r\n";
     }
     else {
-        $testno =~ s/[^0-9]//g;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        my @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($mailbox);
 
         for my $d (@data) {
             sendcontrol $d;
@@ -1432,25 +1389,17 @@ sub EXAMINE_imap {
 }
 
 sub STATUS_imap {
-    my ($testno) = @_;
-    fix_imap_params($testno);
+    my ($args) = @_;
+    my ($mailbox, $what) = split(/ /, $args, 2);
+    fix_imap_params($mailbox);
 
-    logmsg "STATUS_imap got $testno\n";
+    logmsg "STATUS_imap got $args\n";
 
-    if ($testno eq "") {
+    if ($mailbox eq "") {
         sendcontrol "$cmdid BAD Command Argument\r\n";
     }
     else {
-        $testno =~ s/[^0-9]//g;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        my @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($mailbox);
 
         for my $d (@data) {
             sendcontrol $d;
@@ -1475,18 +1424,7 @@ sub SEARCH_imap {
         sendcontrol "$cmdid BAD Command Argument\r\n";
     }
     else {
-        my $testno = $selected;
-
-        $testno =~ s/^([^0-9]*)//;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        my @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($selected);
 
         for my $d (@data) {
             sendcontrol $d;
@@ -1631,18 +1569,7 @@ sub UID_imap {
         sendcontrol "$cmdid BAD Command Argument\r\n";
     }
     else {
-        my $testno = $selected;
-
-        $testno =~ s/^([^0-9]*)//;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        my @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($selected);
 
         for my $d (@data) {
             sendcontrol $d;
@@ -1692,7 +1619,6 @@ sub LOGOUT_imap {
 my $username;
 
 sub CAPA_pop3 {
-    my ($testno) = @_;
     my @list = ();
     my $mechs;
 
@@ -1767,8 +1693,6 @@ sub APOP_pop3 {
 }
 
 sub AUTH_pop3 {
-    my ($testno) = @_;
-
     if(!@auth_mechs) {
         sendcontrol "-ERR Unrecognized command\r\n";
     }
@@ -1827,10 +1751,10 @@ sub PASS_pop3 {
 }
 
 sub RETR_pop3 {
-    my ($testno) = @_;
+    my ($msgid) = @_;
     my @data;
 
-    if($testno =~ /^verifiedserver$/) {
+    if($msgid =~ /^verifiedserver$/) {
         # this is the secret command that verifies that this actually is
         # the curl test server
         my $response = "WE ROOLZ: $$\r\n";
@@ -1841,19 +1765,10 @@ sub RETR_pop3 {
         logmsg "return proof we are we\n";
     }
     else {
+        # send mail content
         logmsg "retrieve a mail\n";
 
-        $testno =~ s/^([^0-9]*)//;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        # send mail content
-        loadtest("$srcdir/data/test$testno");
-
-        @data = getpart("reply", "data$testpart");
+        @data = getreplydata($msgid);
     }
 
     sendcontrol "+OK Mail transfer starts\r\n";
@@ -1892,15 +1807,15 @@ sub LIST_pop3 {
 }
 
 sub DELE_pop3 {
-    my ($msg) = @_;
+    my ($msgid) = @_;
 
-    logmsg "DELE_pop3 got $msg\n";
+    logmsg "DELE_pop3 got $msgid\n";
 
-    if (!$msg) {
+    if (!$msgid) {
         sendcontrol "-ERR Protocol error\r\n";
     }
     else {
-        push (@deleted, $msg);
+        push (@deleted, $msgid);
 
         sendcontrol "+OK\r\n";
     }
@@ -1965,19 +1880,17 @@ sub UIDL_pop3 {
 
 sub TOP_pop3 {
     my ($args) = @_;
-    my ($msg, $lines) = split(/ /, $args, 2);
+    my ($msgid, $lines) = split(/ /, $args, 2);
 
     logmsg "TOP_pop3 got $args\n";
 
     if (!grep /^TOP$/, @capabilities) {
         sendcontrol "-ERR Unrecognized command\r\n";
     }
-    elsif (($msg eq "") || ($lines eq "")) {
+    elsif (($msgid eq "") || ($lines eq "")) {
         sendcontrol "-ERR Protocol error\r\n";
     }
     else {
-        my @data;
-
         if ($lines == "0") {
             logmsg "retrieve header of mail\n";
         }
@@ -1985,17 +1898,7 @@ sub TOP_pop3 {
             logmsg "retrieve top $lines lines of mail\n";
         }
 
-        my $testno = $msg;
-        $testno =~ s/^([^0-9]*)//;
-        my $testpart = "";
-        if ($testno > 10000) {
-            $testpart = $testno % 10000;
-            $testno = int($testno / 10000);
-        }
-
-        loadtest("$srcdir/data/test$testno");
-
-        @data = getpart("reply", "data$testpart");
+        my @data = getreplydata($msgid);
 
         sendcontrol "+OK Mail transfer starts\r\n";
 
@@ -2857,7 +2760,7 @@ sub customize {
     logmsg "FTPD: Getting commands from log/ftpserver.cmd\n";
 
     while(<CUSTOM>) {
-        if($_ =~ /REPLY \"([A-Z]+ [A-Za-z0-9+-\/=\*]+)\" (.*)/) {
+        if($_ =~ /REPLY \"([A-Z]+ [A-Za-z0-9+-\/=\*. ]+)\" (.*)/) {
             $fulltextreply{$1}=eval "qq{$2}";
             logmsg "FTPD: set custom reply for $1\n";
         }

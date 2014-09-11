@@ -477,8 +477,8 @@ static CURLcode tftp_send_first(tftp_state_data_t *state, tftp_event_t event)
       setpacketevent(&state->spacket, TFTP_EVENT_WRQ);
       state->conn->data->req.upload_fromhere =
         (char *)state->spacket.data+4;
-      if(data->set.infilesize != -1)
-        Curl_pgrsSetUploadSize(data, data->set.infilesize);
+      if(data->state.infilesize != -1)
+        Curl_pgrsSetUploadSize(data, data->state.infilesize);
     }
     else {
       /* If we are downloading, send an RRQ */
@@ -498,9 +498,9 @@ static CURLcode tftp_send_first(tftp_state_data_t *state, tftp_event_t event)
     sbytes = 4 + strlen(filename) + strlen(mode);
 
     /* add tsize option */
-    if(data->set.upload && (data->set.infilesize != -1))
+    if(data->set.upload && (data->state.infilesize != -1))
       snprintf(buf, sizeof(buf), "%" CURL_FORMAT_CURL_OFF_T,
-               data->set.infilesize);
+               data->state.infilesize);
     else
       strcpy(buf, "0"); /* the destination is large enough */
 
@@ -974,9 +974,9 @@ static CURLcode tftp_connect(struct connectdata *conn, bool *done)
       return CURLE_OUT_OF_MEMORY;
   }
 
-  conn->bits.close = TRUE; /* we don't keep TFTP connections up bascially
-                              because there's none or very little gain for UDP
-                           */
+  /* we don't keep TFTP connections up bascially because there's none or very
+   * little gain for UDP */
+  connclose(conn, "TFTP");
 
   state->conn = conn;
   state->sockfd = state->conn->sock[FIRSTSOCKET];
@@ -1320,7 +1320,10 @@ static CURLcode tftp_do(struct connectdata *conn, bool *done)
     if(code)
       return code;
   }
+
   state = (tftp_state_data_t *)conn->proto.tftpc;
+  if(!state)
+    return CURLE_BAD_CALLING_ORDER;
 
   code = tftp_perform(conn, done);
 

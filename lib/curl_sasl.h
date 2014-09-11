@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2012 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -22,7 +22,15 @@
  *
  ***************************************************************************/
 
-#include "pingpong.h"
+#include <curl/curl.h>
+
+struct SessionHandle;
+struct connectdata;
+struct ntlmdata;
+
+#if defined(USE_WINDOWS_SSPI)
+struct kerberos5data;
+#endif
 
 /* Authentication mechanism values */
 #define SASL_AUTH_NONE          0
@@ -53,6 +61,13 @@
   (wordlen == (sizeof(mech) - 1) / sizeof(char) && \
    !memcmp(line, mech, wordlen))
 
+/* This is used to build a SPN string */
+#if !defined(USE_WINDOWS_SSPI)
+char *Curl_sasl_build_spn(const char *service, const char *instance);
+#else
+TCHAR *Curl_sasl_build_spn(const char *service, const char *instance);
+#endif
+
 /* This is used to generate a base64 encoded PLAIN authentication message */
 CURLcode Curl_sasl_create_plain_message(struct SessionHandle *data,
                                         const char *userp,
@@ -77,17 +92,10 @@ CURLcode Curl_sasl_create_cram_md5_message(struct SessionHandle *data,
                                            const char *passwdp,
                                            char **outptr, size_t *outlen);
 
-/* This is used to decode a base64 encoded DIGEST-MD5 challange message */
-CURLcode Curl_sasl_decode_digest_md5_message(const char *chlg64,
-                                             char *nonce, size_t nlen,
-                                             char *realm, size_t rlen,
-                                             char *alg, size_t alen);
-
 /* This is used to generate a base64 encoded DIGEST-MD5 response message */
 CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
-                                             const char *nonce,
-                                             const char *realm,
-                                             const char *user,
+                                             const char *chlg64,
+                                             const char *userp,
                                              const char *passwdp,
                                              const char *service,
                                              char **outptr, size_t *outlen);
@@ -114,6 +122,27 @@ CURLcode Curl_sasl_create_ntlm_type3_message(struct SessionHandle *data,
                                              char **outptr, size_t *outlen);
 
 #endif /* USE_NTLM */
+
+#if defined(USE_WINDOWS_SSPI)
+/* This is used to generate a base64 encoded GSSAPI (Kerberos V5) user token
+   message */
+CURLcode Curl_sasl_create_gssapi_user_message(struct SessionHandle *data,
+                                              const char *userp,
+                                              const char *passwdp,
+                                              const char *service,
+                                              const bool mutual,
+                                              const char *chlg64,
+                                              struct kerberos5data *krb5,
+                                              char **outptr, size_t *outlen);
+
+/* This is used to generate a base64 encoded GSSAPI (Kerberos V5) security
+   token message */
+CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
+                                                  const char *input,
+                                                  struct kerberos5data *krb5,
+                                                  char **outptr,
+                                                  size_t *outlen);
+#endif
 
 /* This is used to generate a base64 encoded XOAUTH2 authentication message
    containing the user name and bearer token */

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -47,11 +47,17 @@
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
 #include "curl_memory.h"
+
+#include <cyassl/ssl.h>
+#ifdef HAVE_CYASSL_ERROR_SSL_H
+#include <cyassl/error-ssl.h>
+#else
+#include <cyassl/error.h>
+#endif
+#include <cyassl/ctaocrypt/random.h>
+
 /* The last #include file should be: */
 #include "memdebug.h"
-#include <cyassl/ssl.h>
-#include <cyassl/error.h>
-
 
 static Curl_recv cyassl_recv;
 static Curl_send cyassl_send;
@@ -139,7 +145,7 @@ cyassl_connect_step1(struct connectdata *conn,
                                       data->set.str[STRING_SSL_CAFILE],
                                       data->set.str[STRING_SSL_CAPATH])) {
       if(data->set.ssl.verifypeer) {
-        /* Fail if we insiste on successfully verifying the server. */
+        /* Fail if we insist on successfully verifying the server. */
         failf(data,"error setting certificate verify locations:\n"
               "  CAfile: %s\n  CApath: %s",
               data->set.str[STRING_SSL_CAFILE]?
@@ -149,7 +155,7 @@ cyassl_connect_step1(struct connectdata *conn,
         return CURLE_SSL_CACERT_BADFILE;
       }
       else {
-        /* Just continue with a warning if no strict  certificate
+        /* Just continue with a warning if no strict certificate
            verification is required. */
         infof(data, "error setting certificate verify locations,"
               " continuing anyway:\n");
@@ -294,6 +300,20 @@ cyassl_connect_step2(struct connectdata *conn,
       }
 #endif
     }
+#if LIBCYASSL_VERSION_HEX >= 0x02007000 /* 2.7.0 */
+    else if(ASN_NO_SIGNER_E == detail) {
+      if(data->set.ssl.verifypeer) {
+        failf(data, "\tCA signer not available for verification\n");
+        return CURLE_SSL_CACERT_BADFILE;
+      }
+      else {
+        /* Just continue with a warning if no strict certificate
+           verification is required. */
+        infof(data, "CA signer not available for verification, "
+                    "continuing anyway\n");
+      }
+    }
+#endif
     else {
       failf(data, "SSL_connect failed with error %d: %s", detail,
           ERR_error_string(detail, error_buffer));
@@ -617,6 +637,19 @@ Curl_cyassl_connect(struct connectdata *conn,
   DEBUGASSERT(done);
 
   return CURLE_OK;
+}
+
+int Curl_cyassl_random(struct SessionHandle *data,
+                       unsigned char *entropy,
+                       size_t length)
+{
+  RNG rng;
+  (void)data;
+  if(InitRng(&rng))
+    return 1;
+  if(RNG_GenerateBlock(&rng, entropy, length))
+    return 1;
+  return 0;
 }
 
 #endif
