@@ -86,6 +86,7 @@
 #define CURL_SUPPORT_MAC_10_6 0
 #define CURL_SUPPORT_MAC_10_7 0
 #define CURL_SUPPORT_MAC_10_8 0
+#define CURL_SUPPORT_MAC_10_9 0
 
 #else
 #error "The darwinssl back-end requires iOS or OS X."
@@ -1057,10 +1058,8 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
 #if CURL_BUILD_MAC_10_8 || CURL_BUILD_IOS
   if(SSLSetProtocolVersionMax != NULL) {
     switch(data->set.ssl.version) {
-      case CURL_SSLVERSION_DEFAULT: default:
-        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kSSLProtocol3);
-        (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol12);
-        break;
+      default:
+      case CURL_SSLVERSION_DEFAULT:
       case CURL_SSLVERSION_TLSv1:
         (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kTLSProtocol1);
         (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol12);
@@ -1078,7 +1077,11 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
         (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol12);
         break;
       case CURL_SSLVERSION_SSLv3:
-        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kSSLProtocol3);
+        err = SSLSetProtocolVersionMin(connssl->ssl_ctx, kSSLProtocol3);
+        if(err != noErr) {
+          failf(data, "Your version of the OS does not support SSLv3");
+          return CURLE_SSL_CONNECT_ERROR;
+        }
         (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kSSLProtocol3);
         break;
       case CURL_SSLVERSION_SSLv2:
@@ -1096,20 +1099,8 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
                                        kSSLProtocolAll,
                                        false);
     switch (data->set.ssl.version) {
-      case CURL_SSLVERSION_DEFAULT: default:
-        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
-                                           kSSLProtocol3,
-                                           true);
-        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
-                                           kTLSProtocol1,
-                                           true);
-        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
-                                           kTLSProtocol11,
-                                           true);
-        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
-                                           kTLSProtocol12,
-                                           true);
-        break;
+      default:
+      case CURL_SSLVERSION_DEFAULT:
       case CURL_SSLVERSION_TLSv1:
         (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
                                            kTLSProtocol1,
@@ -1137,9 +1128,13 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
                                            true);
         break;
       case CURL_SSLVERSION_SSLv3:
-        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+        err = SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
                                            kSSLProtocol3,
                                            true);
+        if(err != noErr) {
+          failf(data, "Your version of the OS does not support SSLv3");
+          return CURLE_SSL_CONNECT_ERROR;
+        }
         break;
       case CURL_SSLVERSION_SSLv2:
         err = SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
@@ -1158,13 +1153,6 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
   switch(data->set.ssl.version) {
     default:
     case CURL_SSLVERSION_DEFAULT:
-      (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
-                                         kSSLProtocol3,
-                                         true);
-      (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
-                                         kTLSProtocol1,
-                                         true);
-      break;
     case CURL_SSLVERSION_TLSv1:
     case CURL_SSLVERSION_TLSv1_0:
       (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
@@ -1187,9 +1175,13 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
       }
       break;
     case CURL_SSLVERSION_SSLv3:
-      (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+      err = SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
                                          kSSLProtocol3,
                                          true);
+      if(err != noErr) {
+        failf(data, "Your version of the OS does not support SSLv3");
+        return CURLE_SSL_CONNECT_ERROR;
+      }
       break;
   }
 #endif /* CURL_BUILD_MAC_10_8 || CURL_BUILD_IOS */

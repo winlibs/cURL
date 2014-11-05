@@ -1,6 +1,6 @@
-Curl and libcurl 7.38.0
+Curl and libcurl 7.39.0
 
- Public curl releases:         141
+ Public curl releases:         142
  Command line options:         162
  curl_easy_setopt() options:   208
  Public functions in libcurl:  58
@@ -8,85 +8,81 @@ Curl and libcurl 7.38.0
 
 This release includes the following changes:
 
- o CURLE_HTTP2 is a new error code
- o CURLAUTH_NEGOTIATE is a new auth define
- o CURL_VERSION_GSSAPI is a new capability bit
- o no longer use fbopenssl for anything
- o schannel: use CryptGenRandom for random numbers
- o axtls: define curlssl_random using axTLS's PRNG
- o cyassl: use RNG_GenerateBlock to generate a good random number
- o findprotocol: show unsupported protocol within quotes
- o version: detect and show LibreSSL
- o version: detect and show BoringSSL
- o imap/pop3/smtp: Kerberos (SASL GSSAPI) authentication via Windows SSPI
- o http2: requires nghttp2 0.6.0 or later
+ o SSLv3 is disabled by default
+ o CURLOPT_COOKIELIST: Added "RELOAD" command [5]
+ o build: Added WinIDN build configuration options to Visual Studio projects
+ o ssh: improve key file search
+ o SSL: public key pinning. Use CURLOPT_PINNEDPUBLICKEY and --pinnedpubkey
+ o vtls: remove QsoSSL support, use gskit!
+ o mk-ca-bundle: added SHA-384 signature algorithm
+ o docs: added many examples for libcurl opts and other doc improvements
+ o build: Added VC ssh2 target to main Makefile
+ o MinGW: Added support to build with nghttp2
+ o NetWare: Added support to build with nghttp2
+ o build: added Watcom support to build with WinSSL
+ o build: Added optional specific version generation of VC project files
 
 This release includes the following bugfixes:
 
- o CVE-2014-3613: cookie leak with IP address as domain [25]
- o CVE-2014-3620: cookie leak for TLDs [26]
-
- o fix a build failure on Debian when NSS support is enabled [1]
- o HTTP/2: fixed compiler warnings when built disabled [2]
- o cyassl: return the correct error code on no CA cert
- o http: Deprecate GSS-Negotiate macros due to bad naming
- o http: Fixed Negotiate: authentication
- o multi: Improve proxy CONNECT performance (regression) [3]
- o ntlm_wb: Avoid invoking ntlm_auth helper with empty username
- o ntlm_wb: Fix hard-coded limit on NTLM auth packet size
- o url.c: use the preferred symbol name: *READDATA [4]
- o smtp: fixed a segfault during test 1320 torture test
- o cyassl: made it compile with version 2.0.6 again
- o nss: do not check the version of NSS at run time
- o c-ares: fix build without IPv6 support [5]
- o HTTP/2: use base64url encoding [6]
- o SSPI Negotiate: Fix 3 memory leaks
- o libtest: fixed duplicated line in Makefile [7]
- o conncache: fix compiler warning [8]
- o openssl: make ossl_send return CURLE_OK better
- o HTTP/2: Support expect: 100-continue
- o HTTP/2: Fix infinite loop in readwrite_data()
- o parsedate: fix the return code for an overflow edge condition
- o darwinssl: don't use strtok()
- o http_negotiate_sspi: Fixed specific username and password not working [9]
- o openssl: replace call to OPENSSL_config [10]
- o http2: show the received header for better debugging
- o HTTP/2: Move :authority before non-pseudo header fields
- o HTTP/2: Reset promised stream, not its associated stream
- o HTTP/2: added some more logging for debugging stream problems
- o ntlm: Added support for SSPI package info query
- o ntlm: Fixed hard coded buffer for SSPI based auth packet generation
- o sasl_sspi: Fixed memory leak with not releasing Package Info struct
- o sasl_sspi: Fixed SPN not being converted to wchar under Unicode builds
- o sasl: Use a dynamic buffer for DIGEST-MD5 SPN generation
- o http_negotiate_sspi: Use a dynamic buffer for SPN generation
- o sasl_sspi: Fixed missing free of challenge buffer on SPN failure
- o sasl_sspi: Fixed hard coded buffer for response generation
- o Curl_poll + Curl_wait_ms: fix timeout return value
- o docs/SSLCERTS: update the section about NSS database
- o create_conn: prune dead connections [11]
- o openssl: fix version report for the 0.9.8 branch
- o mk-ca-bundle.pl: switched to using hg.mozilla.org [12]
- o http: fix the Content-Range: parser [13]
- o Curl_disconnect: don't free the URL [14]
- o win32: Fixed WinSock 2 #if [15]
- o NTLM: ignore CURLOPT_FORBID_REUSE during NTLM HTTP auth
- o curl.1: clarify --limit-rate's effect on both directions [16]
- o disconnect: don't touch easy-related state on disconnects [17]
- o Cmake: big cleanup and numerous fixes
- o HTTP/2: supports draft-14 - moved :headers before the non-psuedo headers
- o HTTP/2: Reset promised stream, not its associated stream
- o configure.ac: Add support for recent GSS-API implementations for HP-UX
- o CONNECT: close proxy connections that fail [18]
- o CURLOPT_NOBODY.3: clarify this option is for downloads [19]
- o darwinssl: fix CA certificate checking using PEM format [20]
- o resolve: cache lookup for async resolvers [21]
- o low-speed-limit: avoid timeout flood [22]
- o polarssl: implement CURLOPT_SSLVERSION [23]
- o multi: convert CURLM_STATE_CONNECT_PEND handling to a list [24]
- o curl_multi_cleanup: remove superfluous NULL assigns
- o polarssl: support CURLOPT_CAPATH / --capath
- o progress: size_dl/size_ul are always >= 0, and clear "KNOWN" properly
+ o curl_easy_duphandle: CURLOPT_COPYPOSTFIELDS read out of bounds [9]
+ o openssl: build fix for versions < 0.9.8e [1]
+ o newlines: fix mixed newlines to LF-only [2]
+ o ntlm: Fixed HTTP proxy authentication when using Windows SSPI [3]
+ o sasl_sspi: Fixed Unicode build [4]
+ o file: reject paths using embedded %00
+ o threaded-resolver: revert Curl_expire_latest() switch [6]
+ o configure: allow --with-ca-path with PolarSSL too
+ o HTTP/2: Fix busy loop when EOF is encountered
+ o CURLOPT_CAPATH: return failure if set without backend support
+ o nss: do not fail if a CRL is already cached
+ o smtp: Fixed intermittent "SSL3_WRITE_PENDING: bad write retry" error
+ o fixed 20+ nits/memory leaks identified by Coverity scans
+ o curl_schannel.c: Fixed possible memory or handle leak
+ o multi-uv.c: call curl_multi_info_read() better
+ o Cmake: Check for OpenSSL before OpenLDAP
+ o Cmake: Fix library list provided to cURL tests
+ o Cmake: Avoid cycle directory dependencies
+ o Cmake: Build with GSS-API libraries (MIT or Heimdal)
+ o vtls: provide backend defines for internal source code
+ o nss: fix a connection failure when FTPS handle is reused
+ o tests/http_pipe.py: Python 3 support
+ o cmake: build tool_hugehelp (ENABLE_MANUAL)
+ o cmake: enable IPv6 by default if available
+ o tests: move TESTCASES to Makefile.inc, add show for cmake
+ o ntlm: Avoid unnecessary buffer allocation for SSPI based type-2 token
+ o ntlm: Fixed empty/bad base-64 decoded buffer return codes
+ o ntlm: Fixed empty type-2 decoded message info text
+ o cmake: add CMake/Macros.cmake to the release tarball
+ o cmake: add SUPPORT_FEATURES and SUPPORT_PROTOCOLS
+ o cmake: use LIBCURL_VERSION from curlver.h
+ o cmake: generate pkg-config and curl-config
+ o fixed several superfluous variable assignements identified by cppcheck
+ o cleanup of 'CURLcode result' return code
+ o pipelining: only output "is not blacklisted" in debug builds
+ o SSL: Remove SSLv3 from SSL default due to POODLE attack
+ o gskit.c: remove SSLv3 from SSL default
+ o darwinssl: detect possible future removal of SSLv3 from the framework
+ o ntlm: Only define ntlm data structure when USE_NTLM is defined
+ o ntlm: Return CURLcode from Curl_ntlm_core_mk_lm_hash()
+ o ntlm: Return all errors from Curl_ntlm_core_mk_nt_hash()
+ o sspi: Only call CompleteAuthToken() when complete is needed
+ o http_negotiate: Fixed missing check for USE_SPNEGO
+ o HTTP: return larger than 3 digit response codes too [7]
+ o openssl: Check for NPN / ALPN via OpenSSL version number
+ o openssl: enable NPN separately from ALPN
+ o sasl_sspi: Allow DIGEST-MD5 to use current windows credentials
+ o sspi: Return CURLE_LOGIN_DENIED on AcquireCredentialsHandle() failure
+ o resume: consider a resume from [content-length] to be OK [8]
+ o sasl: Fixed Kerberos V5 inclusion when CURL_DISABLE_CRYPTO_AUTH is used
+ o build-openssl.bat: Fix x64 release build
+ o cmake: drop _BSD_SOURCE macro usage
+ o cmake: fix gethostby{addr,name}_r in CurlTests
+ o cmake: clean OtherTests, fixing -Werror
+ o cmake: fix struct sockaddr_storage check
+ o Curl_single_getsock: fix hold/pause sock handling
+ o SSL: PolarSSL default min SSL version TLS 1.0
+ o cmake: fix ZLIB_INCLUDE_DIRS use [10]
+ o buildconf: stop checking for libtool
 
 This release includes the following known bugs:
 
@@ -95,43 +91,26 @@ This release includes the following known bugs:
 This release would not have looked like this without help, code, reports and
 advice from friends like these:
 
-  Alessandro Ghedini, Andre Heinecke, Anthon Pang, Askar Safin, Brandon Casey,
-  Catalin Patulea, Dan Fandrich, Daniel Stenberg, Dave Reisner, David Meyer,
-  David Shaw, David Woodhouse, Dimitrios Siganos, Ed Morley, Fabian Keil,
-  Florian Weimer, Frank Gevaerts, Frank Meier, Haris Okanovic, Jakub Zakrzewski,
-  Jan Ehrhardt, John Coffey, Jonatan Vela, Jose Alf, Kamil Dudka,
-  Leonardo Rosati, Marcel Raad, Michael Osipov, Michael Wallner, Paras S,
-  Patrick Monnerat, Paul Saab, Peter Wang, Rafaël Carré, Sergey Nikulov,
-  Spork Schivago, Steve Holme, Tatsuhiro Tsujikawa, Tim Ruehsen, Toby Peterson,
-  Vilmos Nebehaj,
+  Askar Safin, Balaji Salunke, Bill Nagel, Bruno Thomsen, Carlo Wood,
+  Catalin Patulea, Dan Fandrich, Daniel Stenberg, Dimitar Boevski, Fabian Keil,
+  Guenter Knauf, Jakub Zakrzewski, Jeremy Lin, Jonathan Cardoso Machado,
+  Kamil Dudka, K. R. Walker, Luan Cestari, Lucas Pardue, Marcel Raad,
+  Marc Hoersken, Michael Wallner, Nick Zitzmann, Patrick Monnerat,
+  Paul Howarth, Peter Wu, Ray Satiro, Steve Holme, Symeon Paraschoudis,
+  Tatsuhiro Tsujikawa, Ulrich Telle, Viktor Szakáts, Waldek Kozba,
+  Yousuke Kimoto,
 
         Thanks! (and sorry if I forgot to mention someone)
 
 References to bug reports and discussions on issues:
 
- [1] = http://curl.haxx.se/mail/lib-2014-07/0209.html
- [2] = http://curl.haxx.se/mail/lib-2014-07/0202.html
- [3] = http://curl.haxx.se/bug/view.cgi?id=1397
- [4] = http://curl.haxx.se/bug/view.cgi?id=1398
- [5] = http://curl.haxx.se/mail/lib-2014-07/0337.html
- [6] = https://github.com/tatsuhiro-t/nghttp2/issues/62
- [7] = https://github.com/bagder/curl/pull/105
- [8] = http://curl.haxx.se/bug/view.cgi?id=1399
- [9] = http://curl.haxx.se/mail/lib-2014-06/0224.html
- [10] = http://curl.haxx.se/bug/view.cgi?id=1401
- [11] = http://curl.haxx.se/mail/lib-2014-06/0189.html
- [12] = http://curl.haxx.se/bug/view.cgi?id=1409
- [13] = http://curl.haxx.se/mail/lib-2014-06/0221.html
- [14] = http://curl.haxx.se/mail/lib-2014-08/0148.html
- [15] = http://curl.haxx.se/mail/lib-2014-08/0155.html
- [16] = http://curl.haxx.se/bug/view.cgi?id=1414
- [17] = http://curl.haxx.se/mail/lib-2014-08/0148.html
- [18] = http://curl.haxx.se/bug/view.cgi?id=1381
- [19] = http://curl.haxx.se/mail/lib-2014-08/0236.html
- [20] = https://github.com/bagder/curl/pull/115
- [21] = https://github.com/bagder/curl/pull/112
- [22] = http://curl.haxx.se/mail/lib-2014-06/0235.html
- [23] = http://curl.haxx.se/bug/view.cgi?id=1419
- [24] = http://curl.haxx.se/mail/lib-2014-07/0206.html
- [25] = http://curl.haxx.se/docs/adv_20140910A.html
- [26] = http://curl.haxx.se/docs/adv_20140910B.html
+ [1] = http://curl.haxx.se/mail/lib-2014-09/0064.html
+ [2] = http://curl.haxx.se/mail/lib-2014-09/0075.html
+ [3] = http://curl.haxx.se/mail/lib-2014-08/0273.html
+ [4] = http://curl.haxx.se/bug/view.cgi?id=1422
+ [5] = http://curl.haxx.se/libcurl/c/CURLOPT_COOKIELIST.html
+ [6] = http://curl.haxx.se/bug/view.cgi?id=1426
+ [7] = http://curl.haxx.se/bug/view.cgi?id=1441
+ [8] = http://curl.haxx.se/bug/view.cgi?id=1443
+ [9] = http://curl.haxx.se/docs/adv_20141105.html
+ [10] = https://github.com/bagder/curl/pull/123

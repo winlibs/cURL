@@ -46,10 +46,10 @@ p.roffit {
 </head><body>
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
-<p class="level0">CURLOPT_TLSAUTH_USERNAME - user name for TLS authentication <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
+<p class="level0">CURLOPT_TLSAUTH_USERNAME - user name to use for TLS authentication <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0">#include &lt;curl/curl.h&gt; 
 <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_TLSAUTH_USERNAME, char *user); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
-<p class="level0">Pass a char * as parameter, which should point to the zero terminated username to use for the TLS authentication method specified with the <a Class="emphasis" href="./CURLOPT_TLSAUTH_TYPE.html">CURLOPT_TLSAUTH_TYPE</a> option. Requires that the <span Class="emphasis">CURLOPT_TLS_PASSWORD(3)</span> option also be set. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
+<p class="level0">Pass a char * as parameter, which should point to the zero terminated username to use for the TLS authentication method specified with the <a Class="emphasis" href="./CURLOPT_TLSAUTH_TYPE.html">CURLOPT_TLSAUTH_TYPE</a> option. Requires that the <a Class="emphasis" href="./CURLOPT_TLSAUTH_PASSWORD.html">CURLOPT_TLSAUTH_PASSWORD</a> option also be set. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">NULL <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">All TLS-based protocols <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
 <p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>

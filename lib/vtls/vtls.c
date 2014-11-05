@@ -31,7 +31,6 @@
    Curl_ossl_ - prefix for OpenSSL ones
    Curl_gtls_ - prefix for GnuTLS ones
    Curl_nss_ - prefix for NSS ones
-   Curl_qssl_ - prefix for QsoSSL ones
    Curl_gskit_ - prefix for GSKit ones
    Curl_polarssl_ - prefix for PolarSSL ones
    Curl_cyassl_ - prefix for CyaSSL ones
@@ -60,16 +59,6 @@
 #include "urldata.h"
 
 #include "vtls.h" /* generic SSL protos etc */
-#include "openssl.h" /* OpenSSL versions */
-#include "gtls.h"   /* GnuTLS versions */
-#include "nssg.h"   /* NSS versions */
-#include "qssl.h"   /* QSOSSL versions */
-#include "gskit.h"  /* Global Secure ToolKit versions */
-#include "polarssl.h" /* PolarSSL versions */
-#include "axtls.h"  /* axTLS versions */
-#include "cyassl.h"  /* CyaSSL versions */
-#include "curl_schannel.h" /* Schannel SSPI version */
-#include "curl_darwinssl.h" /* SecureTransport (Darwin) version */
 #include "slist.h"
 #include "sendf.h"
 #include "rawstr.h"
@@ -78,6 +67,8 @@
 #include "progress.h"
 #include "share.h"
 #include "timeval.h"
+#include "curl_md5.h"
+#include "warnless.h"
 
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
@@ -193,7 +184,7 @@ void Curl_free_ssl_config(struct ssl_config_data* sslc)
 
 unsigned int Curl_rand(struct SessionHandle *data)
 {
-  unsigned int r;
+  unsigned int r = 0;
   static unsigned int randseed;
   static bool seeded = FALSE;
 
@@ -289,35 +280,35 @@ void Curl_ssl_cleanup(void)
 CURLcode
 Curl_ssl_connect(struct connectdata *conn, int sockindex)
 {
-  CURLcode res;
+  CURLcode result;
   /* mark this is being ssl-enabled from here on. */
   conn->ssl[sockindex].use = TRUE;
   conn->ssl[sockindex].state = ssl_connection_negotiating;
 
-  res = curlssl_connect(conn, sockindex);
+  result = curlssl_connect(conn, sockindex);
 
-  if(!res)
+  if(!result)
     Curl_pgrsTime(conn->data, TIMER_APPCONNECT); /* SSL is connected */
 
-  return res;
+  return result;
 }
 
 CURLcode
 Curl_ssl_connect_nonblocking(struct connectdata *conn, int sockindex,
                              bool *done)
 {
-  CURLcode res;
+  CURLcode result;
   /* mark this is being ssl requested from here on. */
   conn->ssl[sockindex].use = TRUE;
 #ifdef curlssl_connect_nonblocking
-  res = curlssl_connect_nonblocking(conn, sockindex, done);
+  result = curlssl_connect_nonblocking(conn, sockindex, done);
 #else
   *done = TRUE; /* fallback to BLOCKING */
-  res = curlssl_connect(conn, sockindex);
+  result = curlssl_connect(conn, sockindex);
 #endif /* non-blocking connect support */
-  if(!res && *done)
+  if(!result && *done)
     Curl_pgrsTime(conn->data, TIMER_APPCONNECT); /* SSL is connected */
-  return res;
+  return result;
 }
 
 /*
@@ -643,7 +634,7 @@ CURLcode Curl_ssl_push_certinfo_len(struct SessionHandle *data,
   struct curl_certinfo * ci = &data->info.certs;
   char * output;
   struct curl_slist * nl;
-  CURLcode res = CURLE_OK;
+  CURLcode result = CURLE_OK;
   size_t labellen = strlen(label);
   size_t outlen = labellen + 1 + valuelen + 1; /* label:value\0 */
 
@@ -664,11 +655,11 @@ CURLcode Curl_ssl_push_certinfo_len(struct SessionHandle *data,
   if(!nl) {
     free(output);
     curl_slist_free_all(ci->certinfo[certnum]);
-    res = CURLE_OUT_OF_MEMORY;
+    result = CURLE_OUT_OF_MEMORY;
   }
 
   ci->certinfo[certnum] = nl;
-  return res;
+  return result;
 }
 
 /*
@@ -692,14 +683,78 @@ int Curl_ssl_random(struct SessionHandle *data,
   return curlssl_random(data, entropy, length);
 }
 
-#ifdef have_curlssl_md5sum
+/*
+ * Generic pinned public key check.
+ */
+
+CURLcode Curl_pin_peer_pubkey(const char *pinnedpubkey,
+                              const unsigned char *pubkey, size_t pubkeylen)
+{
+  FILE *fp = NULL;
+  unsigned char *buf = NULL;
+  long size = 0;
+  CURLcode result = CURLE_SSL_PINNEDPUBKEYNOTMATCH;
+
+  /* if a path wasn't specified, don't pin */
+  if(!pinnedpubkey)
+    return CURLE_OK;
+  if(!pubkey || !pubkeylen)
+    return result;
+  fp = fopen(pinnedpubkey, "rb");
+  if(!fp)
+    return result;
+
+  do {
+    /* Determine the file's size */
+    if(fseek(fp, 0, SEEK_END))
+      break;
+    size = ftell(fp);
+    if(fseek(fp, 0, SEEK_SET))
+      break;
+
+    /*
+     * if the size of our certificate doesn't match the size of
+     * the file, they can't be the same, don't bother reading it
+     */
+    if((long) pubkeylen != size)
+      break;
+
+    /* Allocate buffer for the pinned key. */
+    buf = malloc(pubkeylen);
+    if(!buf)
+      break;
+
+    /* Returns number of elements read, which should be 1 */
+    if((int) fread(buf, pubkeylen, 1, fp) != 1)
+      break;
+
+    /* The one good exit point */
+    if(!memcmp(pubkey, buf, pubkeylen))
+      result = CURLE_OK;
+  } while(0);
+
+  Curl_safefree(buf);
+  fclose(fp);
+
+  return result;
+}
+
 void Curl_ssl_md5sum(unsigned char *tmp, /* input */
                      size_t tmplen,
                      unsigned char *md5sum, /* output */
                      size_t md5len)
 {
+#ifdef curlssl_md5sum
   curlssl_md5sum(tmp, tmplen, md5sum, md5len);
-}
+#else
+  MD5_context *MD5pw;
+
+  (void) md5len;
+
+  MD5pw = Curl_MD5_init(Curl_DIGEST_MD5);
+  Curl_MD5_update(MD5pw, tmp, curlx_uztoui(tmplen));
+  Curl_MD5_final(MD5pw, md5sum);
 #endif
+}
 
 #endif /* USE_SSL */

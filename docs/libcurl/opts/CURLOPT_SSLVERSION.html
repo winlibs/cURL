@@ -53,7 +53,7 @@ p.roffit {
 <p class="level0">Use one of the available defines for this purpose. The available options are: 
 <p class="level1">
 <p class="level0"><a name="CURLSSLVERSIONDEFAULT"></a><span class="nroffip">CURL_SSLVERSION_DEFAULT</span> 
-<p class="level1">The default action. This will attempt to figure out the remote SSL protocol version, i.e. either SSLv3 or TLSv1 
+<p class="level1">The default action. This will attempt to figure out the remote SSL protocol version. 
 <p class="level0"><a name="CURLSSLVERSIONTLSv1"></a><span class="nroffip">CURL_SSLVERSION_TLSv1</span> 
 <p class="level1">TLSv1.x 
 <p class="level0"><a name="CURLSSLVERSIONSSLv2"></a><span class="nroffip">CURL_SSLVERSION_SSLv2</span> 
@@ -69,9 +69,21 @@ p.roffit {
 <p class="level0"><a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">CURL_SSLVERSION_DEFAULT <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">All TLS based protocols: HTTPS, FTPS, IMAPS, POP3, SMTPS etc. <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
-<p class="level0">SSLv2 is disabled by default since 7.18.1 <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
+<p class="level0"><pre>
+<p class="level0">CURL *curl = curl_easy_init();
+ if(curl) {
+ &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+ <p class="level0">&nbsp; /* ask libcurl to use TLS version 1.0 or later */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+ <p class="level0">&nbsp; /* Perform the request */
+ &nbsp; curl_easy_perform(curl);
+ }
+ </pre>
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0">SSLv2 is disabled by default since 7.18.1. Other SSL versions availability may vary depending on which backend libcurl has been built to use. 
+<p class="level0">SSLv3 is disabled by default since 7.39.0. <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./CURLOPT_USE_SSL.html">CURLOPT_USE_SSL</a> <a Class="manpage" href="./CURLOPT_HTTP_VERSION.html">CURLOPT_HTTP_VERSION</a> <span Class="manpage"> </span> <p class="roffit">
+<p class="level0"><a Class="manpage" href="./CURLOPT_USE_SSL.html">CURLOPT_USE_SSL</a> <a Class="manpage" href="./CURLOPT_HTTP_VERSION.html">CURLOPT_HTTP_VERSION</a> <span Class="manpage"> </span> <a Class="manpage" href="./CURLOPT_IPRESOLVE.html">CURLOPT_IPRESOLVE</a> <p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

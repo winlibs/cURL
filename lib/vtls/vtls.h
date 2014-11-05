@@ -23,6 +23,16 @@
  ***************************************************************************/
 #include "curl_setup.h"
 
+#include "openssl.h" /* OpenSSL versions */
+#include "gtls.h"   /* GnuTLS versions */
+#include "nssg.h"   /* NSS versions */
+#include "gskit.h"  /* Global Secure ToolKit versions */
+#include "polarssl.h" /* PolarSSL versions */
+#include "axtls.h"  /* axTLS versions */
+#include "cyassl.h"  /* CyaSSL versions */
+#include "curl_schannel.h" /* Schannel SSPI version */
+#include "curl_darwinssl.h" /* SecureTransport (Darwin) version */
+
 #ifndef MD5_DIGEST_LENGTH
 #define MD5_DIGEST_LENGTH 16 /* fixed size */
 #endif
@@ -98,12 +108,11 @@ void Curl_ssl_md5sum(unsigned char *tmp, /* input */
                      size_t tmplen,
                      unsigned char *md5sum, /* output */
                      size_t md5len);
+/* Check pinned public key. */
+CURLcode Curl_pin_peer_pubkey(const char *pinnedpubkey,
+                              const unsigned char *pubkey, size_t pubkeylen);
 
 #define SSL_SHUTDOWN_TIMEOUT 10000 /* ms */
-
-#ifdef have_curlssl_md5sum
-#define HAVE_CURL_SSL_MD5SUM
-#endif
 
 #else
 /* When SSL support is not present, just define away these function calls */

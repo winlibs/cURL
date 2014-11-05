@@ -215,6 +215,7 @@ static const struct LongShort aliases[]= {
   {"Em", "tlsauthtype",              TRUE},
   {"En", "ssl-allow-beast",          FALSE},
   {"Eo", "login-options",            TRUE},
+  {"Ep", "pinnedpubkey",             TRUE},
   {"f",  "fail",                     FALSE},
   {"F",  "form",                     TRUE},
   {"Fs", "form-string",              TRUE},
@@ -437,12 +438,7 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
     /* we can loop here if we have multiple single-letters */
 
     if(!longopt) {
-      if(NULL != parse) {
-        letter = (char)*parse;
-      }
-      else {
-        letter = '\0';
-      }
+      letter = (char)*parse;
       subletter='\0';
     }
     else {
@@ -1358,6 +1354,11 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
         GetStr(&config->login_options, nextarg);
         break;
 
+      case 'p': /* Pinned public key DER file */
+        /* Pinned public key DER file */
+        GetStr(&config->pinnedpubkey, nextarg);
+        break;
+
       default: /* certificate file */
       {
         char *certname, *passphrase;
@@ -1762,6 +1763,7 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
       switch(*nextarg) {
       case '+':
         nextarg++;
+        /* FALLTHROUGH */
       default:
         /* If-Modified-Since: (section 14.28 in RFC2068) */
         config->timecond = CURL_TIMECOND_IFMODSINCE;

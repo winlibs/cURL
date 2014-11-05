@@ -46,10 +46,10 @@ p.roffit {
 </head><body>
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
-<p class="level0">curl_multi_assign - set data to association with an internal socket <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
+<p class="level0">curl_multi_assign - set data to associate with an internal socket <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0">#include &lt;curl/curl.h&gt; 
 <p class="level0">CURLMcode curl_multi_assign(CURLM *multi_handle, curl_socket_t sockfd, &nbsp;                           void *sockptr); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
-<p class="level0">This function creates an association in the multi handle between the given socket and a private pointer of the application. This is designed for <a Class="emphasis" href="./curl_multi_socket.html">curl_multi_socket</a> uses. 
+<p class="level0">This function creates an association in the multi handle between the given socket and a private pointer of the application. This is designed for <a Class="emphasis" href="./curl_multi_socket_action.html">curl_multi_socket_action</a> uses. 
 <p class="level0">When set, the <span Class="emphasis">sockptr</span> pointer will be passed to all future socket callbacks for the specific <span Class="emphasis">sockfd</span> socket. 
 <p class="level0">If the given <span Class="emphasis">sockfd</span> isn't already in use by libcurl, this function will return an error. 
 <p class="level0">libcurl only keeps one single pointer associated with a socket, so calling this function several times for the same socket will make the last set pointer get used. 

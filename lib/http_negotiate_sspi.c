@@ -53,7 +53,7 @@ int Curl_input_negotiate(struct connectdata *conn, bool proxy,
   SecBufferDesc     in_buff_desc;
   SecBuffer         in_sec_buff;
   unsigned long     context_attributes;
-  TimeStamp         lifetime;
+  TimeStamp         expiry;
   int ret;
   size_t len = 0, input_token_len = 0;
   CURLcode error;
@@ -113,8 +113,8 @@ int Curl_input_negotiate(struct connectdata *conn, bool proxy,
 
     /* Allocate input and output buffers according to the max token size
        as indicated by the security package */
-    neg_ctx->max_token_length = SecurityPackage->cbMaxToken;
-    neg_ctx->output_token = malloc(neg_ctx->max_token_length);
+    neg_ctx->token_max = SecurityPackage->cbMaxToken;
+    neg_ctx->output_token = malloc(neg_ctx->token_max);
     s_pSecFn->FreeContextBuffer(SecurityPackage);
   }
 
@@ -158,7 +158,7 @@ int Curl_input_negotiate(struct connectdata *conn, bool proxy,
                                          (TCHAR *) TEXT("Negotiate"),
                                          SECPKG_CRED_OUTBOUND, NULL,
                                          neg_ctx->p_identity, NULL, NULL,
-                                         neg_ctx->credentials, &lifetime);
+                                         neg_ctx->credentials, &expiry);
     if(neg_ctx->status != SEC_E_OK)
       return -1;
   }
@@ -176,7 +176,7 @@ int Curl_input_negotiate(struct connectdata *conn, bool proxy,
   out_buff_desc.pBuffers  = &out_sec_buff;
   out_sec_buff.BufferType = SECBUFFER_TOKEN;
   out_sec_buff.pvBuffer   = neg_ctx->output_token;
-  out_sec_buff.cbBuffer   = curlx_uztoul(neg_ctx->max_token_length);
+  out_sec_buff.cbBuffer   = curlx_uztoul(neg_ctx->token_max);
 
   /* Setup the "input" security buffer if present */
   if(input_token) {
@@ -201,7 +201,7 @@ int Curl_input_negotiate(struct connectdata *conn, bool proxy,
     neg_ctx->context,
     &out_buff_desc,
     &context_attributes,
-    &lifetime);
+    &expiry);
 
   Curl_safefree(input_token);
 
@@ -258,25 +258,30 @@ CURLcode Curl_output_negotiate(struct connectdata *conn, bool proxy)
 
 static void cleanup(struct negotiatedata *neg_ctx)
 {
+  /* Free our security context */
   if(neg_ctx->context) {
     s_pSecFn->DeleteSecurityContext(neg_ctx->context);
     free(neg_ctx->context);
     neg_ctx->context = NULL;
   }
 
+  /* Free our credentials handle */
   if(neg_ctx->credentials) {
     s_pSecFn->FreeCredentialsHandle(neg_ctx->credentials);
     free(neg_ctx->credentials);
     neg_ctx->credentials = NULL;
   }
 
-  neg_ctx->max_token_length = 0;
-  Curl_safefree(neg_ctx->output_token);
-
-  Curl_safefree(neg_ctx->server_name);
-
+  /* Free our identity */
   Curl_sspi_free_identity(neg_ctx->p_identity);
   neg_ctx->p_identity = NULL;
+
+  /* Free the SPN and output token */
+  Curl_safefree(neg_ctx->server_name);
+  Curl_safefree(neg_ctx->output_token);
+
+  /* Reset any variables */
+  neg_ctx->token_max = 0;
 }
 
 void Curl_cleanup_negotiate(struct SessionHandle *data)

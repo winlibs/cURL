@@ -292,18 +292,13 @@ CURLcode Curl_ntlm_decode_type2_message(struct SessionHandle *data,
     return error;
 
   if(!buffer) {
-    infof(data, "NTLM handshake failure (unhandled condition)\n");
-    return CURLE_REMOTE_ACCESS_DENIED;
+    infof(data, "NTLM handshake failure (empty type-2 message)\n");
+    return CURLE_BAD_CONTENT_ENCODING;
   }
 
 #ifdef USE_WINDOWS_SSPI
-  ntlm->type_2 = malloc(size + 1);
-  if(ntlm->type_2 == NULL) {
-    free(buffer);
-    return CURLE_OUT_OF_MEMORY;
-  }
-  ntlm->n_type_2 = curlx_uztoul(size);
-  memcpy(ntlm->type_2, buffer, size);
+  ntlm->input_token = buffer;
+  ntlm->input_token_len = size;
 #else
   ntlm->flags = 0;
 
@@ -313,7 +308,7 @@ CURLcode Curl_ntlm_decode_type2_message(struct SessionHandle *data,
     /* This was not a good enough type-2 message */
     free(buffer);
     infof(data, "NTLM handshake failure (bad type-2 message)\n");
-    return CURLE_REMOTE_ACCESS_DENIED;
+    return CURLE_BAD_CONTENT_ENCODING;
   }
 
   ntlm->flags = readint_le(&buffer[20]);
@@ -336,8 +331,9 @@ CURLcode Curl_ntlm_decode_type2_message(struct SessionHandle *data,
     fprintf(stderr, "\n****\n");
     fprintf(stderr, "**** Header %s\n ", header);
   });
-#endif
+
   free(buffer);
+#endif
 
   return CURLE_OK;
 }
@@ -345,19 +341,30 @@ CURLcode Curl_ntlm_decode_type2_message(struct SessionHandle *data,
 #ifdef USE_WINDOWS_SSPI
 void Curl_ntlm_sspi_cleanup(struct ntlmdata *ntlm)
 {
-  Curl_safefree(ntlm->type_2);
-
-  if(ntlm->has_handles) {
-    s_pSecFn->DeleteSecurityContext(&ntlm->c_handle);
-    s_pSecFn->FreeCredentialsHandle(&ntlm->handle);
-    ntlm->has_handles = 0;
+  /* Free our security context */
+  if(ntlm->context) {
+    s_pSecFn->DeleteSecurityContext(ntlm->context);
+    free(ntlm->context);
+    ntlm->context = NULL;
   }
 
-  ntlm->max_token_length = 0;
-  Curl_safefree(ntlm->output_token);
+  /* Free our credentials handle */
+  if(ntlm->credentials) {
+    s_pSecFn->FreeCredentialsHandle(ntlm->credentials);
+    free(ntlm->credentials);
+    ntlm->credentials = NULL;
+  }
 
+  /* Free our identity */
   Curl_sspi_free_identity(ntlm->p_identity);
   ntlm->p_identity = NULL;
+
+  /* Free the input and output tokens */
+  Curl_safefree(ntlm->input_token);
+  Curl_safefree(ntlm->output_token);
+
+  /* Reset any variables */
+  ntlm->token_max = 0;
 }
 #endif
 
@@ -421,7 +428,7 @@ CURLcode Curl_ntlm_create_type1_message(const char *userp,
   SecBufferDesc type_1_desc;
   SECURITY_STATUS status;
   unsigned long attrs;
-  TimeStamp tsDummy; /* For Windows 9x compatibility of SSPI calls */
+  TimeStamp expiry; /* For Windows 9x compatibility of SSPI calls */
 
   Curl_ntlm_sspi_cleanup(ntlm);
 
@@ -431,13 +438,13 @@ CURLcode Curl_ntlm_create_type1_message(const char *userp,
   if(status != SEC_E_OK)
     return CURLE_NOT_BUILT_IN;
 
-  ntlm->max_token_length = SecurityPackage->cbMaxToken;
+  ntlm->token_max = SecurityPackage->cbMaxToken;
 
   /* Release the package buffer as it is not required anymore */
   s_pSecFn->FreeContextBuffer(SecurityPackage);
 
   /* Allocate our output buffer */
-  ntlm->output_token = malloc(ntlm->max_token_length);
+  ntlm->output_token = malloc(ntlm->token_max);
   if(!ntlm->output_token)
     return CURLE_OUT_OF_MEMORY;
 
@@ -456,14 +463,28 @@ CURLcode Curl_ntlm_create_type1_message(const char *userp,
     /* Use the current Windows user */
     ntlm->p_identity = NULL;
 
-  /* Acquire our credientials handle */
+  /* Allocate our credentials handle */
+  ntlm->credentials = malloc(sizeof(CredHandle));
+  if(!ntlm->credentials)
+    return CURLE_OUT_OF_MEMORY;
+
+  memset(ntlm->credentials, 0, sizeof(CredHandle));
+
+  /* Acquire our credentials handle */
   status = s_pSecFn->AcquireCredentialsHandle(NULL,
                                               (TCHAR *) TEXT("NTLM"),
                                               SECPKG_CRED_OUTBOUND, NULL,
                                               ntlm->p_identity, NULL, NULL,
-                                              &ntlm->handle, &tsDummy);
+                                              ntlm->credentials, &expiry);
   if(status != SEC_E_OK)
+    return CURLE_LOGIN_DENIED;
+
+  /* Allocate our new context handle */
+  ntlm->context = malloc(sizeof(CtxtHandle));
+  if(!ntlm->context)
     return CURLE_OUT_OF_MEMORY;
+
+  memset(ntlm->context, 0, sizeof(CtxtHandle));
 
   /* Setup the type-1 "output" security buffer */
   type_1_desc.ulVersion = SECBUFFER_VERSION;
@@ -471,28 +492,22 @@ CURLcode Curl_ntlm_create_type1_message(const char *userp,
   type_1_desc.pBuffers  = &type_1_buf;
   type_1_buf.BufferType = SECBUFFER_TOKEN;
   type_1_buf.pvBuffer   = ntlm->output_token;
-  type_1_buf.cbBuffer   = curlx_uztoul(ntlm->max_token_length);
+  type_1_buf.cbBuffer   = curlx_uztoul(ntlm->token_max);
 
   /* Generate our type-1 message */
-  status = s_pSecFn->InitializeSecurityContext(&ntlm->handle, NULL,
+  status = s_pSecFn->InitializeSecurityContext(ntlm->credentials, NULL,
                                                (TCHAR *) TEXT(""),
-                                               ISC_REQ_CONFIDENTIALITY |
-                                               ISC_REQ_REPLAY_DETECT |
-                                               ISC_REQ_CONNECTION,
-                                               0, SECURITY_NETWORK_DREP,
+                                               0, 0, SECURITY_NETWORK_DREP,
                                                NULL, 0,
-                                               &ntlm->c_handle, &type_1_desc,
-                                               &attrs, &tsDummy);
+                                               ntlm->context, &type_1_desc,
+                                               &attrs, &expiry);
 
-  if(status == SEC_I_COMPLETE_AND_CONTINUE ||
-     status == SEC_I_CONTINUE_NEEDED)
-    s_pSecFn->CompleteAuthToken(&ntlm->c_handle, &type_1_desc);
-  else if(status != SEC_E_OK) {
-    s_pSecFn->FreeCredentialsHandle(&ntlm->handle);
+  if(status == SEC_I_COMPLETE_NEEDED ||
+     status == SEC_I_COMPLETE_AND_CONTINUE)
+    s_pSecFn->CompleteAuthToken(ntlm->context, &type_1_desc);
+  else if(status != SEC_E_OK && status != SEC_I_CONTINUE_NEEDED)
     return CURLE_RECV_ERROR;
-  }
 
-  ntlm->has_handles = 1;
   size = type_1_buf.cbBuffer;
 
 #else
@@ -627,29 +642,28 @@ CURLcode Curl_ntlm_create_type3_message(struct SessionHandle *data,
                                           (*) -> Optional
   */
 
+  CURLcode result = CURLE_OK;
   size_t size;
 
 #ifdef USE_WINDOWS_SSPI
-  CURLcode result = CURLE_OK;
   SecBuffer type_2_buf;
   SecBuffer type_3_buf;
   SecBufferDesc type_2_desc;
   SecBufferDesc type_3_desc;
   SECURITY_STATUS status;
   unsigned long attrs;
-  TimeStamp tsDummy; /* For Windows 9x compatibility of SSPI calls */
+  TimeStamp expiry; /* For Windows 9x compatibility of SSPI calls */
 
   (void)passwdp;
   (void)userp;
-  (void)data;
 
   /* Setup the type-2 "input" security buffer */
   type_2_desc.ulVersion = SECBUFFER_VERSION;
   type_2_desc.cBuffers  = 1;
   type_2_desc.pBuffers  = &type_2_buf;
   type_2_buf.BufferType = SECBUFFER_TOKEN;
-  type_2_buf.pvBuffer   = ntlm->type_2;
-  type_2_buf.cbBuffer   = ntlm->n_type_2;
+  type_2_buf.pvBuffer   = ntlm->input_token;
+  type_2_buf.cbBuffer   = curlx_uztoul(ntlm->input_token_len);
 
   /* Setup the type-3 "output" security buffer */
   type_3_desc.ulVersion = SECBUFFER_VERSION;
@@ -657,22 +671,23 @@ CURLcode Curl_ntlm_create_type3_message(struct SessionHandle *data,
   type_3_desc.pBuffers  = &type_3_buf;
   type_3_buf.BufferType = SECBUFFER_TOKEN;
   type_3_buf.pvBuffer   = ntlm->output_token;
-  type_3_buf.cbBuffer   = curlx_uztoul(ntlm->max_token_length);
+  type_3_buf.cbBuffer   = curlx_uztoul(ntlm->token_max);
 
   /* Generate our type-3 message */
-  status = s_pSecFn->InitializeSecurityContext(&ntlm->handle,
-                                               &ntlm->c_handle,
+  status = s_pSecFn->InitializeSecurityContext(ntlm->credentials,
+                                               ntlm->context,
                                                (TCHAR *) TEXT(""),
-                                               ISC_REQ_CONFIDENTIALITY |
-                                               ISC_REQ_REPLAY_DETECT |
-                                               ISC_REQ_CONNECTION,
-                                               0, SECURITY_NETWORK_DREP,
+                                               0, 0, SECURITY_NETWORK_DREP,
                                                &type_2_desc,
-                                               0, &ntlm->c_handle,
+                                               0, ntlm->context,
                                                &type_3_desc,
-                                               &attrs, &tsDummy);
-  if(status != SEC_E_OK)
+                                               &attrs, &expiry);
+  if(status != SEC_E_OK) {
+    infof(data, "NTLM handshake failure (type-3 message): Status=%x\n",
+          status);
+
     return CURLE_RECV_ERROR;
+  }
 
   size = type_3_buf.cbBuffer;
 
@@ -706,7 +721,6 @@ CURLcode Curl_ntlm_create_type3_message(struct SessionHandle *data,
   size_t hostlen = 0;
   size_t userlen = 0;
   size_t domlen = 0;
-  CURLcode res = CURLE_OK;
 
   user = strchr(userp, '\\');
   if(!user)
@@ -742,28 +756,28 @@ CURLcode Curl_ntlm_create_type3_message(struct SessionHandle *data,
     entropy[0] = Curl_rand(data);
     entropy[1] = Curl_rand(data);
 
-    res = Curl_ntlm_core_mk_nt_hash(data, passwdp, ntbuffer);
-    if(res)
-      return res;
+    result = Curl_ntlm_core_mk_nt_hash(data, passwdp, ntbuffer);
+    if(result)
+      return result;
 
-    res = Curl_ntlm_core_mk_ntlmv2_hash(user, userlen, domain, domlen,
-                                        ntbuffer, ntlmv2hash);
-    if(res)
-      return res;
+    result = Curl_ntlm_core_mk_ntlmv2_hash(user, userlen, domain, domlen,
+                                           ntbuffer, ntlmv2hash);
+    if(result)
+      return result;
 
     /* LMv2 response */
-    res = Curl_ntlm_core_mk_lmv2_resp(ntlmv2hash,
-                                      (unsigned char *)&entropy[0],
-                                      &ntlm->nonce[0], lmresp);
-    if(res)
-      return res;
+    result = Curl_ntlm_core_mk_lmv2_resp(ntlmv2hash,
+                                         (unsigned char *)&entropy[0],
+                                         &ntlm->nonce[0], lmresp);
+    if(result)
+      return result;
 
     /* NTLMv2 response */
-    res = Curl_ntlm_core_mk_ntlmv2_resp(ntlmv2hash,
-                                        (unsigned char *)&entropy[0],
-                                        ntlm, &ntlmv2resp, &ntresplen);
-    if(res)
-      return res;
+    result = Curl_ntlm_core_mk_ntlmv2_resp(ntlmv2hash,
+                                           (unsigned char *)&entropy[0],
+                                           ntlm, &ntlmv2resp, &ntresplen);
+    if(result)
+      return result;
 
     ptr_ntresp = ntlmv2resp;
   }
@@ -796,9 +810,9 @@ CURLcode Curl_ntlm_create_type3_message(struct SessionHandle *data,
 
     /* We shall only use the first 8 bytes of md5sum, but the des
        code in Curl_ntlm_core_lm_resp only encrypt the first 8 bytes */
-    if(CURLE_OUT_OF_MEMORY ==
-       Curl_ntlm_core_mk_nt_hash(data, passwdp, ntbuffer))
-      return CURLE_OUT_OF_MEMORY;
+    result = Curl_ntlm_core_mk_nt_hash(data, passwdp, ntbuffer);
+    if(result)
+      return result;
 
     Curl_ntlm_core_lm_resp(ntbuffer, md5sum, ntresp);
 
@@ -815,14 +829,19 @@ CURLcode Curl_ntlm_create_type3_message(struct SessionHandle *data,
     unsigned char lmbuffer[0x18];
 
 #if USE_NTRESPONSES
-    if(CURLE_OUT_OF_MEMORY ==
-       Curl_ntlm_core_mk_nt_hash(data, passwdp, ntbuffer))
-      return CURLE_OUT_OF_MEMORY;
+    result = Curl_ntlm_core_mk_nt_hash(data, passwdp, ntbuffer);
+    if(result)
+      return result;
+
     Curl_ntlm_core_lm_resp(ntbuffer, &ntlm->nonce[0], ntresp);
 #endif
 
-    Curl_ntlm_core_mk_lm_hash(data, passwdp, lmbuffer);
+    result = Curl_ntlm_core_mk_lm_hash(data, passwdp, lmbuffer);
+    if(result)
+      return result;
+
     Curl_ntlm_core_lm_resp(lmbuffer, &ntlm->nonce[0], lmresp);
+
     /* A safer but less compatible alternative is:
      *   Curl_ntlm_core_lm_resp(ntbuffer, &ntlm->nonce[0], lmresp);
      * See http://davenport.sourceforge.net/ntlm.html#ntlmVersion2 */
@@ -997,9 +1016,9 @@ CURLcode Curl_ntlm_create_type3_message(struct SessionHandle *data,
   size += hostlen;
 
   /* Convert domain, user, and host to ASCII but leave the rest as-is */
-  res = Curl_convert_to_network(data, (char *)&ntlmbuf[domoff],
-                                size - domoff);
-  if(res)
+  result = Curl_convert_to_network(data, (char *)&ntlmbuf[domoff],
+                                   size - domoff);
+  if(result)
     return CURLE_CONV_FAILED;
 
   /* Return with binary blob encoded into base64 */

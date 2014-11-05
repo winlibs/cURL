@@ -479,10 +479,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
-CMAKE_DIST = CMakeLists.txt CMake/CMakeConfigurableFile.in		    \
-CMake/CurlCheckCSourceCompiles.cmake CMake/CurlCheckCSourceRuns.cmake	    \
-CMake/CurlTests.c CMake/OtherTests.cmake CMake/Platforms/WindowsCache.cmake \
-CMake/Utilities.cmake include/curl/curlbuild.h.cmake
+CMAKE_DIST = CMakeLists.txt CMake/CMakeConfigurableFile.in	\
+ CMake/CurlTests.c CMake/FindGSS.cmake CMake/OtherTests.cmake	\
+ CMake/Platforms/WindowsCache.cmake CMake/Utilities.cmake	\
+ include/curl/curlbuild.h.cmake CMake/Macros.cmake
 
 VC6_LIBTMPL = projects/Windows/VC6/lib/libcurl.tmpl
 VC6_LIBDSP = projects/Windows/VC6/lib/libcurl.dsp
@@ -534,6 +534,7 @@ VC12_SRCVCXPROJ = projects/Windows/VC12/src/curlsrc.vcxproj
 VC12_SRCVCXPROJ_DEPS = $(VC12_SRCTMPL) Makefile.am src/Makefile.inc
 VC_DIST = projects/README	\
  projects/build-openssl.bat	\
+ projects/checksrc.bat	\
  projects/Windows/VC6/curl.dsw	\
  projects/Windows/VC6/lib/libcurl.dsw $(VC6_LIBDSP)	\
  projects/Windows/VC6/src/curlsrc.dsw $(VC6_SRCDSP)	\
@@ -578,10 +579,10 @@ DIST_SUBDIRS = $(SUBDIRS) tests packages docs
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libcurl.pc
 LIB_VTLS_CFILES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c	\
-  vtls/qssl.c vtls/polarssl.c vtls/polarssl_threadlock.c vtls/axtls.c	\
+  vtls/polarssl.c vtls/polarssl_threadlock.c vtls/axtls.c		\
   vtls/cyassl.c vtls/curl_schannel.c vtls/curl_darwinssl.c vtls/gskit.c
 
-LIB_VTLS_HFILES = vtls/qssl.h vtls/openssl.h vtls/vtls.h vtls/gtls.h	\
+LIB_VTLS_HFILES = vtls/openssl.h vtls/vtls.h vtls/gtls.h		\
   vtls/nssg.h vtls/polarssl.h vtls/polarssl_threadlock.h vtls/axtls.h	\
   vtls/cyassl.h vtls/curl_schannel.h vtls/curl_darwinssl.h vtls/gskit.h
 
@@ -630,7 +631,6 @@ HHEADERS = $(LIB_HFILES) $(LIB_VTLS_HFILES)
 # the official API, but we re-use the code here to avoid duplication.
 CURLX_CFILES = \
 	../lib/strtoofft.c \
-	../lib/strdup.c \
 	../lib/rawstr.c \
 	../lib/nonblock.c \
 	../lib/warnless.c
@@ -638,7 +638,6 @@ CURLX_CFILES = \
 CURLX_HFILES = \
 	../lib/curl_setup.h \
 	../lib/strtoofft.h \
-	../lib/strdup.h \
 	../lib/rawstr.h \
 	../lib/nonblock.h \
 	../lib/warnless.h
@@ -674,6 +673,7 @@ CURL_CFILES = \
 	tool_panykey.c \
 	tool_paramhlp.c \
 	tool_parsecfg.c \
+	tool_strdup.c \
 	tool_setopt.c \
 	tool_sleep.c \
 	tool_urlglob.c \
@@ -718,6 +718,7 @@ CURL_HFILES = \
 	tool_setopt.h \
 	tool_setup.h \
 	tool_sleep.h \
+	tool_strdup.h \
 	tool_urlglob.h \
 	tool_util.h \
 	tool_version.h \

@@ -133,11 +133,17 @@ p.roffit {
 <p class="level0">There is no default URL. If this option isn't set, no transfer can be performed. <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">All <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
 <p class="level0"><pre>
-<p class="level0">&nbsp;  curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+<p class="level0">CURL *curl = curl_easy_init();
+ if(curl) {
+ &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+ <p class="level0">&nbsp; curl_easy_perform(curl);
+ }
  </pre>
-<a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
-<p class="level0">POP3 and SMTP added in 7.31.0 <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
-<p class="level0">Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./CURLOPT_VERBOSE.html">CURLOPT_VERBOSE</a> <a Class="manpage" href="./CURLOPT_PROTOCOLS.html">CURLOPT_PROTOCOLS</a> <span Class="manpage"> </span> <span Class="manpage">curl_easy_perform (3)</span> <p class="roffit">
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0">POP3 and SMTP were added in 7.31.0 <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
+<p class="level0">Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space. 
+<p class="level0">Note that <span Class="emphasis">curl_easy_setopt(3)</span> won't actually parse the given string so given a bad URL, it will not be detected until <span Class="emphasis">curl_easy_perform(3)</span> or similar is called. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
+<p class="level0"><a Class="manpage" href="./CURLOPT_VERBOSE.html">CURLOPT_VERBOSE</a> <a Class="manpage" href="./CURLOPT_PROTOCOLS.html">CURLOPT_PROTOCOLS</a> <span Class="manpage"> </span> <a Class="manpage" href="./CURLOPT_FORBID_REUSE.html">CURLOPT_FORBID_REUSE</a> <a Class="manpage" href="./CURLOPT_FRESH_CONNECT.html">CURLOPT_FRESH_CONNECT</a> <span Class="manpage"> </span> <span Class="manpage">curl_easy_perform (3)</span> <p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

@@ -49,7 +49,7 @@ p.roffit {
 <p class="level0">CURLOPT_CERTINFO - request SSL certificate information <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0">#include &lt;curl/curl.h&gt; 
 <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_CERTINFO, long certinfo); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
-<p class="level0">Pass a long set to 1 to enable libcurl's certificate chain info gatherer. With this enabled, libcurl (if built with OpenSSL, NSS, GSKit or QsoSSL) will extract lots of information and data about the certificates in the certificate chain used in the SSL connection. This data may then be retrieved after a transfer using <span Class="emphasis">curl_easy_getinfo(3)</span> and its option <span Class="emphasis">CURLINFO_CERTINFO</span>. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
+<p class="level0">Pass a long set to 1 to enable libcurl's certificate chain info gatherer. With this enabled, libcurl (if built with OpenSSL, NSS or GSKit) will extract lots of information and data about the certificates in the certificate chain used in the SSL connection. This data may then be retrieved after a transfer using <span Class="emphasis">curl_easy_getinfo(3)</span> and its option <span Class="emphasis">CURLINFO_CERTINFO</span>. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">0 <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">All TLS-based <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
 <p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>

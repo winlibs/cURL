@@ -58,7 +58,20 @@ p.roffit {
 <p class="level0">To make multipart/formdata posts (aka <a href="http://www.ietf.org/rfc/rfc2388.txt">RFC 2388</a>-posts), check out the <a Class="emphasis" href="./CURLOPT_HTTPPOST.html">CURLOPT_HTTPPOST</a> option combined with <span Class="emphasis">curl_formadd(3)</span>. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">NULL <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">HTTP <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0"><pre>
+<p class="level0">CURL *curl = curl_easy_init();
+ if(curl) {
+ &nbsp; const char *data = "data to send";
+ <p class="level0">&nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+ <p class="level0">&nbsp; /* size of the POST data */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 12L);
+ <p class="level0">&nbsp; /* pass in a pointer to the data - libcurl will not copy */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+ <p class="level0">&nbsp; curl_easy_perform(curl);
+ }
+ </pre>
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Always <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
 <p class="level0"><a Class="manpage" href="./CURLOPT_POSTFIELDSIZE.html">CURLOPT_POSTFIELDSIZE</a> <a Class="manpage" href="./CURLOPT_READFUNCTION.html">CURLOPT_READFUNCTION</a> <span Class="manpage"> </span> <p class="roffit">

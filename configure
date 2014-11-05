@@ -3804,8 +3804,8 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
-# expand $ac_aux_dir to an absolute path
-am_aux_dir=`cd $ac_aux_dir && pwd`
+# Expand $ac_aux_dir to an absolute path.
+am_aux_dir=`cd "$ac_aux_dir" && pwd`
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -21843,10 +21843,7 @@ fi
                     ENGINE_cleanup \
                     CRYPTO_cleanup_all_ex_data \
                     SSL_get_shutdown \
-                    SSLv2_client_method \
-                    SSL_CTX_set_next_proto_select_cb \
-                    SSL_CTX_set_alpn_protos \
-                    SSL_CTX_set_alpn_select_cb
+                    SSLv2_client_method
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -23854,8 +23851,8 @@ fi
         ca="$want_ca"
     capath="no"
   elif test "x$want_capath" != "xno" -a "x$want_capath" != "xunset"; then
-        if test "x$OPENSSL_ENABLED" != "x1"; then
-      as_fn_error $? "--with-ca-path only works with openSSL" "$LINENO" 5
+        if test "x$OPENSSL_ENABLED" != "x1" -a "x$POLARSSL_ENABLED" != "x1"; then
+      as_fn_error $? "--with-ca-path only works with openSSL or PolarSSL" "$LINENO" 5
     fi
     capath="$want_capath"
     ca="no"

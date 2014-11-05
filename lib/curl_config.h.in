@@ -596,15 +596,6 @@
 /* Define to 1 if you have the `SSLv2_client_method' function. */
 #undef HAVE_SSLV2_CLIENT_METHOD
 
-/* Define to 1 if you have the `SSL_CTX_set_alpn_protos' function. */
-#undef HAVE_SSL_CTX_SET_ALPN_PROTOS
-
-/* Define to 1 if you have the `SSL_CTX_set_alpn_select_cb' function. */
-#undef HAVE_SSL_CTX_SET_ALPN_SELECT_CB
-
-/* Define to 1 if you have the `SSL_CTX_set_next_proto_select_cb' function. */
-#undef HAVE_SSL_CTX_SET_NEXT_PROTO_SELECT_CB
-
 /* Define to 1 if you have the `SSL_get_shutdown' function. */
 #undef HAVE_SSL_GET_SHUTDOWN
 

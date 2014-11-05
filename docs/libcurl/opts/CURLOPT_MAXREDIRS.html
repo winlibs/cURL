@@ -53,8 +53,21 @@ p.roffit {
 <p class="level0">Setting the limit to 0 will make libcurl refuse any redirect. 
 <p class="level0">Set it to -1 for an infinite number of redirects. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">-1, unlimited <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
-<p class="level0">HTTP <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0">HTTP(S) <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
+<p class="level0"><pre>
+<p class="level0">curl = curl_easy_init();
+ if(curl) {
+ &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com/">http://example.com/</a>");
+ <p class="level0">&nbsp; /* enable redirect following */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+ <p class="level0">&nbsp; /* allow three redirects */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
+ <p class="level0">&nbsp; /* Perform the request */
+ &nbsp; curl_easy_perform(curl);
+ }
+ </pre>
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Along with HTTP <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK if HTTP is supported, and CURLE_UNKNOWN_OPTION if not. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
 <p class="level0"><a Class="manpage" href="./CURLOPT_FOLLOWLOCATION.html">CURLOPT_FOLLOWLOCATION</a> <span Class="manpage"> </span> <p class="roffit">

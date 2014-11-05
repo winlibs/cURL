@@ -53,7 +53,18 @@ p.roffit {
 <p class="level0">Enabling this option means asking for a download but without a body. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">0, the body is transferred <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">Most <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0"><pre>
+<p class="level0">curl = curl_easy_init();
+ if(curl) {
+ &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+ <p class="level0">&nbsp; /* get us the resource without a body! */ 
+ &nbsp; curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+ <p class="level0">&nbsp; /* Perform the request */ 
+ &nbsp; curl_easy_perform(curl);
+ }
+ </pre>
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Always <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
 <p class="level0"><a Class="manpage" href="./CURLOPT_HTTPGET.html">CURLOPT_HTTPGET</a> <a Class="manpage" href="./CURLOPT_POST.html">CURLOPT_POST</a> <span Class="manpage"> </span> <p class="roffit">

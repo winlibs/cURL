@@ -22,7 +22,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;CURL_STATICLIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -71,7 +71,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -120,7 +120,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;CURL_STATICLIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -169,7 +169,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -220,7 +220,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -271,7 +271,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -322,7 +322,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -373,7 +373,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;CURL_STATICLIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -422,7 +422,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;CURL_STATICLIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -471,7 +471,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;CURL_STATICLIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -520,7 +520,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;CURL_STATICLIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -569,7 +569,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -620,7 +620,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -671,7 +671,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -722,7 +722,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -771,7 +771,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -820,7 +820,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -871,7 +871,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,CURL_STATICLIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -922,7 +922,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -971,7 +971,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
-				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -1010,6 +1010,206 @@
 			<Tool
 				Name="VCWebDeploymentTool"/>
 		</Configuration>
+		<Configuration
+			Name="DLL Debug - DLL Windows SSPI - DLL WinIDN|Win32"
+			OutputDirectory=".\..\..\..\..\build\Win32\VC7\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)\src"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc "
+				Optimization="0"
+				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386 /FIXED:NO"
+				AdditionalDependencies="wldap32.lib ws2_32.lib libcurld.lib"
+				OutputFile="$(OutDir)\curld.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC7\$(ConfigurationName)"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+				SubSystem="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName="$(OutDir)\$(ProjectName).tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\..\..\..\include"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="DLL Release - DLL Windows SSPI - DLL WinIDN|Win32"
+			OutputDirectory=".\..\..\..\..\build\Win32\VC7\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)\src"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc "
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				StringPooling="TRUE"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="TRUE"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386 /FIXED:NO"
+				AdditionalDependencies="wldap32.lib ws2_32.lib libcurl.lib"
+				OutputFile="$(OutDir)\curl.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC7\$(ConfigurationName)"
+				SubSystem="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName="$(OutDir)\$(ProjectName).tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\..\..\..\include"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="LIB Debug - DLL Windows SSPI - DLL WinIDN|Win32"
+			OutputDirectory=".\..\..\..\..\build\Win32\VC7\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)\src"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc "
+				Optimization="0"
+				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386 /FIXED:NO"
+				AdditionalDependencies="normaliz.lib wldap32.lib ws2_32.lib libcurld.lib"
+				OutputFile="$(OutDir)\curld.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC7\$(ConfigurationName)"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+				SubSystem="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName="$(OutDir)\$(ProjectName).tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\..\..\..\include"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="LIB Release - DLL Windows SSPI - DLL WinIDN|Win32"
+			OutputDirectory=".\..\..\..\..\build\Win32\VC7\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)\src"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc "
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\src"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;CURL_STATICLIB"
+				StringPooling="TRUE"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="TRUE"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386 /FIXED:NO"
+				AdditionalDependencies="normaliz.lib wldap32.lib ws2_32.lib libcurl.lib"
+				OutputFile="$(OutDir)\curl.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC7\$(ConfigurationName)"
+				SubSystem="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName="$(OutDir)\$(ProjectName).tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\..\..\..\include"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
 	</Configurations>
 	<Files>
 		<Filter
@@ -1020,9 +1220,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\rawstr.c">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\strdup.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strtoofft.c">
@@ -1127,6 +1324,9 @@
 				RelativePath="..\..\..\..\src\tool_sleep.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\src\tool_strdup.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\tool_urlglob.c">
 			</File>
 			<File
@@ -1159,9 +1359,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\rawstr.h">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\strdup.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strtoofft.h">
@@ -1270,6 +1467,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_sleep.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\src\tool_strdup.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_urlglob.h">

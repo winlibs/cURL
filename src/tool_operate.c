@@ -543,7 +543,7 @@ static CURLcode operate_do(struct GlobalConfig *global,
             res = get_url_file_name(&outfile, this_url);
             if(res)
               goto show_error;
-            if((!outfile || !*outfile) && !config->content_disposition) {
+            if(!*outfile && !config->content_disposition) {
               helpf(global->errors, "Remote file name has no length!\n");
               res = CURLE_WRITE_ERROR;
               goto quit_urls;
@@ -1024,6 +1024,9 @@ static CURLcode operate_do(struct GlobalConfig *global,
           my_setopt_str(curl, CURLOPT_CAPATH, config->capath);
         if(config->crlfile)
           my_setopt_str(curl, CURLOPT_CRLFILE, config->crlfile);
+
+        if(config->pinnedpubkey)
+          my_setopt_str(curl, CURLOPT_PINNEDPUBLICKEY, config->pinnedpubkey);
 
         if(curlinfo->features & CURL_VERSION_SSL) {
           if(config->insecure_ok) {
@@ -1844,6 +1847,9 @@ CURLcode operate(struct GlobalConfig *config, int argc, argv_item_t argv[])
 #ifndef CURL_DISABLE_LIBCURL_OPTION
         /* Cleanup the libcurl source output */
         easysrc_cleanup();
+
+        /* set current back to first so that isn't NULL */
+        config->current = config->first;
 
         /* Dump the libcurl code if previously enabled */
         dumpeasysrc(config);

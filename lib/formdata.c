@@ -24,7 +24,7 @@
 
 #include <curl/curl.h>
 
-#if !defined(CURL_DISABLE_HTTP) || defined(USE_SSLEAY)
+#ifndef CURL_DISABLE_HTTP
 
 #if defined(HAVE_LIBGEN_H) && defined(HAVE_BASENAME)
 #include <libgen.h>
@@ -36,16 +36,13 @@
 #include "strequal.h"
 #include "curl_memory.h"
 #include "sendf.h"
+#include "strdup.h"
 
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
 
 /* The last #include file should be: */
 #include "memdebug.h"
-
-#endif  /* !defined(CURL_DISABLE_HTTP) || defined(USE_SSLEAY) */
-
-#ifndef CURL_DISABLE_HTTP
 
 #ifndef HAVE_BASENAME
 static char *Curl_basename(char *path);
@@ -210,46 +207,6 @@ static const char *ContentTypeForFilename(const char *filename,
   }
   /* we have a contenttype by now */
   return contenttype;
-}
-
-/***************************************************************************
- *
- * memdup()
- *
- * Copies the 'source' data to a newly allocated buffer buffer (that is
- * returned). Uses buffer_length if not null, else uses strlen to determine
- * the length of the buffer to be copied
- *
- * Returns the new pointer or NULL on failure.
- *
- ***************************************************************************/
-static char *memdup(const char *src, size_t buffer_length)
-{
-  size_t length;
-  bool add = FALSE;
-  char *buffer;
-
-  if(buffer_length)
-    length = buffer_length;
-  else if(src) {
-    length = strlen(src);
-    add = TRUE;
-  }
-  else
-    /* no length and a NULL src pointer! */
-    return strdup("");
-
-  buffer = malloc(length+add);
-  if(!buffer)
-    return NULL; /* fail */
-
-  memcpy(buffer, src, length);
-
-  /* if length unknown do null termination */
-  if(add)
-    buffer[length] = '\0';
-
-  return buffer;
 }
 
 /***************************************************************************
@@ -682,9 +639,12 @@ CURLFORMcode FormAdd(struct curl_httppost **httppost,
            (form == first_form) ) {
           /* Note that there's small risk that form->name is NULL here if the
              app passed in a bad combo, so we better check for that first. */
-          if(form->name)
+          if(form->name) {
             /* copy name (without strdup; possibly contains null characters) */
-            form->name = memdup(form->name, form->namelength);
+            form->name = Curl_memdup(form->name, form->namelength?
+                                     form->namelength:
+                                     strlen(form->name)+1);
+          }
           if(!form->name) {
             return_value = CURL_FORMADD_MEMORY;
             break;
@@ -693,9 +653,11 @@ CURLFORMcode FormAdd(struct curl_httppost **httppost,
         }
         if(!(form->flags & (HTTPPOST_FILENAME | HTTPPOST_READFILE |
                             HTTPPOST_PTRCONTENTS | HTTPPOST_PTRBUFFER |
-                            HTTPPOST_CALLBACK)) ) {
+                            HTTPPOST_CALLBACK)) && form->value) {
           /* copy value (without strdup; possibly contains null characters) */
-          form->value = memdup(form->value, form->contentslength);
+          form->value = Curl_memdup(form->value, form->contentslength?
+                                    form->contentslength:
+                                    strlen(form->value)+1);
           if(!form->value) {
             return_value = CURL_FORMADD_MEMORY;
             break;
@@ -954,13 +916,13 @@ void Curl_formclean(struct FormData **form_ptr)
 int curl_formget(struct curl_httppost *form, void *arg,
                  curl_formget_callback append)
 {
-  CURLcode rc;
+  CURLcode result;
   curl_off_t size;
   struct FormData *data, *ptr;
 
-  rc = Curl_getformdata(NULL, &data, form, NULL, &size);
-  if(rc != CURLE_OK)
-    return (int)rc;
+  result = Curl_getformdata(NULL, &data, form, NULL, &size);
+  if(result)
+    return (int)result;
 
   for(ptr = data; ptr; ptr = ptr->next) {
     if((ptr->type == FORM_FILE) || (ptr->type == FORM_CALLBACK)) {
@@ -1369,10 +1331,8 @@ CURLcode Curl_getformdata(struct SessionHandle *data,
   } while((post = post->next) != NULL); /* for each field */
 
   /* end-boundary for everything */
-  if(CURLE_OK == result)
-    result = AddFormDataf(&form, &size,
-                          "\r\n--%s--\r\n",
-                          boundary);
+  if(!result)
+    result = AddFormDataf(&form, &size, "\r\n--%s--\r\n", boundary);
 
   if(result) {
     Curl_formclean(&firstform);

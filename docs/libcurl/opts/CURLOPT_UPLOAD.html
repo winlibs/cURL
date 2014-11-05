@@ -54,7 +54,25 @@ p.roffit {
 <p class="level0">If you use PUT to a HTTP 1.1 server, you can upload data without knowing the size before starting the transfer if you use chunked encoding. You enable this by adding a header like "Transfer-Encoding: chunked" with <a Class="emphasis" href="./CURLOPT_HTTPHEADER.html">CURLOPT_HTTPHEADER</a>. With HTTP 1.0 or without chunked transfer, you must specify the size. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">0, default is download <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">Most <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0"><pre>
+<p class="level0">CURL *curl = curl_easy_init();
+ if(curl) {
+ &nbsp; /* we want to use our own read function */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+ <p class="level0">&nbsp; /* enable uploading */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+ <p class="level0">&nbsp; /* specify target */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="ftp://example.com/dir/to/newfile">ftp://example.com/dir/to/newfile</a>");
+ <p class="level0">&nbsp; /* now specify which pointer to pass to our callback */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_READDATA, hd_src);
+ <p class="level0">&nbsp; /* Set the size of the file to upload */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)fsize);
+ <p class="level0">&nbsp; /* Now run off and do what you've been told! */
+ &nbsp; curl_easy_perform(curl);
+ }
+ </pre>
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Always <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
 <p class="level0"><a Class="manpage" href="./CURLOPT_PUT.html">CURLOPT_PUT</a> <a Class="manpage" href="./CURLOPT_READFUNCTION.html">CURLOPT_READFUNCTION</a> <span Class="manpage"> </span> <a Class="manpage" href="./CURLOPT_INFILESIZE_LARGE.html">CURLOPT_INFILESIZE_LARGE</a> <span Class="manpage"> </span> <p class="roffit">

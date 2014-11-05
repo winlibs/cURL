@@ -62,6 +62,17 @@ p.roffit {
 <p class="level1">Require SSL for all communication or fail with <span Class="emphasis">CURLE_USE_SSL_FAILED</span>. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">CURLUSESSL_NONE <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">FTP, SMTP, POP3, IMAP <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
+<p class="level0"><pre>
+<p class="level0">CURL *curl = curl_easy_init();
+ if(curl) {
+ &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="ftp://example.com/dir/file.ext">ftp://example.com/dir/file.ext</a>");
+ <p class="level0">&nbsp; /* require use of SSL for this, or fail */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
+ <p class="level0">&nbsp; /* Perform the request */
+ &nbsp; curl_easy_perform(curl);
+ }
+ </pre>
+
 <p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Added in 7.11.0. This option was known as CURLOPT_FTP_SSL up to 7.16.4, and the constants were known as CURLFTPSSL_* <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>

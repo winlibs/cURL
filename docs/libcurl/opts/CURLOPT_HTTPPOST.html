@@ -58,7 +58,29 @@ p.roffit {
 <p class="level0">When setting <a Class="emphasis" href="./CURLOPT_HTTPPOST.html">CURLOPT_HTTPPOST</a>, it will automatically set <a Class="emphasis" href="./CURLOPT_NOBODY.html">CURLOPT_NOBODY</a> to 0. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">NULL <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">HTTP <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0"><pre>
+<p class="level0">/* Fill in the file upload field. This makes libcurl load data from
+ &nbsp;  the given file name when curl_easy_perform() is called. */
+ curl_formadd(&formpost,
+ &nbsp;            &lastptr,
+ &nbsp;            CURLFORM_COPYNAME, "sendfile",
+ &nbsp;            CURLFORM_FILE, "postit2.c",
+ &nbsp;            CURLFORM_END);
+ <p class="level0">/* Fill in the filename field */
+ curl_formadd(&formpost,
+ &nbsp;            &lastptr,
+ &nbsp;            CURLFORM_COPYNAME, "filename",
+ &nbsp;            CURLFORM_COPYCONTENTS, "postit2.c",
+ &nbsp;            CURLFORM_END);
+ <p class="level0">/* Fill in the submit field too, even if this is rarely needed */
+ curl_formadd(&formpost,
+ &nbsp;            &lastptr,
+ &nbsp;            CURLFORM_COPYNAME, "submit",
+ &nbsp;            CURLFORM_COPYCONTENTS, "send",
+ &nbsp;            CURLFORM_END);
+ </pre>
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">As long as HTTP is enabled <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK if HTTP is enabled, and CURLE_UNKNOWN_OPTION if not. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
 <p class="level0"><a Class="manpage" href="./CURLOPT_POSTFIELDS.html">CURLOPT_POSTFIELDS</a> <a Class="manpage" href="./CURLOPT_POST.html">CURLOPT_POST</a> <span Class="manpage"> </span> <p class="roffit">

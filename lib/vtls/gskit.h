@@ -42,6 +42,9 @@ int Curl_gskit_shutdown(struct connectdata * conn, int sockindex);
 size_t Curl_gskit_version(char * buffer, size_t size);
 int Curl_gskit_check_cxn(struct connectdata * cxn);
 
+/* this backend supports CURLOPT_CERTINFO */
+#define have_curlssl_certinfo 1
+
 /* API setup for GSKit */
 #define curlssl_init Curl_gskit_init
 #define curlssl_cleanup Curl_gskit_cleanup
@@ -59,6 +62,7 @@ int Curl_gskit_check_cxn(struct connectdata * cxn);
 #define curlssl_version Curl_gskit_version
 #define curlssl_check_cxn(x) Curl_gskit_check_cxn(x)
 #define curlssl_data_pending(x,y) 0
+#define curlssl_random(x,y,z) -1
 #define CURL_SSL_BACKEND CURLSSLBACKEND_GSKIT
 #endif /* USE_GSKIT */
 

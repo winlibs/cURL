@@ -55,9 +55,21 @@ p.roffit {
 <p class="level0">If the library does not return an error, the buffer may not have been touched. Do not rely on the contents in those cases. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">NULL <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">All <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0"><pre>
+<p class="level0">curl = curl_easy_init();
+ if(curl) {
+ &nbsp; char error[CURL_ERROR_SIZE]
+ <p class="level0">&nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+ <p class="level0">&nbsp; /* provide a buffer to store errors in */
+ &nbsp; curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error);
+ <p class="level0">&nbsp; /* Perform the request */
+ &nbsp; curl_easy_perform(curl);
+ }
+ </pre>
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Always <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./CURLOPT_DEBUGFUNCTION.html">CURLOPT_DEBUGFUNCTION</a> <a Class="manpage" href="./CURLOPT_VERBOSE.html">CURLOPT_VERBOSE</a> <span Class="manpage"> </span> <p class="roffit">
+<p class="level0"><a Class="manpage" href="./CURLOPT_DEBUGFUNCTION.html">CURLOPT_DEBUGFUNCTION</a> <a Class="manpage" href="./CURLOPT_VERBOSE.html">CURLOPT_VERBOSE</a> <span Class="manpage"> </span> <span Class="manpage">curl_easy_strerror (3)</span> <span Class="manpage">  curl_multi_strerror (3)</span> <span Class="manpage"> </span> <span Class="manpage">curl_share_strerror (3) </span> <p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

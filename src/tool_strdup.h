@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_VERSION_H
-#define HEADER_CURL_VERSION_H
+#ifndef HEADER_TOOL_STRDUP_H
+#define HEADER_TOOL_STRDUP_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -21,15 +21,10 @@
  * KIND, either express or implied.
  *
  ***************************************************************************/
+#include "tool_setup.h"
 
-#include <curl/curlver.h>
+#ifndef HAVE_STRDUP
+extern char *strdup(const char *str);
+#endif
 
-#define CURL_NAME "curl"
-#define CURL_COPYRIGHT LIBCURL_COPYRIGHT
-#define CURL_VERSION "7.22.0"
-#define CURL_VERSION_MAJOR LIBCURL_VERSION_MAJOR
-#define CURL_VERSION_MINOR LIBCURL_VERSION_MINOR
-#define CURL_VERSION_PATCH LIBCURL_VERSION_PATCH
-#define CURL_ID CURL_NAME " " CURL_VERSION " (" OS ") "
-
-#endif /* HEADER_CURL_VERSION_H */
+#endif /* HEADER_TOOL_STRDUP_H */

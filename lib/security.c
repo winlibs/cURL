@@ -10,7 +10,7 @@
  * Copyright (c) 1998, 1999, 2013 Kungliga Tekniska Högskolan
  * (Royal Institute of Technology, Stockholm, Sweden).
  *
- * Copyright (C) 2001 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2001 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * All rights reserved.
  *
@@ -129,11 +129,11 @@ static int ftp_send_command(struct connectdata *conn, const char *message, ...)
   vsnprintf(print_buffer, sizeof(print_buffer), message, args);
   va_end(args);
 
-  if(Curl_ftpsendf(conn, print_buffer) != CURLE_OK) {
+  if(Curl_ftpsendf(conn, print_buffer)) {
     ftp_code = -1;
   }
   else {
-    if(Curl_GetFTPResponse(&nread, conn, &ftp_code) != CURLE_OK)
+    if(Curl_GetFTPResponse(&nread, conn, &ftp_code))
       ftp_code = -1;
   }
 
@@ -147,20 +147,20 @@ static CURLcode
 socket_read(curl_socket_t fd, void *to, size_t len)
 {
   char *to_p = to;
-  CURLcode code;
+  CURLcode result;
   ssize_t nread;
 
   while(len > 0) {
-    code = Curl_read_plain(fd, to_p, len, &nread);
-    if(code == CURLE_OK) {
+    result = Curl_read_plain(fd, to_p, len, &nread);
+    if(!result) {
       len -= nread;
       to_p += nread;
     }
     else {
       /* FIXME: We are doing a busy wait */
-      if(code == CURLE_AGAIN)
+      if(result == CURLE_AGAIN)
         continue;
-      return code;
+      return result;
     }
   }
   return CURLE_OK;
@@ -175,20 +175,20 @@ socket_write(struct connectdata *conn, curl_socket_t fd, const void *to,
              size_t len)
 {
   const char *to_p = to;
-  CURLcode code;
+  CURLcode result;
   ssize_t written;
 
   while(len > 0) {
-    code = Curl_write_plain(conn, fd, to_p, len, &written);
-    if(code == CURLE_OK) {
+    result = Curl_write_plain(conn, fd, to_p, len, &written);
+    if(!result) {
       len -= written;
       to_p += written;
     }
     else {
       /* FIXME: We are doing a busy wait */
-      if(code == CURLE_AGAIN)
+      if(result == CURLE_AGAIN)
         continue;
-      return code;
+      return result;
     }
   }
   return CURLE_OK;
@@ -200,11 +200,11 @@ static CURLcode read_data(struct connectdata *conn,
 {
   int len;
   void* tmp;
-  CURLcode ret;
+  CURLcode result;
 
-  ret = socket_read(fd, &len, sizeof(len));
-  if(ret != CURLE_OK)
-    return ret;
+  result = socket_read(fd, &len, sizeof(len));
+  if(result)
+    return result;
 
   len = ntohl(len);
   tmp = realloc(buf->data, len);
@@ -212,9 +212,9 @@ static CURLcode read_data(struct connectdata *conn,
     return CURLE_OUT_OF_MEMORY;
 
   buf->data = tmp;
-  ret = socket_read(fd, buf->data, len);
-  if(ret != CURLE_OK)
-    return ret;
+  result = socket_read(fd, buf->data, len);
+  if(result)
+    return result;
   buf->size = conn->mech->decode(conn->app_data, buf->data, len,
                                  conn->data_prot, conn);
   buf->index = 0;
@@ -256,7 +256,7 @@ static ssize_t sec_recv(struct connectdata *conn, int sockindex,
   buffer += bytes_read;
 
   while(len > 0) {
-    if(read_data(conn, fd, &conn->in_buffer) != CURLE_OK)
+    if(read_data(conn, fd, &conn->in_buffer))
       return -1;
     if(conn->in_buffer.size == 0) {
       if(bytes_read > 0)
@@ -295,7 +295,7 @@ static void do_sec_send(struct connectdata *conn, curl_socket_t fd,
       prot_level = conn->command_prot;
   }
   bytes = conn->mech->encode(conn->app_data, from, length, prot_level,
-                             (void**)&buffer, conn);
+                             (void**)&buffer);
   if(!buffer || bytes <= 0)
     return; /* error */
 
@@ -332,7 +332,6 @@ static void do_sec_send(struct connectdata *conn, curl_socket_t fd,
 static ssize_t sec_write(struct connectdata *conn, curl_socket_t fd,
                          const char *buffer, size_t length)
 {
-  /* FIXME: Check for overflow */
   ssize_t tx = 0, len = conn->buffer_size;
 
   len -= conn->mech->overhead(conn->app_data, conn->data_prot,
@@ -340,10 +339,9 @@ static ssize_t sec_write(struct connectdata *conn, curl_socket_t fd,
   if(len <= 0)
     len = length;
   while(length) {
-    if(len >= 0 || length < (size_t)len) {
-      /* FIXME: Check for overflow. */
+    if(length < (size_t)len)
       len = length;
-    }
+
     do_sec_send(conn, fd, buffer, curlx_sztosi(len));
     length -= len;
     buffer += len;
@@ -402,7 +400,7 @@ int Curl_sec_read_msg(struct connectdata *conn, char *buffer,
     ret_code = 0;
   else {
     /* Check for error? */
-    sscanf(buf, "%d", &ret_code);
+    (void)sscanf(buf, "%d", &ret_code);
   }
 
   if(buf[decoded_len - 1] == '\n')
@@ -564,7 +562,7 @@ static CURLcode choose_mech(struct connectdata *conn)
     break;
   }
 
-  return mech != NULL ? CURLE_OK : CURLE_FAILED_INIT;
+  return *mech != NULL ? CURLE_OK : CURLE_FAILED_INIT;
 }
 
 CURLcode

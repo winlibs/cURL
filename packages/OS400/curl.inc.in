@@ -5,7 +5,7 @@
       *                            | (__| |_| |  _ <| |___
       *                             \___|\___/|_| \_\_____|
       *
-      * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+      * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
       *
       * This software is licensed as described in the file COPYING, which
       * you should have received as part of this distribution. The terms
@@ -511,6 +511,8 @@
      d                 c                   88
      d  CURLE_NO_CONNECTION_AVAILABLE...
      d                 c                   89
+     d  CURLE_SSL_PINNEDPUBKEYNOTMATCH...
+     d                 c                   90
       *
       /if not defined(CURL_NO_OLDIES)
      d  CURLE_URL_MALFORMAT_USER...
@@ -1189,6 +1191,8 @@
      d                 c                   10228
      d  CURLOPT_HEADEROPT...
      d                 c                   00229
+     d  CURLOPT_PINNEDPUBLICKEY...
+     d                 c                   10230
       *
       /if not defined(CURL_NO_OLDIES)
      d  CURLOPT_FILE   c                   10001
@@ -1381,7 +1385,7 @@
      d                 c                   2
      d  CURLSSLBACKEND_NSS...
      d                 c                   3
-     d  CURLSSLBACKEND_QSOSSL...
+     d  CURLSSLBACKEND_OBSOLETE4...
      d                 c                   4
      d  CURLSSLBACKEND_GSKIT...
      d                 c                   5

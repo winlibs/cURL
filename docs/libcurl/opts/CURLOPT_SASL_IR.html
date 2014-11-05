@@ -49,7 +49,8 @@ p.roffit {
 <p class="level0">CURLOPT_SASL_IR - enable sending initial response in first packet <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0">#include &lt;curl/curl.h&gt; 
 <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SASL_IR, long enable); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
-<p class="level0">Pass a long. If the value is 1, curl will send the initial response to the server in the first authentication packet in order to reduce the number of ping pong requests. Only applicable to supporting SASL authentication mechanisms and to the IMAP, POP3 and SMTP protocols. 
+<p class="level0">Pass a long. If the value is 1, curl will send the initial response to the server in the first authentication packet in order to reduce the number of ping pong requests. Only applicable to the following supporting SASL authentication mechanisms: 
+<p class="level0">* Login * Plain * GSSAPI * NTLM * OAuth 2.0 
 <p class="level0">Note: Whilst IMAP supports this option there is no need to explicitly set it, as libcurl can determine the feature itself when the server supports the SASL-IR CAPABILITY. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">0 <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">IMAP, POP3 and SMTP <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
