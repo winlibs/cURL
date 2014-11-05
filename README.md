@@ -30,15 +30,15 @@ See [https://github.com/pierrejoye/curl/blob/master/winbuild/BUILD.WINDOWS.txt
 
 #### PHP 5.3/5.4 x86 only
 
-    nmake /f Makefile.vc mode=static VC=9 WITH_DEVEL=D:\repo\curl_deps WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=no GEN_PDB=yes DEBUG=no MACHINE=x86
+    nmake /f Makefile.vc mode=static VC=9 WITH_DEVEL=D:\repo\curl_deps WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=no GEN_PDB=yes DEBUG=no MACHINE=x86
 
 #### PHP 5.5 x86
 
-	nmake /f Makefile.vc mode=static VC=11 WITH_DEVEL=D:\repo\curl_deps.x86 WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x86
+	nmake /f Makefile.vc mode=static VC=11 WITH_DEVEL=D:\repo\curl_deps.x86 WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x86
 
 #### PHP 5.5 x64
 
-	nmake /f Makefile.vc mode=static VC=11 WITH_DEVEL=D:\repo\curl_deps.x64 WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=static ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x64
+	nmake /f Makefile.vc mode=static VC=11 WITH_DEVEL=D:\repo\curl_deps.x64 WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x64
 
 **NOTE**
 Builds with USE_IDN=yes will require [Microsoft IDN Mitigation APIs](http://www.microsoft.com/en-us/download/details.aspx?id=734) on Windows XP. These APIs are available by default starting with Windows Vista.
