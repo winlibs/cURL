@@ -777,7 +777,9 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
 
       state(conn, SSH_AUTH_PKEY_INIT);
       break;
-
+#ifdef _WIN32
+#define R_OK 4
+#endif
     case SSH_AUTH_PKEY_INIT:
       /*
        * Check the supported auth types in the order I feel is most secure
