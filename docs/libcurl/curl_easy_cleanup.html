@@ -54,8 +54,19 @@ p.roffit {
 <p class="level0">Occasionally you may get your progress callback or header callback called from within <a Class="emphasis" href="./curl_easy_cleanup.html">curl_easy_cleanup</a> (if previously set for the handle using <a Class="emphasis" href="./curl_easy_setopt.html">curl_easy_setopt</a>). Like if libcurl decides to shut down the connection and the protocol is of a kind that requires a command/response sequence before disconnect. Examples of such protocols are FTP, POP3 and IMAP. 
 <p class="level0">Any use of the <span Class="bold">handle</span> after this function has been called and have returned, is illegal. <a Class="emphasis" href="./curl_easy_cleanup.html">curl_easy_cleanup</a> kills the handle and all memory associated with it! 
 <p class="level0">For libcurl versions before 7.17,: after you've called this function, you can safely remove all the strings you've previously told libcurl to use, as it won't use them anymore now. <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
-<p class="level0">None <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./curl_easy_init.html">curl_easy_init</a> <span Class="manpage"> </span> 
+<p class="level0">None <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
+<p class="level0"><pre>
+<p class="level0">CURL *curl = curl_easy_init();
+ if(curl) {
+ &nbsp; CURLcode res;
+ &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+ &nbsp; res = curl_easy_perform(curl);
+ &nbsp; curl_easy_cleanup(curl);
+ }
+ </pre>
+
+<p class="level0"><a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
+<p class="level0"><a Class="manpage" href="./curl_easy_init.html">curl_easy_init</a>, <span Class="manpage"> </span> 
 <p class="level0"><p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

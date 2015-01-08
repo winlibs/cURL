@@ -127,7 +127,7 @@ schannel_connect_step1(struct connectdata *conn, int sockindex)
         conn->host.name, conn->remote_port);
 
   /* check for an existing re-usable credential handle */
-  if(!Curl_ssl_getsessionid(conn, (void**)&old_cred, NULL)) {
+  if(!Curl_ssl_getsessionid(conn, (void **)&old_cred, NULL)) {
     connssl->cred = old_cred;
     infof(data, "schannel: re-using existing credential handle\n");
   }
@@ -294,6 +294,8 @@ schannel_connect_step2(struct connectdata *conn, int sockindex)
   ssize_t nread = -1, written = -1;
   struct SessionHandle *data = conn->data;
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
+  unsigned char *reallocated_buffer;
+  size_t reallocated_length;
   SecBuffer outbuf[2];
   SecBufferDesc outbuf_desc;
   SecBuffer inbuf[2];
@@ -326,13 +328,18 @@ schannel_connect_step2(struct connectdata *conn, int sockindex)
   if(connssl->encdata_length - connssl->encdata_offset <
      CURL_SCHANNEL_BUFFER_FREE_SIZE) {
     /* increase internal encrypted data buffer */
-    connssl->encdata_length *= CURL_SCHANNEL_BUFFER_STEP_FACTOR;
-    connssl->encdata_buffer = realloc(connssl->encdata_buffer,
-                                      connssl->encdata_length);
+    reallocated_length = connssl->encdata_offset +
+                         CURL_SCHANNEL_BUFFER_FREE_SIZE;
+    reallocated_buffer = realloc(connssl->encdata_buffer,
+                                 reallocated_length);
 
-    if(connssl->encdata_buffer == NULL) {
+    if(reallocated_buffer == NULL) {
       failf(data, "schannel: unable to re-allocate memory");
       return CURLE_OUT_OF_MEMORY;
+    }
+    else {
+      connssl->encdata_buffer = reallocated_buffer;
+      connssl->encdata_length = reallocated_length;
     }
   }
 
@@ -498,11 +505,11 @@ schannel_connect_step2(struct connectdata *conn, int sockindex)
 static CURLcode
 schannel_connect_step3(struct connectdata *conn, int sockindex)
 {
-  CURLcode retcode = CURLE_OK;
+  CURLcode result = CURLE_OK;
   struct SessionHandle *data = conn->data;
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   struct curl_schannel_cred *old_cred = NULL;
-  int incache;
+  bool incache;
 
   DEBUGASSERT(ssl_connect_3 == connssl->connecting_state);
 
@@ -535,20 +542,21 @@ schannel_connect_step3(struct connectdata *conn, int sockindex)
   }
 
   /* save the current session data for possible re-use */
-  incache = !(Curl_ssl_getsessionid(conn, (void**)&old_cred, NULL));
+  incache = !(Curl_ssl_getsessionid(conn, (void **)&old_cred, NULL));
   if(incache) {
     if(old_cred != connssl->cred) {
       infof(data, "schannel: old credential handle is stale, removing\n");
-      Curl_ssl_delsessionid(conn, (void*)old_cred);
+      Curl_ssl_delsessionid(conn, (void *)old_cred);
       incache = FALSE;
     }
   }
+
   if(!incache) {
-    retcode = Curl_ssl_addsessionid(conn, (void*)connssl->cred,
-                                    sizeof(struct curl_schannel_cred));
-    if(retcode) {
+    result = Curl_ssl_addsessionid(conn, (void *)connssl->cred,
+                                   sizeof(struct curl_schannel_cred));
+    if(result) {
       failf(data, "schannel: failed to store credential handle");
-      return retcode;
+      return result;
     }
     else {
       connssl->cred->cached = TRUE;
@@ -565,7 +573,7 @@ static CURLcode
 schannel_connect_common(struct connectdata *conn, int sockindex,
                         bool nonblocking, bool *done)
 {
-  CURLcode retcode;
+  CURLcode result;
   struct SessionHandle *data = conn->data;
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   curl_socket_t sockfd = conn->sock[sockindex];
@@ -588,9 +596,9 @@ schannel_connect_common(struct connectdata *conn, int sockindex,
       return CURLE_OPERATION_TIMEDOUT;
     }
 
-    retcode = schannel_connect_step1(conn, sockindex);
-    if(retcode)
-      return retcode;
+    result = schannel_connect_step1(conn, sockindex);
+    if(result)
+      return result;
   }
 
   while(ssl_connect_2 == connssl->connecting_state ||
@@ -642,19 +650,19 @@ schannel_connect_common(struct connectdata *conn, int sockindex,
      * ensuring that a client using select() or epoll() will always
      * have a valid fdset to wait on.
      */
-    retcode = schannel_connect_step2(conn, sockindex);
-    if(retcode || (nonblocking &&
-                   (ssl_connect_2 == connssl->connecting_state ||
-                    ssl_connect_2_reading == connssl->connecting_state ||
-                    ssl_connect_2_writing == connssl->connecting_state)))
-      return retcode;
+    result = schannel_connect_step2(conn, sockindex);
+    if(result || (nonblocking &&
+                  (ssl_connect_2 == connssl->connecting_state ||
+                   ssl_connect_2_reading == connssl->connecting_state ||
+                   ssl_connect_2_writing == connssl->connecting_state)))
+      return result;
 
   } /* repeat step2 until all transactions are done. */
 
   if(ssl_connect_3 == connssl->connecting_state) {
-    retcode = schannel_connect_step3(conn, sockindex);
-    if(retcode)
-      return retcode;
+    result = schannel_connect_step3(conn, sockindex);
+    if(result)
+      return result;
   }
 
   if(ssl_connect_done == connssl->connecting_state) {
@@ -706,7 +714,7 @@ schannel_send(struct connectdata *conn, int sockindex,
   /* calculate the complete message length and allocate a buffer for it */
   data_len = connssl->stream_sizes.cbHeader + len +
               connssl->stream_sizes.cbTrailer;
-  data = (unsigned char*) malloc(data_len);
+  data = (unsigned char *) malloc(data_len);
   if(data == NULL) {
     *err = CURLE_OUT_OF_MEMORY;
     return -1;
@@ -825,9 +833,11 @@ schannel_recv(struct connectdata *conn, int sockindex,
 {
   size_t size = 0;
   ssize_t nread = 0, ret = -1;
-  CURLcode retcode;
+  CURLcode result;
   struct SessionHandle *data = conn->data;
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
+  unsigned char *reallocated_buffer;
+  size_t reallocated_length;
   bool done = FALSE;
   SecBuffer inbuf[4];
   SecBufferDesc inbuf_desc;
@@ -849,17 +859,26 @@ schannel_recv(struct connectdata *conn, int sockindex,
   }
 
   /* increase buffer in order to fit the requested amount of data */
-  while(connssl->encdata_length - connssl->encdata_offset <
-        CURL_SCHANNEL_BUFFER_FREE_SIZE || connssl->encdata_length < len) {
+  if(connssl->encdata_length - connssl->encdata_offset <
+     CURL_SCHANNEL_BUFFER_FREE_SIZE || connssl->encdata_length < len) {
     /* increase internal encrypted data buffer */
-    connssl->encdata_length *= CURL_SCHANNEL_BUFFER_STEP_FACTOR;
-    connssl->encdata_buffer = realloc(connssl->encdata_buffer,
-                                      connssl->encdata_length);
+    reallocated_length = connssl->encdata_offset +
+                         CURL_SCHANNEL_BUFFER_FREE_SIZE;
+    /* make sure that the requested amount of data fits */
+    if(reallocated_length < len) {
+      reallocated_length = len;
+    }
+    reallocated_buffer = realloc(connssl->encdata_buffer,
+                                 reallocated_length);
 
-    if(connssl->encdata_buffer == NULL) {
+    if(reallocated_buffer == NULL) {
       failf(data, "schannel: unable to re-allocate memory");
       *err = CURLE_OUT_OF_MEMORY;
       return -1;
+    }
+    else {
+      connssl->encdata_buffer = reallocated_buffer;
+      connssl->encdata_length = reallocated_length;
     }
   }
 
@@ -912,10 +931,11 @@ schannel_recv(struct connectdata *conn, int sockindex,
     }
 
     /* check if everything went fine (server may want to renegotiate
-       context) */
+       or shutdown the connection context) */
     if(sspi_status == SEC_E_OK || sspi_status == SEC_I_RENEGOTIATE ||
                                   sspi_status == SEC_I_CONTEXT_EXPIRED) {
-      /* check for successfully decrypted data */
+      /* check for successfully decrypted data, even before actual
+         renegotiation or shutdown of the connection context */
       if(inbuf[1].BufferType == SECBUFFER_DATA) {
         infof(data, "schannel: decrypted data length: %lu\n",
               inbuf[1].cbBuffer);
@@ -923,17 +943,25 @@ schannel_recv(struct connectdata *conn, int sockindex,
         /* increase buffer in order to fit the received amount of data */
         size = inbuf[1].cbBuffer > CURL_SCHANNEL_BUFFER_FREE_SIZE ?
                inbuf[1].cbBuffer : CURL_SCHANNEL_BUFFER_FREE_SIZE;
-        while(connssl->decdata_length - connssl->decdata_offset < size ||
-              connssl->decdata_length < len) {
+        if(connssl->decdata_length - connssl->decdata_offset < size ||
+           connssl->decdata_length < len) {
           /* increase internal decrypted data buffer */
-          connssl->decdata_length *= CURL_SCHANNEL_BUFFER_STEP_FACTOR;
-          connssl->decdata_buffer = realloc(connssl->decdata_buffer,
-                                            connssl->decdata_length);
+          reallocated_length = connssl->decdata_offset + size;
+          /* make sure that the requested amount of data fits */
+          if(reallocated_length < len) {
+            reallocated_length = len;
+          }
+          reallocated_buffer = realloc(connssl->decdata_buffer,
+                                       reallocated_length);
 
-          if(connssl->decdata_buffer == NULL) {
+          if(reallocated_buffer == NULL) {
             failf(data, "schannel: unable to re-allocate memory");
             *err = CURLE_OUT_OF_MEMORY;
             return -1;
+          }
+          else {
+            connssl->decdata_buffer = reallocated_buffer;
+            connssl->decdata_length = reallocated_length;
           }
         }
 
@@ -984,9 +1012,9 @@ schannel_recv(struct connectdata *conn, int sockindex,
       infof(data, "schannel: renegotiating SSL/TLS connection\n");
       connssl->state = ssl_connection_negotiating;
       connssl->connecting_state = ssl_connect_2_writing;
-      retcode = schannel_connect_common(conn, sockindex, FALSE, &done);
-      if(retcode)
-        *err = retcode;
+      result = schannel_connect_common(conn, sockindex, FALSE, &done);
+      if(result)
+        *err = result;
       else {
         infof(data, "schannel: SSL/TLS connection renegotiated\n");
         /* now retry receiving data */
@@ -1013,6 +1041,8 @@ schannel_recv(struct connectdata *conn, int sockindex,
     infof(data, "schannel: decrypted data buffer: offset %zu length %zu\n",
           connssl->decdata_offset, connssl->decdata_length);
   }
+  else
+    ret = 0;
 
   /* check if the server closed the connection */
   if(ret <= 0 && ( /* special check for Windows 2000 Professional */
@@ -1044,12 +1074,12 @@ Curl_schannel_connect_nonblocking(struct connectdata *conn, int sockindex,
 CURLcode
 Curl_schannel_connect(struct connectdata *conn, int sockindex)
 {
-  CURLcode retcode;
+  CURLcode result;
   bool done = FALSE;
 
-  retcode = schannel_connect_common(conn, sockindex, FALSE, &done);
-  if(retcode)
-    return retcode;
+  result = schannel_connect_common(conn, sockindex, FALSE, &done);
+  if(result)
+    return result;
 
   DEBUGASSERT(done);
 

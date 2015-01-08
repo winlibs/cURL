@@ -39,7 +39,7 @@ void Curl_nss_close(struct connectdata *conn, int sockindex);
 
 /* tell NSS to close down all open information regarding connections (and
    thus session ID caching etc) */
-int Curl_nss_close_all(struct SessionHandle *data);
+void Curl_nss_close_all(struct SessionHandle *data);
 
 int Curl_nss_init(void);
 void Curl_nss_cleanup(void);
@@ -60,6 +60,9 @@ void Curl_nss_md5sum(unsigned char *tmp, /* input */
                      unsigned char *md5sum, /* output */
                      size_t md5len);
 
+/* this backend supports the CAPATH option */
+#define have_curlssl_ca_path 1
+
 /* this backend supports CURLOPT_CERTINFO */
 #define have_curlssl_certinfo 1
 
@@ -74,13 +77,13 @@ void Curl_nss_md5sum(unsigned char *tmp, /* input */
 #define curlssl_close_all Curl_nss_close_all
 #define curlssl_close Curl_nss_close
 /* NSS has no shutdown function provided and thus always fail */
-#define curlssl_shutdown(x,y) (x=x, y=y, 1)
-#define curlssl_set_engine(x,y) (x=x, y=y, CURLE_NOT_BUILT_IN)
-#define curlssl_set_engine_default(x) (x=x, CURLE_NOT_BUILT_IN)
-#define curlssl_engines_list(x) (x=x, (struct curl_slist *)NULL)
+#define curlssl_shutdown(x,y) ((void)x, (void)y, 1)
+#define curlssl_set_engine(x,y) ((void)x, (void)y, CURLE_NOT_BUILT_IN)
+#define curlssl_set_engine_default(x) ((void)x, CURLE_NOT_BUILT_IN)
+#define curlssl_engines_list(x) ((void)x, (struct curl_slist *)NULL)
 #define curlssl_version Curl_nss_version
 #define curlssl_check_cxn(x) Curl_nss_check_cxn(x)
-#define curlssl_data_pending(x,y) (x=x, y=y, 0)
+#define curlssl_data_pending(x,y) ((void)x, (void)y, 0)
 #define curlssl_random(x,y,z) Curl_nss_random(x,y,z)
 #define curlssl_md5sum(a,b,c,d) Curl_nss_md5sum(a,b,c,d)
 #define CURL_SSL_BACKEND CURLSSLBACKEND_NSS

@@ -48,6 +48,9 @@
 /* to disable RTSP */
 #undef CURL_DISABLE_RTSP
 
+/* to disable SMB/CIFS */
+#undef CURL_DISABLE_SMB
+
 /* to disable SMTP */
 #undef CURL_DISABLE_SMTP
 
@@ -391,23 +394,8 @@
 /* Define to 1 if you have the `ssh2' library (-lssh2). */
 #undef HAVE_LIBSSH2
 
-/* Define to 1 if you have the `libssh2_exit' function. */
-#undef HAVE_LIBSSH2_EXIT
-
 /* Define to 1 if you have the <libssh2.h> header file. */
 #undef HAVE_LIBSSH2_H
-
-/* Define to 1 if you have the `libssh2_init' function. */
-#undef HAVE_LIBSSH2_INIT
-
-/* Define to 1 if you have the `libssh2_scp_send64' function. */
-#undef HAVE_LIBSSH2_SCP_SEND64
-
-/* Define to 1 if you have the `libssh2_session_handshake' function. */
-#undef HAVE_LIBSSH2_SESSION_HANDSHAKE
-
-/* Define to 1 if you have the `libssh2_version' function. */
-#undef HAVE_LIBSSH2_VERSION
 
 /* Define to 1 if you have the `ssl' library (-lssl). */
 #undef HAVE_LIBSSL
@@ -965,6 +953,9 @@
 
 /* Use TLS-SRP authentication */
 #undef USE_TLS_SRP
+
+/* Use Unix domain sockets */
+#undef USE_UNIX_SOCKETS
 
 /* Define to 1 if you have the `normaliz' (WinIDN) library (-lnormaliz). */
 #undef USE_WIN32_IDN

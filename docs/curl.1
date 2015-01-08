@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl 1 "2 Aug 2014" "Curl 7.38.0" "Curl Manual"
+.TH curl 1 "30 Nov 2014" "Curl 7.40.0" "Curl Manual"
 .SH NAME
 curl \- transfer a URL
 .SH SYNOPSIS
@@ -30,8 +30,8 @@ curl \- transfer a URL
 .B curl
 is a tool to transfer data from or to a server, using one of the supported
 protocols (DICT, FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP,
-LDAPS, POP3, POP3S, RTMP, RTSP, SCP, SFTP, SMTP, SMTPS, TELNET and TFTP).  The
-command is designed to work without user interaction.
+LDAPS, POP3, POP3S, RTMP, RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET
+and TFTP). The command is designed to work without user interaction.
 
 curl offers a busload of useful tricks like proxy support, user
 authentication, FTP upload, HTTP post, SSL connections, cookies, file transfer
@@ -77,6 +77,11 @@ When using [] or {} sequences when invoked from a command line prompt, you
 probably have to put the full URL within double quotes to avoid the shell from
 interfering with it. This also goes for other characters treated special, like
 for example '&', '?' and '*'.
+
+Provide the IPv6 zone index in the URL with an escaped percentage sign and the
+interface name. Like in
+
+  http://[fe80::3%25eth0]/
 
 If you specify URL without protocol:// prefix, curl will attempt to guess what
 protocol you might want. It will then default to HTTP but try other protocols
@@ -172,7 +177,7 @@ considered insecure.
 (SSL) Forces curl to use SSL version 3 when negotiating with a remote SSL
 server. Sometimes curl is built without SSLv3 support.
 .IP "-4, --ipv4"
-Tis option tells curl to resolve names to IPv4 addresses only, and not for
+This option tells curl to resolve names to IPv4 addresses only, and not for
 example try IPv6.
 .IP "-6, --ipv6"
 This option tells curl to resolve names to IPv6 addresses only, and not for
@@ -293,7 +298,9 @@ uses no dir or if the dirs it mentions already exist, no dir will be created.
 To create remote directories when using FTP or SFTP, try
 \fI--ftp-create-dirs\fP.
 .IP "--crlf"
-(FTP) Convert LF to CRLF in upload. Useful for MVS (OS/390).
+Convert LF to CRLF in upload. Useful for MVS (OS/390).
+
+(SMTP added in 7.40.0)
 .IP "--crlfile <file>"
 (HTTPS/FTPS) Provide a file using PEM format with a Certificate Revocation
 List that may specify peer certificates that are to be considered revoked.
@@ -534,14 +541,14 @@ If this option is set, the default capath value will be ignored, and if it is
 used several times, the last one will be used.
 .IP "--pinnedpubkey <pinned public key>"
 (SSL) Tells curl to use the specified public key file to verify the peer. The
-file must contain a single public key in DER format.
+file must contain a single public key in PEM or DER format.
 
 When negotiating a TLS or SSL connection, the server sends a certificate
 indicating its identity. A public key is extracted from this certificate and
 if it does not exactly match the public key provided to this option, curl will
 abort the connection before sending or receiving any data.
 
-This is currently only implemented in the OpenSSL and GnuTLS backends.
+This is currently only implemented in the OpenSSL, GnuTLS and GSKit backends.
 
 If this option is used several times, the last one will be used.
 (Added in 7.39.0)
@@ -806,12 +813,12 @@ the following places in this order:
 
 1) curl tries to find the "home dir": It first checks for the CURL_HOME and
 then the HOME environment variables. Failing that, it uses getpwuid() on
-UNIX-like systems (which returns the home dir given the current user in your
+Unix-like systems (which returns the home dir given the current user in your
 system). On Windows, it then checks for the APPDATA variable, or as a last
 resort the '%USERPROFILE%\\Application Data'.
 
 2) On windows, if there is no _curlrc file in the home dir, it checks for one
-in the same dir the curl executable is placed. On UNIX-like systems, it will
+in the same dir the curl executable is placed. On Unix-like systems, it will
 simply try to load .curlrc from the determined home dir.
 
 .nf
@@ -1019,7 +1026,7 @@ in Metalink file, hash check will fail.
 .IP "-n, --netrc"
 Makes curl scan the \fI.netrc\fP (\fI_netrc\fP on Windows) file in the user's
 home directory for login name and password. This is typically used for FTP on
-UNIX. If used with HTTP, curl will enable user authentication. See
+Unix. If used with HTTP, curl will enable user authentication. See
 .BR netrc(4)
 or
 .BR ftp(1)
@@ -1655,6 +1662,9 @@ If this option is used several times, the last one will be used.
 .IP "--trace-time"
 Prepends a time stamp to each trace or verbose line that curl displays.
 (Added in 7.14.0)
+.IP "--unix-socket <path>"
+(HTTP) Connect through this Unix domain socket, instead of using the
+network. (Added in 7.40.0)
 .IP "-u, --user <user:password>"
 Specify the user name and password to use for server authentication. Overrides
 \fI-n, --netrc\fP and \fI--netrc-optional\fP.
@@ -1679,7 +1689,7 @@ Principal Name) formats. For example, EXAMPLE\\user and user@example.com
 respectively.
 
 If you use a Windows SSPI-enabled curl binary and perform Kerberos V5,
-Negotiate, NTLM or DIGEST-MD5 authentication then you can tell curl to select
+Negotiate, NTLM or Digest authentication then you can tell curl to select
 the user name and password from your environment by specifying a single colon
 with this option: "-u :".
 

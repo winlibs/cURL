@@ -51,7 +51,7 @@ p.roffit {
 <p class="level0">This document will refer to 'the user' as the person writing the source code that uses libcurl. That would probably be you or someone in your position. What will be generally referred to as 'the program' will be the collected source code that you write that is using libcurl for transfers. The program is outside libcurl and libcurl is outside of the program. 
 <p class="level0">To get more details on all options and functions described herein, please refer to their respective man pages. 
 <p class="level0"><a name="Building"></a><h2 class="nroffsh">Building</h2>
-<p class="level0">There are many different ways to build C programs. This chapter will assume a UNIX-style build process. If you use a different build system, you can still read this to get general information that may apply to your environment as well. 
+<p class="level0">There are many different ways to build C programs. This chapter will assume a Unix style build process. If you use a different build system, you can still read this to get general information that may apply to your environment as well. 
 <p class="level0"><a name="Compiling"></a><span class="nroffip">Compiling the Program</span> 
 <p class="level1">Your compiler needs to know where the libcurl headers are located. Therefore you must set your compiler's include path to point to the directory where you installed them. The 'curl-config'[3] tool can be used to get this information: 
 <p class="level1">$ curl-config --cflags 
@@ -171,7 +171,7 @@ p.roffit {
 <p class="level0">&nbsp;curl_easy_setopt(easyhandle, CURLOPT_USERPWD, "myname:thesecret"); 
 <p class="level0">Another case where name and password might be needed at times, is for those users who need to authenticate themselves to a proxy they use. libcurl offers another option for this, the <span Class="emphasis">CURLOPT_PROXYUSERPWD(3)</span>. It is used quite similar to the <span Class="emphasis">CURLOPT_USERPWD(3)</span> option like this: 
 <p class="level0">&nbsp;curl_easy_setopt(easyhandle, CURLOPT_PROXYUSERPWD, "myname:thesecret"); 
-<p class="level0">There's a long time UNIX "standard" way of storing ftp user names and passwords, namely in the $HOME/.netrc file. The file should be made private so that only the user may read it (see also the "Security Considerations" chapter), as it might contain the password in plain text. libcurl has the ability to use this file to figure out what set of user name and password to use for a particular host. As an extension to the normal functionality, libcurl also supports this file for non-FTP protocols such as HTTP. To make curl use this file, use the <span Class="emphasis">CURLOPT_NETRC(3)</span> option: 
+<p class="level0">There's a long time Unix "standard" way of storing FTP user names and passwords, namely in the $HOME/.netrc file. The file should be made private so that only the user may read it (see also the "Security Considerations" chapter), as it might contain the password in plain text. libcurl has the ability to use this file to figure out what set of user name and password to use for a particular host. As an extension to the normal functionality, libcurl also supports this file for non-FTP protocols such as HTTP. To make curl use this file, use the <span Class="emphasis">CURLOPT_NETRC(3)</span> option: 
 <p class="level0">&nbsp;curl_easy_setopt(easyhandle, CURLOPT_NETRC, 1L); 
 <p class="level0">And a very basic example of how such a .netrc file may look like: 
 <p class="level0"><pre>
@@ -470,7 +470,7 @@ p.roffit {
 <p class="level1">
 <p class="level0"><a name="Clear"></a><span class="nroffip">Clear Text Passwords</span> 
 <p class="level1">Many of the protocols libcurl supports send name and password unencrypted as clear text (HTTP Basic authentication, FTP, TELNET etc). It is very easy for anyone on your network or a network nearby yours to just fire up a network analyzer tool and eavesdrop on your passwords. Don't let the fact that HTTP Basic uses base64 encoded passwords fool you. They may not look readable at a first glance, but they very easily "deciphered" by anyone within seconds. 
-<p class="level1">To avoid this problem, use HTTP authentication methods or other protocols that don't let snoopers see your password: HTTP with Digest, NTLM or GSS authentication, HTTPS, FTPS, SCP, SFTP and FTP-Kerberos are a few examples. 
+<p class="level1">To avoid this problem, use an authentication mechanism or other protocol that doesn't let snoopers see your password: Digest, CRAM-MD5, Kerberos, SPNEGO or NTLM authentication, HTTPS, FTPS, SCP and SFTP are a few examples. 
 <p class="level1">
 <p class="level0"><a name="Redirects"></a><span class="nroffip">Redirects</span> 
 <p class="level1">The <span Class="emphasis">CURLOPT_FOLLOWLOCATION(3)</span> option automatically follows HTTP redirects sent by a remote server.  These redirects can refer to any kind of URL, not just HTTP.  A redirect to a file: URL would cause the libcurl to read (or write) arbitrary files from the local filesystem.  If the application returns the data back to the user (as would happen in some kinds of CGI scripts), an attacker could leverage this to read otherwise forbidden data (e.g.  file://localhost/etc/passwd). 
@@ -541,7 +541,7 @@ p.roffit {
 <p class="level0"><a name="Sharing"></a><h2 class="nroffsh">Sharing Data Between Easy Handles</h2>
 <p class="level0">You can share some data between easy handles when the easy interface is used, and some data is share automatically when you use the multi interface. 
 <p class="level0">When you add easy handles to a multi handle, these easy handles will automatically share a lot of the data that otherwise would be kept on a per-easy handle basis when the easy interface is used. 
-<p class="level0">The DNS cache is shared between handles within a multi handle, making subsequent name resolving faster, and the connection pool that is kept to better allow persistent connections and connection re-use is also shared. If you're using the easy interface, you can still share these between specific easy handles by using the share interface, see <span Class="emphasis">libcurl-share(3)</span>. 
+<p class="level0">The DNS cache is shared between handles within a multi handle, making subsequent name resolving faster, and the connection pool that is kept to better allow persistent connections and connection re-use is also shared. If you're using the easy interface, you can still share these between specific easy handles by using the share interface, see <a Class="emphasis" href="./libcurl-share.html">libcurl-share</a>. 
 <p class="level0">Some things are never shared automatically, not within multi handles, like for example cookies so the only way to share that is with the share interface. <a name="Footnotes"></a><h2 class="nroffsh">Footnotes</h2>
 <p class="level0">
 <p class="level0">
@@ -550,9 +550,9 @@ p.roffit {
 <p class="level0"><a name="2"></a><span class="nroffip">[2]</span> 
 <p class="level1">This happens on Windows machines when libcurl is built and used as a DLL. However, you can still do this on Windows if you link with a static library. 
 <p class="level0"><a name="3"></a><span class="nroffip">[3]</span> 
-<p class="level1">The curl-config tool is generated at build-time (on UNIX-like systems) and should be installed with the 'make install' or similar instruction that installs the library, header files, man pages etc. 
+<p class="level1">The curl-config tool is generated at build-time (on Unix-like systems) and should be installed with the 'make install' or similar instruction that installs the library, header files, man pages etc. 
 <p class="level0"><a name="4"></a><span class="nroffip">[4]</span> 
 <p class="level1">This behavior was different in versions before 7.17.0, where strings had to remain valid past the end of the <a Class="emphasis" href="./curl_easy_setopt.html">curl_easy_setopt</a> call. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><span Class="manpage">libcurl-errors (3)</span> <span Class="manpage">  libcurl-multi (3)</span> <span Class="manpage">  libcurl-easy (3) </span> <p class="roffit">
+<p class="level0"><a Class="manpage" href="./libcurl-errors.html">libcurl-errors</a>, <a Class="manpage" href="./libcurl-multi.html">libcurl-multi</a>, <a Class="manpage" href="./libcurl-easy.html">libcurl-easy</a>, <p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

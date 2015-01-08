@@ -23,15 +23,19 @@
  ***************************************************************************/
 #include "curl_setup.h"
 
-#include "openssl.h" /* OpenSSL versions */
-#include "gtls.h"   /* GnuTLS versions */
-#include "nssg.h"   /* NSS versions */
-#include "gskit.h"  /* Global Secure ToolKit versions */
-#include "polarssl.h" /* PolarSSL versions */
-#include "axtls.h"  /* axTLS versions */
-#include "cyassl.h"  /* CyaSSL versions */
-#include "curl_schannel.h" /* Schannel SSPI version */
+#include "openssl.h"        /* OpenSSL versions */
+#include "gtls.h"           /* GnuTLS versions */
+#include "nssg.h"           /* NSS versions */
+#include "gskit.h"          /* Global Secure ToolKit versions */
+#include "polarssl.h"       /* PolarSSL versions */
+#include "axtls.h"          /* axTLS versions */
+#include "cyassl.h"         /* CyaSSL versions */
+#include "curl_schannel.h"  /* Schannel SSPI version */
 #include "curl_darwinssl.h" /* SecureTransport (Darwin) version */
+
+#ifndef MAX_PINNED_PUBKEY_SIZE
+#define MAX_PINNED_PUBKEY_SIZE 1048576 /* 1MB */
+#endif
 
 #ifndef MD5_DIGEST_LENGTH
 #define MD5_DIGEST_LENGTH 16 /* fixed size */
@@ -78,7 +82,7 @@ int Curl_ssl_check_cxn(struct connectdata *conn);
 /* Certificate information list handling. */
 
 void Curl_ssl_free_certinfo(struct SessionHandle *data);
-int Curl_ssl_init_certinfo(struct SessionHandle * data, int num);
+CURLcode Curl_ssl_init_certinfo(struct SessionHandle * data, int num);
 CURLcode Curl_ssl_push_certinfo_len(struct SessionHandle * data, int certnum,
                                     const char * label, const char * value,
                                     size_t valuelen);
@@ -88,9 +92,9 @@ CURLcode Curl_ssl_push_certinfo(struct SessionHandle * data, int certnum,
 /* Functions to be used by SSL library adaptation functions */
 
 /* extract a session ID */
-int Curl_ssl_getsessionid(struct connectdata *conn,
-                          void **ssl_sessionid,
-                          size_t *idsize) /* set 0 if unknown */;
+bool Curl_ssl_getsessionid(struct connectdata *conn,
+                           void **ssl_sessionid,
+                           size_t *idsize) /* set 0 if unknown */;
 /* add a new session ID */
 CURLcode Curl_ssl_addsessionid(struct connectdata *conn,
                                void *ssl_sessionid,
@@ -134,7 +138,7 @@ CURLcode Curl_pin_peer_pubkey(const char *pinnedpubkey,
 #define Curl_ssl_free_certinfo(x) Curl_nop_stmt
 #define Curl_ssl_connect_nonblocking(x,y,z) CURLE_NOT_BUILT_IN
 #define Curl_ssl_kill_session(x) Curl_nop_stmt
-#define Curl_ssl_random(x,y,z) CURLE_NOT_BUILT_IN
+#define Curl_ssl_random(x,y,z) ((void)x, CURLE_NOT_BUILT_IN)
 #define CURL_SSL_BACKEND CURLSSLBACKEND_NONE
 #endif
 

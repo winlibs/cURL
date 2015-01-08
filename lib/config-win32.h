@@ -502,26 +502,39 @@
 #  endif
 #endif
 
-/* Officially, Microsoft's Windows SDK versions 6.X do not support Windows
-   2000 as a supported build target. VS2008 default installations provide
-   an embedded Windows SDK v6.0A along with the claim that Windows 2000 is
-   a valid build target for VS2008. Popular belief is that binaries built
-   with VS2008 using Windows SDK versions 6.X and Windows 2000 as a build
-   target are functional. */
-#if defined(_MSC_VER) && (_MSC_VER >= 1500)
+/* Define some minimum and default build targets for Visual Studio */
+#if defined(_MSC_VER)
+   /* Officially, Microsoft's Windows SDK versions 6.X does not support Windows
+      2000 as a supported build target. VS2008 default installations provides
+      an embedded Windows SDK v6.0A along with the claim that Windows 2000 is a
+      valid build target for VS2008. Popular belief is that binaries built with
+      VS2008 using Windows SDK versions v6.X and Windows 2000 as a build target
+      are functional. */
 #  define VS2008_MIN_TARGET 0x0500
-#endif
 
-/* When no build target is specified VS2008 default build target is Windows
-   Vista, which leaves out even Winsows XP. If no build target has been given
-   for VS2008 we will target the minimum Officially supported build target,
-   which happens to be Windows XP. */
-#if defined(_MSC_VER) && (_MSC_VER >= 1500)
-#  define VS2008_DEF_TARGET  0x0501
+   /* The minimum build target for VS2012 is Vista unless Update 1 is installed
+      and the v110_xp toolset is choosen. */
+#  if defined(_USING_V110_SDK71_)
+#    define VS2012_MIN_TARGET 0x0501
+#  else
+#    define VS2012_MIN_TARGET 0x0600
+#  endif
+
+   /* VS2008 default build target is Windows Vista. We override default target
+      to be Windows XP. */
+#  define VS2008_DEF_TARGET 0x0501
+
+   /* VS2012 default build target is Windows Vista unless Update 1 is installed
+      and the v110_xp toolset is choosen. */
+#  if defined(_USING_V110_SDK71_)
+#    define VS2012_DEF_TARGET 0x0501
+#  else
+#    define VS2012_DEF_TARGET 0x0600
+#  endif
 #endif
 
 /* VS2008 default target settings and minimum build target check. */
-#if defined(_MSC_VER) && (_MSC_VER >= 1500)
+#if defined(_MSC_VER) && (_MSC_VER >= 1500) && (_MSC_VER <= 1600)
 #  ifndef _WIN32_WINNT
 #    define _WIN32_WINNT VS2008_DEF_TARGET
 #  endif
@@ -530,6 +543,24 @@
 #  endif
 #  if (_WIN32_WINNT < VS2008_MIN_TARGET) || (WINVER < VS2008_MIN_TARGET)
 #    error VS2008 does not support Windows build targets prior to Windows 2000
+#  endif
+#endif
+
+/* VS2012 default target settings and minimum build target check. */
+#if defined(_MSC_VER) && (_MSC_VER >= 1700)
+#  ifndef _WIN32_WINNT
+#    define _WIN32_WINNT VS2012_DEF_TARGET
+#  endif
+#  ifndef WINVER
+#    define WINVER VS2012_DEF_TARGET
+#  endif
+#  if (_WIN32_WINNT < VS2012_MIN_TARGET) || (WINVER < VS2012_MIN_TARGET)
+#    if defined(_USING_V110_SDK71_)
+#      error VS2012 does not support Windows build targets prior to Windows XP
+#    else
+#      error VS2012 does not support Windows build targets prior to Windows \
+Vista
+#    endif
 #  endif
 #endif
 
@@ -667,6 +698,11 @@
 
 #if defined(__POCC__) && defined(CURL_LDAP_WIN)
 #  define CURL_DISABLE_LDAP 1
+#endif
+
+/* Define to use the Windows crypto library. */
+#if !defined(USE_SSLEAY) && !defined(USE_NSS)
+#define USE_WIN32_CRYPTO
 #endif
 
 /* ---------------------------------------------------------------- */

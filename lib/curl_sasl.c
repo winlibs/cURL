@@ -19,6 +19,7 @@
  * KIND, either express or implied.
  *
  * RFC2195 CRAM-MD5 authentication
+ * RFC2617 Basic and Digest Access Authentication
  * RFC2831 DIGEST-MD5 authentication
  * RFC4422 Simple Authentication and Security Layer (SASL)
  * RFC4616 PLAIN authentication
@@ -36,26 +37,18 @@
 #include "curl_md5.h"
 #include "vtls/vtls.h"
 #include "curl_hmac.h"
-#include "curl_ntlm_msgs.h"
 #include "curl_sasl.h"
 #include "warnless.h"
 #include "curl_memory.h"
 #include "strtok.h"
 #include "rawstr.h"
-
-#ifdef USE_NSS
-#include "vtls/nssg.h" /* for Curl_nss_force_init() */
-#endif
+#include "non-ascii.h" /* included for Curl_convert_... prototypes */
 
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
 
 /* The last #include file should be: */
 #include "memdebug.h"
-
-#if defined(USE_KRB5)
-extern void Curl_sasl_gssapi_cleanup(struct kerberos5data *krb5);
-#endif
 
 #if !defined(CURL_DISABLE_CRYPTO_AUTH) && !defined(USE_WINDOWS_SSPI)
 #define DIGEST_QOP_VALUE_AUTH             (1 << 0)
@@ -65,6 +58,129 @@ extern void Curl_sasl_gssapi_cleanup(struct kerberos5data *krb5);
 #define DIGEST_QOP_VALUE_STRING_AUTH      "auth"
 #define DIGEST_QOP_VALUE_STRING_AUTH_INT  "auth-int"
 #define DIGEST_QOP_VALUE_STRING_AUTH_CONF "auth-conf"
+
+#define DIGEST_MAX_VALUE_LENGTH           256
+#define DIGEST_MAX_CONTENT_LENGTH         1024
+
+/* The CURL_OUTPUT_DIGEST_CONV macro below is for non-ASCII machines.
+   It converts digest text to ASCII so the MD5 will be correct for
+   what ultimately goes over the network.
+*/
+#define CURL_OUTPUT_DIGEST_CONV(a, b) \
+  result = Curl_convert_to_network(a, (char *)b, strlen((const char*)b)); \
+  if(result) { \
+    free(b); \
+    return result; \
+  }
+
+/*
+ * Return 0 on success and then the buffers are filled in fine.
+ *
+ * Non-zero means failure to parse.
+ */
+static int sasl_digest_get_pair(const char *str, char *value, char *content,
+                                const char **endptr)
+{
+  int c;
+  bool starts_with_quote = FALSE;
+  bool escape = FALSE;
+
+  for(c = DIGEST_MAX_VALUE_LENGTH - 1; (*str && (*str != '=') && c--); )
+    *value++ = *str++;
+  *value = 0;
+
+  if('=' != *str++)
+    /* eek, no match */
+    return 1;
+
+  if('\"' == *str) {
+    /* this starts with a quote so it must end with one as well! */
+    str++;
+    starts_with_quote = TRUE;
+  }
+
+  for(c = DIGEST_MAX_CONTENT_LENGTH - 1; *str && c--; str++) {
+    switch(*str) {
+    case '\\':
+      if(!escape) {
+        /* possibly the start of an escaped quote */
+        escape = TRUE;
+        *content++ = '\\'; /* even though this is an escape character, we still
+                              store it as-is in the target buffer */
+        continue;
+      }
+      break;
+    case ',':
+      if(!starts_with_quote) {
+        /* this signals the end of the content if we didn't get a starting
+           quote and then we do "sloppy" parsing */
+        c = 0; /* the end */
+        continue;
+      }
+      break;
+    case '\r':
+    case '\n':
+      /* end of string */
+      c = 0;
+      continue;
+    case '\"':
+      if(!escape && starts_with_quote) {
+        /* end of string */
+        c = 0;
+        continue;
+      }
+      break;
+    }
+    escape = FALSE;
+    *content++ = *str;
+  }
+  *content = 0;
+
+  *endptr = str;
+
+  return 0; /* all is fine! */
+}
+
+/* Convert md5 chunk to RFC2617 (section 3.1.3) -suitable ascii string*/
+static void sasl_digest_md5_to_ascii(unsigned char *source, /* 16 bytes */
+                                     unsigned char *dest) /* 33 bytes */
+{
+  int i;
+  for(i = 0; i < 16; i++)
+    snprintf((char *)&dest[i*2], 3, "%02x", source[i]);
+}
+
+/* Perform quoted-string escaping as described in RFC2616 and its errata */
+static char *sasl_digest_string_quoted(const char *source)
+{
+  char *dest, *d;
+  const char *s = source;
+  size_t n = 1; /* null terminator */
+
+  /* Calculate size needed */
+  while(*s) {
+    ++n;
+    if(*s == '"' || *s == '\\') {
+      ++n;
+    }
+    ++s;
+  }
+
+  dest = malloc(n);
+  if(dest) {
+    s = source;
+    d = dest;
+    while(*s) {
+      if(*s == '"' || *s == '\\') {
+        *d++ = '\\';
+      }
+      *d++ = *s++;
+    }
+    *d = 0;
+  }
+
+  return dest;
+}
 
 /* Retrieves the value for a corresponding key from the challenge string
  * returns TRUE if the key could be found, FALSE if it does not exists
@@ -122,7 +238,7 @@ static CURLcode sasl_digest_get_qop_values(const char *options, int *value)
 
   return CURLE_OK;
 }
-#endif
+#endif /* !CURL_DISABLE_CRYPTO_AUTH && !USE_WINDOWS_SSPI */
 
 #if !defined(USE_WINDOWS_SSPI)
 /*
@@ -133,7 +249,7 @@ static CURLcode sasl_digest_get_qop_values(const char *options, int *value)
  * Parameters:
  *
  * serivce  [in] - The service type such as www, smtp, pop or imap.
- * instance [in] - The instance name such as the host nme or realm.
+ * host     [in] - The host name or realm.
  *
  * Returns a pointer to the newly allocated SPN.
  */
@@ -241,7 +357,7 @@ CURLcode Curl_sasl_create_login_message(struct SessionHandle *data,
  *
  * Parameters:
  *
- * chlg64  [in]     - Pointer to the base64 encoded challenge message.
+ * chlg64  [in]     - The base64 encoded challenge message.
  * outptr  [in/out] - The address where a pointer to newly allocated memory
  *                    holding the result will be stored upon completion.
  * outlen  [out]    - The length of the output message.
@@ -338,7 +454,7 @@ CURLcode Curl_sasl_create_cram_md5_message(struct SessionHandle *data,
  *
  * Parameters:
  *
- * chlg64  [in]     - Pointer to the base64 encoded challenge message.
+ * chlg64  [in]     - The base64 encoded challenge message.
  * nonce   [in/out] - The buffer where the nonce will be stored.
  * nlen    [in]     - The length of the nonce buffer.
  * realm   [in/out] - The buffer where the realm will be stored.
@@ -410,7 +526,7 @@ static CURLcode sasl_decode_digest_md5_message(const char *chlg64,
  * Parameters:
  *
  * data    [in]     - The session handle.
- * chlg64  [in]     - Pointer to the base64 encoded challenge message.
+ * chlg64  [in]     - The base64 encoded challenge message.
  * userp   [in]     - The user name.
  * passdwp [in]     - The user's password.
  * service [in]     - The service type such as www, smtp, pop or imap.
@@ -580,96 +696,418 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
 
   return result;
 }
+
+/*
+ * Curl_sasl_decode_digest_http_message()
+ *
+ * This is used to decode a HTTP DIGEST challenge message into the seperate
+ * attributes.
+ *
+ * Parameters:
+ *
+ * chlg    [in]     - The challenge message.
+ * digest  [in/out] - The digest data struct being used and modified.
+ *
+ * Returns CURLE_OK on success.
+ */
+CURLcode Curl_sasl_decode_digest_http_message(const char *chlg,
+                                              struct digestdata *digest)
+{
+  bool before = FALSE; /* got a nonce before */
+  bool foundAuth = FALSE;
+  bool foundAuthInt = FALSE;
+  char *token = NULL;
+  char *tmp = NULL;
+
+  /* If we already have received a nonce, keep that in mind */
+  if(digest->nonce)
+    before = TRUE;
+
+  /* Clean up any former leftovers and initialise to defaults */
+  Curl_sasl_digest_cleanup(digest);
+
+  for(;;) {
+    char value[DIGEST_MAX_VALUE_LENGTH];
+    char content[DIGEST_MAX_CONTENT_LENGTH];
+
+    /* Pass all additional spaces here */
+    while(*chlg && ISSPACE(*chlg))
+      chlg++;
+
+    /* Extract a value=content pair */
+    if(!sasl_digest_get_pair(chlg, value, content, &chlg)) {
+      if(Curl_raw_equal(value, "nonce")) {
+        digest->nonce = strdup(content);
+        if(!digest->nonce)
+          return CURLE_OUT_OF_MEMORY;
+      }
+      else if(Curl_raw_equal(value, "stale")) {
+        if(Curl_raw_equal(content, "true")) {
+          digest->stale = TRUE;
+          digest->nc = 1; /* we make a new nonce now */
+        }
+      }
+      else if(Curl_raw_equal(value, "realm")) {
+        digest->realm = strdup(content);
+        if(!digest->realm)
+          return CURLE_OUT_OF_MEMORY;
+      }
+      else if(Curl_raw_equal(value, "opaque")) {
+        digest->opaque = strdup(content);
+        if(!digest->opaque)
+          return CURLE_OUT_OF_MEMORY;
+      }
+      else if(Curl_raw_equal(value, "qop")) {
+        char *tok_buf;
+        /* Tokenize the list and choose auth if possible, use a temporary
+            clone of the buffer since strtok_r() ruins it */
+        tmp = strdup(content);
+        if(!tmp)
+          return CURLE_OUT_OF_MEMORY;
+
+        token = strtok_r(tmp, ",", &tok_buf);
+        while(token != NULL) {
+          if(Curl_raw_equal(token, DIGEST_QOP_VALUE_STRING_AUTH)) {
+            foundAuth = TRUE;
+          }
+          else if(Curl_raw_equal(token, DIGEST_QOP_VALUE_STRING_AUTH_INT)) {
+            foundAuthInt = TRUE;
+          }
+          token = strtok_r(NULL, ",", &tok_buf);
+        }
+
+        free(tmp);
+
+        /* Select only auth or auth-int. Otherwise, ignore */
+        if(foundAuth) {
+          digest->qop = strdup(DIGEST_QOP_VALUE_STRING_AUTH);
+          if(!digest->qop)
+            return CURLE_OUT_OF_MEMORY;
+        }
+        else if(foundAuthInt) {
+          digest->qop = strdup(DIGEST_QOP_VALUE_STRING_AUTH_INT);
+          if(!digest->qop)
+            return CURLE_OUT_OF_MEMORY;
+        }
+      }
+      else if(Curl_raw_equal(value, "algorithm")) {
+        digest->algorithm = strdup(content);
+        if(!digest->algorithm)
+          return CURLE_OUT_OF_MEMORY;
+
+        if(Curl_raw_equal(content, "MD5-sess"))
+          digest->algo = CURLDIGESTALGO_MD5SESS;
+        else if(Curl_raw_equal(content, "MD5"))
+          digest->algo = CURLDIGESTALGO_MD5;
+        else
+          return CURLE_BAD_CONTENT_ENCODING;
+      }
+      else {
+        /* unknown specifier, ignore it! */
+      }
+    }
+    else
+      break; /* we're done here */
+
+    /* Pass all additional spaces here */
+    while(*chlg && ISSPACE(*chlg))
+      chlg++;
+
+    /* Allow the list to be comma-separated */
+    if(',' == *chlg)
+      chlg++;
+  }
+
+  /* We had a nonce since before, and we got another one now without
+     'stale=true'. This means we provided bad credentials in the previous
+     request */
+  if(before && !digest->stale)
+    return CURLE_BAD_CONTENT_ENCODING;
+
+  /* We got this header without a nonce, that's a bad Digest line! */
+  if(!digest->nonce)
+    return CURLE_BAD_CONTENT_ENCODING;
+
+  return CURLE_OK;
+}
+
+/*
+ * Curl_sasl_create_digest_http_message()
+ *
+ * This is used to generate a HTTP DIGEST response message ready for sending
+ * to the recipient.
+ *
+ * Parameters:
+ *
+ * data    [in]     - The session handle.
+ * userp   [in]     - The user name.
+ * passdwp [in]     - The user's password.
+ * request [in]     - The HTTP request.
+ * uripath [in]     - The path of the HTTP uri.
+ * digest  [in/out] - The digest data struct being used and modified.
+ * outptr  [in/out] - The address where a pointer to newly allocated memory
+ *                    holding the result will be stored upon completion.
+ * outlen  [out]    - The length of the output message.
+ *
+ * Returns CURLE_OK on success.
+ */
+CURLcode Curl_sasl_create_digest_http_message(struct SessionHandle *data,
+                                              const char *userp,
+                                              const char *passwdp,
+                                              const unsigned char *request,
+                                              const unsigned char *uripath,
+                                              struct digestdata *digest,
+                                              char **outptr, size_t *outlen)
+{
+  CURLcode result;
+  unsigned char md5buf[16]; /* 16 bytes/128 bits */
+  unsigned char request_digest[33];
+  unsigned char *md5this;
+  unsigned char ha1[33];/* 32 digits and 1 zero byte */
+  unsigned char ha2[33];/* 32 digits and 1 zero byte */
+  char cnoncebuf[33];
+  char *cnonce = NULL;
+  size_t cnonce_sz = 0;
+  char *userp_quoted;
+  char *response = NULL;
+  char *tmp = NULL;
+
+  if(!digest->nc)
+    digest->nc = 1;
+
+  if(!digest->cnonce) {
+    snprintf(cnoncebuf, sizeof(cnoncebuf), "%08x%08x%08x%08x",
+             Curl_rand(data), Curl_rand(data),
+             Curl_rand(data), Curl_rand(data));
+
+    result = Curl_base64_encode(data, cnoncebuf, strlen(cnoncebuf),
+                                &cnonce, &cnonce_sz);
+    if(result)
+      return result;
+
+    digest->cnonce = cnonce;
+  }
+
+  /*
+    if the algorithm is "MD5" or unspecified (which then defaults to MD5):
+
+    A1 = unq(username-value) ":" unq(realm-value) ":" passwd
+
+    if the algorithm is "MD5-sess" then:
+
+    A1 = H( unq(username-value) ":" unq(realm-value) ":" passwd )
+         ":" unq(nonce-value) ":" unq(cnonce-value)
+  */
+
+  md5this = (unsigned char *)
+    aprintf("%s:%s:%s", userp, digest->realm, passwdp);
+  if(!md5this)
+    return CURLE_OUT_OF_MEMORY;
+
+  CURL_OUTPUT_DIGEST_CONV(data, md5this); /* convert on non-ASCII machines */
+  Curl_md5it(md5buf, md5this);
+  Curl_safefree(md5this);
+  sasl_digest_md5_to_ascii(md5buf, ha1);
+
+  if(digest->algo == CURLDIGESTALGO_MD5SESS) {
+    /* nonce and cnonce are OUTSIDE the hash */
+    tmp = aprintf("%s:%s:%s", ha1, digest->nonce, digest->cnonce);
+    if(!tmp)
+      return CURLE_OUT_OF_MEMORY;
+
+    CURL_OUTPUT_DIGEST_CONV(data, tmp); /* convert on non-ASCII machines */
+    Curl_md5it(md5buf, (unsigned char *)tmp);
+    Curl_safefree(tmp);
+    sasl_digest_md5_to_ascii(md5buf, ha1);
+  }
+
+  /*
+    If the "qop" directive's value is "auth" or is unspecified, then A2 is:
+
+      A2       = Method ":" digest-uri-value
+
+          If the "qop" value is "auth-int", then A2 is:
+
+      A2       = Method ":" digest-uri-value ":" H(entity-body)
+
+    (The "Method" value is the HTTP request method as specified in section
+    5.1.1 of RFC 2616)
+  */
+
+  md5this = (unsigned char *)aprintf("%s:%s", request, uripath);
+
+  if(digest->qop && Curl_raw_equal(digest->qop, "auth-int")) {
+    /* We don't support auth-int for PUT or POST at the moment.
+       TODO: replace md5 of empty string with entity-body for PUT/POST */
+    unsigned char *md5this2 = (unsigned char *)
+      aprintf("%s:%s", md5this, "d41d8cd98f00b204e9800998ecf8427e");
+    Curl_safefree(md5this);
+    md5this = md5this2;
+  }
+
+  if(!md5this)
+    return CURLE_OUT_OF_MEMORY;
+
+  CURL_OUTPUT_DIGEST_CONV(data, md5this); /* convert on non-ASCII machines */
+  Curl_md5it(md5buf, md5this);
+  Curl_safefree(md5this);
+  sasl_digest_md5_to_ascii(md5buf, ha2);
+
+  if(digest->qop) {
+    md5this = (unsigned char *)aprintf("%s:%s:%08x:%s:%s:%s",
+                                       ha1,
+                                       digest->nonce,
+                                       digest->nc,
+                                       digest->cnonce,
+                                       digest->qop,
+                                       ha2);
+  }
+  else {
+    md5this = (unsigned char *)aprintf("%s:%s:%s",
+                                       ha1,
+                                       digest->nonce,
+                                       ha2);
+  }
+
+  if(!md5this)
+    return CURLE_OUT_OF_MEMORY;
+
+  CURL_OUTPUT_DIGEST_CONV(data, md5this); /* convert on non-ASCII machines */
+  Curl_md5it(md5buf, md5this);
+  Curl_safefree(md5this);
+  sasl_digest_md5_to_ascii(md5buf, request_digest);
+
+  /* for test case 64 (snooped from a Mozilla 1.3a request)
+
+    Authorization: Digest username="testuser", realm="testrealm", \
+    nonce="1053604145", uri="/64", response="c55f7f30d83d774a3d2dcacf725abaca"
+
+    Digest parameters are all quoted strings.  Username which is provided by
+    the user will need double quotes and backslashes within it escaped.  For
+    the other fields, this shouldn't be an issue.  realm, nonce, and opaque
+    are copied as is from the server, escapes and all.  cnonce is generated
+    with web-safe characters.  uri is already percent encoded.  nc is 8 hex
+    characters.  algorithm and qop with standard values only contain web-safe
+    chracters.
+  */
+  userp_quoted = sasl_digest_string_quoted(userp);
+  if(!userp_quoted)
+    return CURLE_OUT_OF_MEMORY;
+
+  if(digest->qop) {
+    response = aprintf("username=\"%s\", "
+                       "realm=\"%s\", "
+                       "nonce=\"%s\", "
+                       "uri=\"%s\", "
+                       "cnonce=\"%s\", "
+                       "nc=%08x, "
+                       "qop=%s, "
+                       "response=\"%s\"",
+                       userp_quoted,
+                       digest->realm,
+                       digest->nonce,
+                       uripath,
+                       digest->cnonce,
+                       digest->nc,
+                       digest->qop,
+                       request_digest);
+
+    if(Curl_raw_equal(digest->qop, "auth"))
+      digest->nc++; /* The nc (from RFC) has to be a 8 hex digit number 0
+                       padded which tells to the server how many times you are
+                       using the same nonce in the qop=auth mode */
+  }
+  else {
+    response = aprintf("username=\"%s\", "
+                       "realm=\"%s\", "
+                       "nonce=\"%s\", "
+                       "uri=\"%s\", "
+                       "response=\"%s\"",
+                       userp_quoted,
+                       digest->realm,
+                       digest->nonce,
+                       uripath,
+                       request_digest);
+  }
+  Curl_safefree(userp_quoted);
+  if(!response)
+    return CURLE_OUT_OF_MEMORY;
+
+  /* Add the optional fields */
+  if(digest->opaque) {
+    /* Append the opaque */
+    tmp = aprintf("%s, opaque=\"%s\"", response, digest->opaque);
+    free(response);
+    if(!tmp)
+      return CURLE_OUT_OF_MEMORY;
+
+    response = tmp;
+  }
+
+  if(digest->algorithm) {
+    /* Append the algorithm */
+    tmp = aprintf("%s, algorithm=\"%s\"", response, digest->algorithm);
+    free(response);
+    if(!tmp)
+      return CURLE_OUT_OF_MEMORY;
+
+    response = tmp;
+  }
+
+  /* Return the output */
+  *outptr = response;
+  *outlen = strlen(response);
+
+  return CURLE_OK;
+}
+
+/*
+ * Curl_sasl_digest_cleanup()
+ *
+ * This is used to clean up the digest specific data.
+ *
+ * Parameters:
+ *
+ * digest    [in/out] - The digest data struct being cleaned up.
+ *
+ */
+void Curl_sasl_digest_cleanup(struct digestdata *digest)
+{
+  Curl_safefree(digest->nonce);
+  Curl_safefree(digest->cnonce);
+  Curl_safefree(digest->realm);
+  Curl_safefree(digest->opaque);
+  Curl_safefree(digest->qop);
+  Curl_safefree(digest->algorithm);
+
+  digest->nc = 0;
+  digest->algo = CURLDIGESTALGO_MD5; /* default algorithm */
+  digest->stale = FALSE; /* default means normal, not stale */
+}
 #endif  /* !USE_WINDOWS_SSPI */
 
 #endif  /* CURL_DISABLE_CRYPTO_AUTH */
 
-#ifdef USE_NTLM
+#if defined(USE_NTLM) && !defined(USE_WINDOWS_SSPI)
 /*
- * Curl_sasl_create_ntlm_type1_message()
+ * Curl_sasl_ntlm_cleanup()
  *
- * This is used to generate an already encoded NTLM type-1 message ready for
- * sending to the recipient.
- *
- * Note: This is a simple wrapper of the NTLM function which means that any
- * SASL based protocols don't have to include the NTLM functions directly.
+ * This is used to clean up the ntlm specific data.
  *
  * Parameters:
  *
- * userp   [in]     - The user name in the format User or Domain\User.
- * passdwp [in]     - The user's password.
- * ntlm    [in/out] - The ntlm data struct being used and modified.
- * outptr  [in/out] - The address where a pointer to newly allocated memory
- *                    holding the result will be stored upon completion.
- * outlen  [out]    - The length of the output message.
+ * ntlm    [in/out] - The ntlm data struct being cleaned up.
  *
- * Returns CURLE_OK on success.
  */
-CURLcode Curl_sasl_create_ntlm_type1_message(const char *userp,
-                                             const char *passwdp,
-                                             struct ntlmdata *ntlm,
-                                             char **outptr, size_t *outlen)
+void Curl_sasl_ntlm_cleanup(struct ntlmdata *ntlm)
 {
-  return Curl_ntlm_create_type1_message(userp, passwdp, ntlm, outptr, outlen);
+  /* Free the target info */
+  Curl_safefree(ntlm->target_info);
+
+  /* Reset any variables */
+  ntlm->target_info_len = 0;
 }
-
-/*
- * Curl_sasl_decode_ntlm_type2_message()
- *
- * This is used to decode an already encoded NTLM type-2 message.
- *
- * Parameters:
- *
- * data     [in]     - Pointer to session handle.
- * type2msg [in]     - Pointer to the base64 encoded type-2 message.
- * ntlm     [in/out] - The ntlm data struct being used and modified.
- *
- * Returns CURLE_OK on success.
- */
-CURLcode Curl_sasl_decode_ntlm_type2_message(struct SessionHandle *data,
-                                             const char *type2msg,
-                                             struct ntlmdata *ntlm)
-{
-#ifdef USE_NSS
-  CURLcode result;
-
-  /* make sure the crypto backend is initialized */
-  result = Curl_nss_force_init(data);
-  if(result)
-    return result;
-#endif
-
-  return Curl_ntlm_decode_type2_message(data, type2msg, ntlm);
-}
-
-/*
- * Curl_sasl_create_ntlm_type3_message()
- *
- * This is used to generate an already encoded NTLM type-3 message ready for
- * sending to the recipient.
- *
- * Parameters:
- *
- * data    [in]     - Pointer to session handle.
- * userp   [in]     - The user name in the format User or Domain\User.
- * passdwp [in]     - The user's password.
- * ntlm    [in/out] - The ntlm data struct being used and modified.
- * outptr  [in/out] - The address where a pointer to newly allocated memory
- *                    holding the result will be stored upon completion.
- * outlen  [out]    - The length of the output message.
- *
- * Returns CURLE_OK on success.
- */
-CURLcode Curl_sasl_create_ntlm_type3_message(struct SessionHandle *data,
-                                             const char *userp,
-                                             const char *passwdp,
-                                             struct ntlmdata *ntlm,
-                                             char **outptr, size_t *outlen)
-{
-  return Curl_ntlm_create_type3_message(data, userp, passwdp, ntlm, outptr,
-                                        outlen);
-}
-#endif /* USE_NTLM */
+#endif /* USE_NTLM && !USE_WINDOWS_SSPI*/
 
 /*
  * Curl_sasl_create_xoauth2_message()
@@ -717,23 +1155,26 @@ CURLcode Curl_sasl_create_xoauth2_message(struct SessionHandle *data,
  *
  * Parameters:
  *
- * conn     [in]     - Pointer to the connection data.
+ * conn     [in]     - The connection data.
  * authused [in]     - The authentication mechanism used.
  */
 void Curl_sasl_cleanup(struct connectdata *conn, unsigned int authused)
 {
-#if defined(USE_KRB5)
+#if defined(USE_KERBEROS5)
   /* Cleanup the gssapi structure */
   if(authused == SASL_MECH_GSSAPI) {
     Curl_sasl_gssapi_cleanup(&conn->krb5);
   }
-#ifdef USE_NTLM
+#endif
+
+#if defined(USE_NTLM)
   /* Cleanup the ntlm structure */
-  else if(authused == SASL_MECH_NTLM) {
-    Curl_ntlm_sspi_cleanup(&conn->ntlm);
+  if(authused == SASL_MECH_NTLM) {
+    Curl_sasl_ntlm_cleanup(&conn->ntlm);
   }
 #endif
-#else
+
+#if !defined(USE_KERBEROS5) && !defined(USE_NTLM)
   /* Reserved for future use */
   (void)conn;
   (void)authused;

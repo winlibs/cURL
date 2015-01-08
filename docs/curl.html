@@ -48,7 +48,7 @@ p.roffit {
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">curl - transfer a URL <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><span Class="bold">curl [options]</span> <a class="emphasis" href="#URL">[URL...]</a> <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
-<p class="level0"><span Class="bold">curl</span> is a tool to transfer data from or to a server, using one of the supported protocols (DICT, FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, POP3, POP3S, RTMP, RTSP, SCP, SFTP, SMTP, SMTPS, TELNET and TFTP).  The command is designed to work without user interaction. 
+<p class="level0"><span Class="bold">curl</span> is a tool to transfer data from or to a server, using one of the supported protocols (DICT, FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, POP3, POP3S, RTMP, RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET and TFTP). The command is designed to work without user interaction. 
 <p class="level0">curl offers a busload of useful tricks like proxy support, user authentication, FTP upload, HTTP post, SSL connections, cookies, file transfer resume, Metalink, and more. As you will see below, the number of features will make your head spin! 
 <p class="level0">curl is powered by libcurl for all transfer-related features. See <span Class="manpage">libcurl (3)</span> for details. <a name="URL"></a><h2 class="nroffsh">URL</h2>
 <p class="level0">The URL syntax is protocol-dependent. You'll find a detailed description in <a href="http://www.ietf.org/rfc/rfc3986.txt">RFC 3986</a>. 
@@ -65,6 +65,8 @@ p.roffit {
 <p class="level0">&nbsp; <a href="http://www.numericals.com/file">http://www.numericals.com/file</a>[1-100:10].txt 
 <p class="level0">&nbsp; <a href="http://www.letters.com/file">http://www.letters.com/file</a>[a-z:2].txt 
 <p class="level0">When using [] or {} sequences when invoked from a command line prompt, you probably have to put the full URL within double quotes to avoid the shell from interfering with it. This also goes for other characters treated special, like for example '&', '?' and '*'. 
+<p class="level0">Provide the IPv6 zone index in the URL with an escaped percentage sign and the interface name. Like in 
+<p class="level0">&nbsp; http://[fe80::3%25eth0]/ 
 <p class="level0">If you specify URL without protocol:// prefix, curl will attempt to guess what protocol you might want. It will then default to HTTP but try other protocols based on often-used host name prefixes. For example, for host names starting with "ftp." curl will assume you want to speak FTP. 
 <p class="level0">curl will do its best to use what you pass to it as a URL. It is not trying to validate it as a syntactically correct URL by any means but is instead <span Class="bold">very</span> liberal with what it accepts. 
 <p class="level0">curl will attempt to re-use connections for multiple file transfers, so that getting many files from the same server will not do multiple connects / handshakes. This improves speed. Of course this is only done on files specified on a single command line and cannot be used between separate curl invokes. <a name="PROGRESS"></a><h2 class="nroffsh">PROGRESS METER</h2>
@@ -100,7 +102,7 @@ p.roffit {
 <p class="level0"><a name="-3"></a><span class="nroffip">-3, --sslv3</span> 
 <p class="level1">(SSL) Forces curl to use SSL version 3 when negotiating with a remote SSL server. Sometimes curl is built without SSLv3 support. 
 <p class="level0"><a name="-4"></a><span class="nroffip">-4, --ipv4</span> 
-<p class="level1">Tis option tells curl to resolve names to IPv4 addresses only, and not for example try IPv6. 
+<p class="level1">This option tells curl to resolve names to IPv4 addresses only, and not for example try IPv6. 
 <p class="level0"><a name="-6"></a><span class="nroffip">-6, --ipv6</span> 
 <p class="level1">This option tells curl to resolve names to IPv6 addresses only, and not for example try IPv4. 
 <p class="level0"><a name="-a"></a><span class="nroffip">-a, --append</span> 
@@ -145,7 +147,8 @@ p.roffit {
 <p class="level1">When used in conjunction with the <a class="emphasis" href="#-o">-o</a> option, curl will create the necessary local directory hierarchy as needed. This option creates the dirs mentioned with the <a class="emphasis" href="#-o">-o</a> option, nothing else. If the <a class="emphasis" href="#-o">-o</a> file name uses no dir or if the dirs it mentions already exist, no dir will be created. 
 <p class="level1">To create remote directories when using FTP or SFTP, try <a class="emphasis" href="#--ftp-create-dirs">--ftp-create-dirs</a>. 
 <p class="level0"><a name="--crlf"></a><span class="nroffip">--crlf</span> 
-<p class="level1">(FTP) Convert LF to CRLF in upload. Useful for MVS (OS/390). 
+<p class="level1">Convert LF to CRLF in upload. Useful for MVS (OS/390). 
+<p class="level1">(SMTP added in 7.40.0) 
 <p class="level0"><a name="--crlfile"></a><span class="nroffip">--crlfile &lt;file&gt;</span> 
 <p class="level1">(HTTPS/FTPS) Provide a file using PEM format with a Certificate Revocation List that may specify peer certificates that are to be considered revoked. 
 <p class="level1">If this option is used several times, the last one will be used. 
@@ -241,9 +244,9 @@ p.roffit {
 <p class="level1">(SSL) Tells curl to use the specified certificate directory to verify the peer. Multiple paths can be provided by separating them with ":" (e.g. "path1:path2:path3"). The certificates must be in PEM format, and if curl is built against OpenSSL, the directory must have been processed using the c_rehash utility supplied with OpenSSL. Using <a class="emphasis" href="#--capath">--capath</a> can allow OpenSSL-powered curl to make SSL-connections much more efficiently than using <a class="emphasis" href="#--cacert">--cacert</a> if the <a class="emphasis" href="#--cacert">--cacert</a> file contains many CA certificates. 
 <p class="level1">If this option is set, the default capath value will be ignored, and if it is used several times, the last one will be used. 
 <p class="level0"><a name="--pinnedpubkey"></a><span class="nroffip">--pinnedpubkey &lt;pinned public key&gt;</span> 
-<p class="level1">(SSL) Tells curl to use the specified public key file to verify the peer. The file must contain a single public key in DER format. 
+<p class="level1">(SSL) Tells curl to use the specified public key file to verify the peer. The file must contain a single public key in PEM or DER format. 
 <p class="level1">When negotiating a TLS or SSL connection, the server sends a certificate indicating its identity. A public key is extracted from this certificate and if it does not exactly match the public key provided to this option, curl will abort the connection before sending or receiving any data. 
-<p class="level1">This is currently only implemented in the OpenSSL and GnuTLS backends. 
+<p class="level1">This is currently only implemented in the OpenSSL, GnuTLS and GSKit backends. 
 <p class="level1">If this option is used several times, the last one will be used. (Added in 7.39.0) 
 <p class="level0"><a name="-f"></a><span class="nroffip">-f, --fail</span> 
 <p class="level1">(HTTP) Fail silently (no output at all) on server errors. This is mostly done to better enable scripts etc to better deal with failed attempts. In normal cases when an HTTP server fails to deliver a document, it returns an HTML document stating so (which often also describes why and more). This flag will prevent curl from outputting that and return error 22. 
@@ -342,8 +345,8 @@ p.roffit {
 <p class="level1">Note that to be able to specify a URL in the config file, you need to specify it using the <a class="emphasis" href="#--url">--url</a> option, and not by simply writing the URL on its own line. So, it could look similar to this: 
 <p class="level1">url = "<a href="http://curl.haxx.se/docs/">http://curl.haxx.se/docs/</a>" 
 <p class="level1">When curl is invoked, it always (unless <a class="emphasis" href="#-q">-q</a> is used) checks for a default config file and uses it if found. The default config file is checked for in the following places in this order: 
-<p class="level1">1) curl tries to find the "home dir": It first checks for the CURL_HOME and then the HOME environment variables. Failing that, it uses getpwuid() on UNIX-like systems (which returns the home dir given the current user in your system). On Windows, it then checks for the APPDATA variable, or as a last resort the '%USERPROFILE%\Application Data'. 
-<p class="level1">2) On windows, if there is no _curlrc file in the home dir, it checks for one in the same dir the curl executable is placed. On UNIX-like systems, it will simply try to load .curlrc from the determined home dir. 
+<p class="level1">1) curl tries to find the "home dir": It first checks for the CURL_HOME and then the HOME environment variables. Failing that, it uses getpwuid() on Unix-like systems (which returns the home dir given the current user in your system). On Windows, it then checks for the APPDATA variable, or as a last resort the '%USERPROFILE%\Application Data'. 
+<p class="level1">2) On windows, if there is no _curlrc file in the home dir, it checks for one in the same dir the curl executable is placed. On Unix-like systems, it will simply try to load .curlrc from the determined home dir. 
 <p class="level1"><pre>
 <p class="level1"># --- Example file ---
  # this is a comment
@@ -427,7 +430,7 @@ p.roffit {
 <p class="level1">Please note that if FILE protocol is disabled, there is no way to use a local Metalink file at the time of this writing. Also note that if <a class="emphasis" href="#--metalink">--metalink</a> and <span Class="emphasis">--include</span> are used together, <span Class="emphasis">--include</span> will be ignored. This is because including headers in the response will break Metalink parser and if the headers are included in the file described in Metalink file, hash check will fail. 
 <p class="level1">(Added in 7.27.0, if built against the libmetalink library.) 
 <p class="level0"><a name="-n"></a><span class="nroffip">-n, --netrc</span> 
-<p class="level1">Makes curl scan the <span Class="emphasis">.netrc</span> (<span Class="emphasis">_netrc</span> on Windows) file in the user's home directory for login name and password. This is typically used for FTP on UNIX. If used with HTTP, curl will enable user authentication. See <span Class="manpage">netrc(4)</span> or <span Class="manpage">ftp(1)</span> for details on the file format. Curl will not complain if that file doesn't have the right permissions (it should not be either world- or group-readable). The environment variable "HOME" is used to find the home directory. 
+<p class="level1">Makes curl scan the <span Class="emphasis">.netrc</span> (<span Class="emphasis">_netrc</span> on Windows) file in the user's home directory for login name and password. This is typically used for FTP on Unix. If used with HTTP, curl will enable user authentication. See <span Class="manpage">netrc(4)</span> or <span Class="manpage">ftp(1)</span> for details on the file format. Curl will not complain if that file doesn't have the right permissions (it should not be either world- or group-readable). The environment variable "HOME" is used to find the home directory. 
 <p class="level1">A quick and very simple example of how to setup a <span Class="emphasis">.netrc</span> to allow curl to FTP to the machine host.domain.com with user name 'myself' and password 'secret' should look similar to: 
 <p class="level1"><span Class="bold">machine host.domain.com login myself password secret</span> 
 <p class="level0"><a name="-N"></a><span class="nroffip">-N, --no-buffer</span> 
@@ -697,6 +700,8 @@ p.roffit {
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--trace-time"></a><span class="nroffip">--trace-time</span> 
 <p class="level1">Prepends a time stamp to each trace or verbose line that curl displays. (Added in 7.14.0) 
+<p class="level0"><a name="--unix-socket"></a><span class="nroffip">--unix-socket &lt;path&gt;</span> 
+<p class="level1">(HTTP) Connect through this Unix domain socket, instead of using the network. (Added in 7.40.0) 
 <p class="level0"><a name="-u"></a><span class="nroffip">-u, --user &lt;user:password&gt;</span> 
 <p class="level1">Specify the user name and password to use for server authentication. Overrides <a class="emphasis" href="#-n">-n, --netrc</a> and <a class="emphasis" href="#--netrc-optional">--netrc-optional</a>. 
 <p class="level1">If you simply specify the user name, curl will prompt for a password. 
@@ -704,7 +709,7 @@ p.roffit {
 <p class="level1">When using Kerberos V5 with a Windows based server you should include the Windows domain name in the user name, in order for the server to succesfully obtain a Kerberos Ticket. If you don't then the initial authentication handshake may fail. 
 <p class="level1">When using NTLM, the user name can be specified simply as the user name, without the domain, if there is a single domain and forest in your setup for example. 
 <p class="level1">To specify the domain name use either Down-Level Logon Name or UPN (User Principal Name) formats. For example, EXAMPLE\user and user@example.com respectively. 
-<p class="level1">If you use a Windows SSPI-enabled curl binary and perform Kerberos V5, Negotiate, NTLM or DIGEST-MD5 authentication then you can tell curl to select the user name and password from your environment by specifying a single colon with this option: "-u :". 
+<p class="level1">If you use a Windows SSPI-enabled curl binary and perform Kerberos V5, Negotiate, NTLM or Digest authentication then you can tell curl to select the user name and password from your environment by specifying a single colon with this option: "-u :". 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="-U"></a><span class="nroffip">-U, --proxy-user &lt;user:password&gt;</span> 
 <p class="level1">Specify the user name and password to use for proxy authentication. 

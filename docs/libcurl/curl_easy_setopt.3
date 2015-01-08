@@ -187,6 +187,8 @@ Enable TCP keep-alive. See \fICURLOPT_TCP_KEEPALIVE(3)\fP
 Idle time before sending keep-alive. See \fICURLOPT_TCP_KEEPIDLE(3)\fP
 .IP CURLOPT_TCP_KEEPINTVL
 Interval between keep-alive probes. See \fICURLOPT_TCP_KEEPINTVL(3)\fP
+.IP CURLOPT_UNIX_SOCKET_PATH
+Path to a Unix domain socket. See \fICURLOPT_UNIX_SOCKET_PATH(3)\fP
 .SH NAMES and PASSWORDS OPTIONS (Authentication)
 .IP CURLOPT_NETRC
 Enable .netrc parsing. See \fICURLOPT_NETRC(3)\fP
@@ -446,6 +448,8 @@ Certificate Revocation List. See \fICURLOPT_CRLFILE(3)\fP
 Verify the host name in the SSL certificate. See \fICURLOPT_SSL_VERIFYHOST(3)\fP
 .IP CURLOPT_CERTINFO
 Extract certificate info. See \fICURLOPT_CERTINFO(3)\fP
+.IP CURLOPT_PINNEDPUBLICKEY
+Set pinned SSL public key . See \fICURLOPT_PINNEDPUBLICKEY(3)\fP
 .IP CURLOPT_RANDOM_FILE
 Provide source for entropy random data. See \fICURLOPT_RANDOM_FILE(3)\fP
 .IP CURLOPT_EGDSOCKET
@@ -497,6 +501,16 @@ the library is too old to support it or the option was removed in a recent
 version, this function will return \fICURLE_UNKNOWN_OPTION\fP. If support for
 the option was disabled at compile-time, it will return
 \fICURLE_NOT_BUILT_IN\fP.
+.SH EXAMPLE
+.nf
+CURL *curl = curl_easy_init();
+if(curl) {
+  CURLcode res;
+  curl_easy_setopt(curl, CURLOPT_URL, "http://example.com");
+  res = curl_easy_perform(curl);
+  curl_easy_cleanup(curl);
+}}
+.fi
 .SH "SEE ALSO"
 .BR curl_easy_init "(3), " curl_easy_cleanup "(3), " curl_easy_reset "(3), "
 .BR curl_multi_setopt "(3), "

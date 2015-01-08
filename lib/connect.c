@@ -238,7 +238,7 @@ long Curl_timeleft(struct SessionHandle *data,
 }
 
 static CURLcode bindlocal(struct connectdata *conn,
-                          curl_socket_t sockfd, int af)
+                          curl_socket_t sockfd, int af, unsigned int scope)
 {
   struct SessionHandle *data = conn->data;
 
@@ -286,7 +286,8 @@ static CURLcode bindlocal(struct connectdata *conn,
 
     /* interface */
     if(!is_host) {
-      switch(Curl_if2ip(af, conn->scope, dev, myhost, sizeof(myhost))) {
+      switch(Curl_if2ip(af, scope, conn->scope_id, dev,
+                        myhost, sizeof(myhost))) {
         case IF2IP_NOT_FOUND:
           if(is_interface) {
             /* Do not fall back to treating it as a host name */
@@ -375,7 +376,7 @@ static CURLcode bindlocal(struct connectdata *conn,
 
     if(done > 0) {
 #ifdef ENABLE_IPV6
-      /* ipv6 address */
+      /* IPv6 address */
       if(af == AF_INET6) {
 #ifdef HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID
         char *scope_ptr = strchr(myhost, '%');
@@ -398,7 +399,7 @@ static CURLcode bindlocal(struct connectdata *conn,
       }
       else
 #endif
-      /* ipv4 address */
+      /* IPv4 address */
       if((af == AF_INET) &&
          (Curl_inet_pton(AF_INET, myhost, &si4->sin_addr) > 0)) {
         si4->sin_family = AF_INET;
@@ -679,6 +680,7 @@ void Curl_updateconninfo(struct connectdata *conn, curl_socket_t sockfd)
     }
 
     len = sizeof(struct Curl_sockaddr_storage);
+    memset(&ssloc, 0, sizeof(ssloc));
     if(getsockname(sockfd, (struct sockaddr*) &ssloc, &len)) {
       error = SOCKERRNO;
       failf(data, "getsockname() failed with errno %d: %s",
@@ -991,6 +993,7 @@ static CURLcode singleipconnect(struct connectdata *conn,
   CURLcode result;
   char ipaddress[MAX_IPADR_LEN];
   long port;
+  bool is_tcp;
 
   *sockp = CURL_SOCKET_BAD;
 
@@ -1013,14 +1016,16 @@ static CURLcode singleipconnect(struct connectdata *conn,
   }
   infof(data, "  Trying %s...\n", ipaddress);
 
-  if(data->set.tcp_nodelay)
+  is_tcp = (addr.family == AF_INET || addr.family == AF_INET6) &&
+           addr.socktype == SOCK_STREAM;
+  if(is_tcp && data->set.tcp_nodelay)
     tcpnodelay(conn, sockfd);
 
   nosigpipe(conn, sockfd);
 
   Curl_sndbufset(sockfd);
 
-  if(data->set.tcp_keepalive)
+  if(is_tcp && data->set.tcp_keepalive)
     tcpkeepalive(data, sockfd);
 
   if(data->set.fsockopt) {
@@ -1038,16 +1043,18 @@ static CURLcode singleipconnect(struct connectdata *conn,
   }
 
   /* possibly bind the local end to an IP, interface or port */
-  result = bindlocal(conn, sockfd, addr.family);
-  if(result) {
-    Curl_closesocket(conn, sockfd); /* close socket and bail out */
-    if(result == CURLE_UNSUPPORTED_PROTOCOL) {
-      /* The address family is not supported on this interface.
-         We can continue trying addresses */
-      return CURLE_OK;
+  if(addr.family == AF_INET || addr.family == AF_INET6) {
+    result = bindlocal(conn, sockfd, addr.family,
+                       Curl_ipv6_scope((struct sockaddr*)&addr.sa_addr));
+    if(result) {
+      Curl_closesocket(conn, sockfd); /* close socket and bail out */
+      if(result == CURLE_UNSUPPORTED_PROTOCOL) {
+        /* The address family is not supported on this interface.
+           We can continue trying addresses */
+        return CURLE_COULDNT_CONNECT;
+      }
+      return result;
     }
-
-    return result;
   }
 
   /* set socket non-blocking */
@@ -1244,11 +1251,12 @@ int Curl_closesocket(struct connectdata *conn,
     else
       return conn->fclosesocket(conn->closesocket_client, sock);
   }
-  sclose(sock);
 
   if(conn)
     /* tell the multi-socket code about this */
     Curl_multi_closed(conn, sock);
+
+  sclose(sock);
 
   return 0;
 }
@@ -1313,9 +1321,9 @@ CURLcode Curl_socket(struct connectdata *conn,
     return CURLE_COULDNT_CONNECT;
 
 #if defined(ENABLE_IPV6) && defined(HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID)
-  if(conn->scope && (addr->family == AF_INET6)) {
+  if(conn->scope_id && (addr->family == AF_INET6)) {
     struct sockaddr_in6 * const sa6 = (void *)&addr->sa_addr;
-    sa6->sin6_scope_id = conn->scope;
+    sa6->sin6_scope_id = conn->scope_id;
   }
 #endif
 
@@ -1326,15 +1334,20 @@ CURLcode Curl_socket(struct connectdata *conn,
 #ifdef CURLDEBUG
 /*
  * Curl_conncontrol() is used to set the conn->bits.close bit on or off. It
- * MUST be called with the connclose() or connclose() macros with a stated
+ * MUST be called with the connclose() or connkeep() macros with a stated
  * reason. The reason is only shown in debug builds but helps to figure out
  * decision paths when connections are or aren't re-used as expected.
  */
 void Curl_conncontrol(struct connectdata *conn, bool closeit,
                       const char *reason)
 {
+#if defined(CURL_DISABLE_VERBOSE_STRINGS)
+  (void) reason;
+#endif
+
   infof(conn->data, "Marked for [%s]: %s\n", closeit?"closure":"keep alive",
         reason);
+
   conn->bits.close = closeit; /* the only place in the source code that should
                                  assign this bit */
 }

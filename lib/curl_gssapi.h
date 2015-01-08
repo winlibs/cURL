@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2011 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -43,7 +43,6 @@ extern gss_OID_desc Curl_spnego_mech_oid;
 extern gss_OID_desc Curl_krb5_mech_oid;
 
 /* Common method for using GSS-API */
-
 OM_uint32 Curl_gss_init_sec_context(
     struct SessionHandle *data,
     OM_uint32 *minor_status,
@@ -53,7 +52,12 @@ OM_uint32 Curl_gss_init_sec_context(
     gss_channel_bindings_t input_chan_bindings,
     gss_buffer_t input_token,
     gss_buffer_t output_token,
+    const bool mutual_auth,
     OM_uint32 *ret_flags);
+
+/* Helper to log a GSS-API error status */
+void Curl_gss_log_error(struct SessionHandle *data, OM_uint32 status,
+                        const char *prefix);
 
 #endif /* HAVE_GSSAPI */
 

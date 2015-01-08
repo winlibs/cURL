@@ -618,6 +618,7 @@ gtls_connect_step1(struct connectdata *conn,
       gnutls_alpn_set_protocols(session, protocols, protocols_size, 0);
       infof(data, "ALPN, offering %s, %s\n", NGHTTP2_PROTO_VERSION_ID,
             ALPN_HTTP_1_1);
+      connssl->asked_for_h2 = TRUE;
     }
     else {
       infof(data, "SSL, can't negotiate HTTP/2.0 without ALPN\n");
@@ -753,7 +754,7 @@ gtls_connect_step3(struct connectdata *conn,
   struct SessionHandle *data = conn->data;
   gnutls_session_t session = conn->ssl[sockindex].session;
   int rc;
-  int incache;
+  bool incache;
   void *ssl_sessionid;
 #ifdef HAS_ALPN
   gnutls_datum_t proto;
@@ -1047,7 +1048,7 @@ gtls_connect_step3(struct connectdata *conn,
         conn->negnpn = NPN_HTTP1_1;
       }
     }
-    else {
+    else if(connssl->asked_for_h2) {
       infof(data, "ALPN, server did not agree to a protocol\n");
     }
   }
@@ -1150,12 +1151,12 @@ Curl_gtls_connect(struct connectdata *conn,
                   int sockindex)
 
 {
-  CURLcode retcode;
+  CURLcode result;
   bool done = FALSE;
 
-  retcode = gtls_connect_common(conn, sockindex, FALSE, &done);
-  if(retcode)
-    return retcode;
+  result = gtls_connect_common(conn, sockindex, FALSE, &done);
+  if(result)
+    return result;
 
   DEBUGASSERT(done);
 
@@ -1303,10 +1304,10 @@ static ssize_t gtls_recv(struct connectdata *conn, /* connection data */
   if(ret == GNUTLS_E_REHANDSHAKE) {
     /* BLOCKING call, this is bad but a work-around for now. Fixing this "the
        proper way" takes a whole lot of work. */
-    CURLcode rc = handshake(conn, num, FALSE, FALSE);
-    if(rc)
+    CURLcode result = handshake(conn, num, FALSE, FALSE);
+    if(result)
       /* handshake() writes error message on its own */
-      *curlcode = rc;
+      *curlcode = result;
     else
       *curlcode = CURLE_AGAIN; /* then return as if this was a wouldblock */
     return -1;

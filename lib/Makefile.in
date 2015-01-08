@@ -215,7 +215,8 @@ am__objects_1 = libcurl_la-file.lo libcurl_la-timeval.lo \
 	libcurl_la-bundles.lo libcurl_la-conncache.lo \
 	libcurl_la-pipeline.lo libcurl_la-dotdot.lo \
 	libcurl_la-x509asn1.lo libcurl_la-http2.lo \
-	libcurl_la-curl_sasl_sspi.lo
+	libcurl_la-curl_sasl_sspi.lo libcurl_la-smb.lo \
+	libcurl_la-curl_sasl_gssapi.lo libcurl_la-curl_endian.lo
 am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_2 = vtls/libcurl_la-openssl.lo vtls/libcurl_la-gtls.lo \
 	vtls/libcurl_la-vtls.lo vtls/libcurl_la-nss.lo \
@@ -284,7 +285,9 @@ am__objects_6 = libcurlu_la-file.lo libcurlu_la-timeval.lo \
 	libcurlu_la-hostcheck.lo libcurlu_la-bundles.lo \
 	libcurlu_la-conncache.lo libcurlu_la-pipeline.lo \
 	libcurlu_la-dotdot.lo libcurlu_la-x509asn1.lo \
-	libcurlu_la-http2.lo libcurlu_la-curl_sasl_sspi.lo
+	libcurlu_la-http2.lo libcurlu_la-curl_sasl_sspi.lo \
+	libcurlu_la-smb.lo libcurlu_la-curl_sasl_gssapi.lo \
+	libcurlu_la-curl_endian.lo
 am__objects_7 = vtls/libcurlu_la-openssl.lo vtls/libcurlu_la-gtls.lo \
 	vtls/libcurlu_la-vtls.lo vtls/libcurlu_la-nss.lo \
 	vtls/libcurlu_la-polarssl.lo \
@@ -395,6 +398,7 @@ CURL_DISABLE_LDAPS = @CURL_DISABLE_LDAPS@
 CURL_DISABLE_POP3 = @CURL_DISABLE_POP3@
 CURL_DISABLE_PROXY = @CURL_DISABLE_PROXY@
 CURL_DISABLE_RTSP = @CURL_DISABLE_RTSP@
+CURL_DISABLE_SMB = @CURL_DISABLE_SMB@
 CURL_DISABLE_SMTP = @CURL_DISABLE_SMTP@
 CURL_DISABLE_TELNET = @CURL_DISABLE_TELNET@
 CURL_DISABLE_TFTP = @CURL_DISABLE_TFTP@
@@ -491,6 +495,7 @@ USE_OPENLDAP = @USE_OPENLDAP@
 USE_POLARSSL = @USE_POLARSSL@
 USE_SCHANNEL = @USE_SCHANNEL@
 USE_SSLEAY = @USE_SSLEAY@
+USE_UNIX_SOCKETS = @USE_UNIX_SOCKETS@
 USE_WINDOWS_SSPI = @USE_WINDOWS_SSPI@
 VERSION = @VERSION@
 VERSIONNUM = @VERSIONNUM@
@@ -642,50 +647,50 @@ libcurl_la_CFLAGS = $(AM_CFLAGS) $(libcurl_la_CFLAGS_EXTRA)
 libcurlu_la_CPPFLAGS = $(AM_CPPFLAGS) -DCURL_STATICLIB -DUNITTESTS
 libcurlu_la_LDFLAGS = $(AM_LDFLAGS) -static $(LIBCURL_LIBS)
 libcurlu_la_CFLAGS = $(AM_CFLAGS)
-LIB_VTLS_CFILES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c	\
-  vtls/polarssl.c vtls/polarssl_threadlock.c vtls/axtls.c		\
+LIB_VTLS_CFILES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c     \
+  vtls/polarssl.c vtls/polarssl_threadlock.c vtls/axtls.c               \
   vtls/cyassl.c vtls/curl_schannel.c vtls/curl_darwinssl.c vtls/gskit.c
 
-LIB_VTLS_HFILES = vtls/openssl.h vtls/vtls.h vtls/gtls.h		\
-  vtls/nssg.h vtls/polarssl.h vtls/polarssl_threadlock.h vtls/axtls.h	\
+LIB_VTLS_HFILES = vtls/openssl.h vtls/vtls.h vtls/gtls.h                \
+  vtls/nssg.h vtls/polarssl.h vtls/polarssl_threadlock.h vtls/axtls.h   \
   vtls/cyassl.h vtls/curl_schannel.h vtls/curl_darwinssl.h vtls/gskit.h
 
-LIB_CFILES = file.c timeval.c base64.c hostip.c progress.c formdata.c	\
-  cookie.c http.c sendf.c ftp.c url.c dict.c if2ip.c speedcheck.c	\
-  ldap.c version.c getenv.c escape.c mprintf.c telnet.c netrc.c		\
-  getinfo.c transfer.c strequal.c easy.c security.c curl_fnmatch.c	\
-  fileinfo.c ftplistparser.c wildcard.c krb5.c memdebug.c http_chunks.c	\
-  strtok.c connect.c llist.c hash.c multi.c content_encoding.c share.c	\
-  http_digest.c md4.c md5.c http_negotiate.c inet_pton.c strtoofft.c	\
-  strerror.c amigaos.c hostasyn.c hostip4.c hostip6.c hostsyn.c		\
-  inet_ntop.c parsedate.c select.c tftp.c splay.c strdup.c socks.c	\
-  ssh.c rawstr.c curl_addrinfo.c socks_gssapi.c socks_sspi.c		\
-  curl_sspi.c slist.c nonblock.c curl_memrchr.c imap.c pop3.c smtp.c	\
-  pingpong.c rtsp.c curl_threads.c warnless.c hmac.c curl_rtmp.c	\
-  openldap.c curl_gethostname.c gopher.c idn_win32.c			\
-  http_negotiate_sspi.c http_proxy.c non-ascii.c asyn-ares.c		\
-  asyn-thread.c curl_gssapi.c curl_ntlm.c curl_ntlm_wb.c		\
-  curl_ntlm_core.c curl_ntlm_msgs.c curl_sasl.c curl_multibyte.c	\
-  hostcheck.c bundles.c conncache.c pipeline.c dotdot.c x509asn1.c	\
-  http2.c curl_sasl_sspi.c
+LIB_CFILES = file.c timeval.c base64.c hostip.c progress.c formdata.c   \
+  cookie.c http.c sendf.c ftp.c url.c dict.c if2ip.c speedcheck.c       \
+  ldap.c version.c getenv.c escape.c mprintf.c telnet.c netrc.c         \
+  getinfo.c transfer.c strequal.c easy.c security.c curl_fnmatch.c      \
+  fileinfo.c ftplistparser.c wildcard.c krb5.c memdebug.c http_chunks.c \
+  strtok.c connect.c llist.c hash.c multi.c content_encoding.c share.c  \
+  http_digest.c md4.c md5.c http_negotiate.c inet_pton.c strtoofft.c    \
+  strerror.c amigaos.c hostasyn.c hostip4.c hostip6.c hostsyn.c         \
+  inet_ntop.c parsedate.c select.c tftp.c splay.c strdup.c socks.c      \
+  ssh.c rawstr.c curl_addrinfo.c socks_gssapi.c socks_sspi.c            \
+  curl_sspi.c slist.c nonblock.c curl_memrchr.c imap.c pop3.c smtp.c    \
+  pingpong.c rtsp.c curl_threads.c warnless.c hmac.c curl_rtmp.c        \
+  openldap.c curl_gethostname.c gopher.c idn_win32.c                    \
+  http_negotiate_sspi.c http_proxy.c non-ascii.c asyn-ares.c            \
+  asyn-thread.c curl_gssapi.c curl_ntlm.c curl_ntlm_wb.c                \
+  curl_ntlm_core.c curl_ntlm_msgs.c curl_sasl.c curl_multibyte.c        \
+  hostcheck.c bundles.c conncache.c pipeline.c dotdot.c x509asn1.c      \
+  http2.c curl_sasl_sspi.c smb.c curl_sasl_gssapi.c curl_endian.c
 
-LIB_HFILES = arpa_telnet.h netrc.h file.h timeval.h hostip.h progress.h	\
-  formdata.h cookie.h http.h sendf.h ftp.h url.h dict.h if2ip.h		\
-  speedcheck.h urldata.h curl_ldap.h escape.h telnet.h getinfo.h	\
-  strequal.h curl_sec.h memdebug.h http_chunks.h curl_fnmatch.h		\
-  wildcard.h fileinfo.h ftplistparser.h strtok.h connect.h llist.h	\
-  hash.h content_encoding.h share.h curl_md4.h curl_md5.h http_digest.h	\
-  http_negotiate.h inet_pton.h amigaos.h strtoofft.h strerror.h		\
-  inet_ntop.h curlx.h curl_memory.h curl_setup.h transfer.h select.h	\
-  easyif.h multiif.h parsedate.h tftp.h sockaddr.h splay.h strdup.h	\
-  socks.h ssh.h curl_base64.h rawstr.h curl_addrinfo.h curl_sspi.h	\
-  slist.h nonblock.h curl_memrchr.h imap.h pop3.h smtp.h pingpong.h	\
-  rtsp.h curl_threads.h warnless.h curl_hmac.h curl_rtmp.h		\
-  curl_gethostname.h gopher.h http_proxy.h non-ascii.h asyn.h		\
-  curl_ntlm.h curl_gssapi.h curl_ntlm_wb.h curl_ntlm_core.h		\
-  curl_ntlm_msgs.h curl_sasl.h curl_multibyte.h hostcheck.h bundles.h	\
-  conncache.h curl_setup_once.h multihandle.h setup-vms.h pipeline.h	\
-  dotdot.h x509asn1.h http2.h sigpipe.h
+LIB_HFILES = arpa_telnet.h netrc.h file.h timeval.h hostip.h progress.h \
+  formdata.h cookie.h http.h sendf.h ftp.h url.h dict.h if2ip.h         \
+  speedcheck.h urldata.h curl_ldap.h escape.h telnet.h getinfo.h        \
+  strequal.h curl_sec.h memdebug.h http_chunks.h curl_fnmatch.h         \
+  wildcard.h fileinfo.h ftplistparser.h strtok.h connect.h llist.h      \
+  hash.h content_encoding.h share.h curl_md4.h curl_md5.h http_digest.h \
+  http_negotiate.h inet_pton.h amigaos.h strtoofft.h strerror.h         \
+  inet_ntop.h curlx.h curl_memory.h curl_setup.h transfer.h select.h    \
+  easyif.h multiif.h parsedate.h tftp.h sockaddr.h splay.h strdup.h     \
+  socks.h ssh.h curl_base64.h rawstr.h curl_addrinfo.h curl_sspi.h      \
+  slist.h nonblock.h curl_memrchr.h imap.h pop3.h smtp.h pingpong.h     \
+  rtsp.h curl_threads.h warnless.h curl_hmac.h curl_rtmp.h              \
+  curl_gethostname.h gopher.h http_proxy.h non-ascii.h asyn.h           \
+  curl_ntlm.h curl_gssapi.h curl_ntlm_wb.h curl_ntlm_core.h             \
+  curl_ntlm_msgs.h curl_sasl.h curl_multibyte.h hostcheck.h bundles.h   \
+  conncache.h curl_setup_once.h multihandle.h setup-vms.h pipeline.h    \
+  dotdot.h x509asn1.h http2.h sigpipe.h smb.h curl_endian.h
 
 LIB_RCFILES = libcurl.rc
 CSOURCES = $(LIB_CFILES) $(LIB_VTLS_CFILES)
@@ -868,6 +873,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-content_encoding.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-cookie.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_addrinfo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_endian.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_fnmatch.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_gethostname.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_gssapi.Plo@am__quote@
@@ -879,6 +885,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_ntlm_wb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_rtmp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_sasl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_sasl_gssapi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_sasl_sspi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_sspi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-curl_threads.Plo@am__quote@
@@ -938,6 +945,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-sendf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-share.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-slist.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-smb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-smtp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-socks.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurl_la-socks_gssapi.Plo@am__quote@
@@ -969,6 +977,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-content_encoding.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-cookie.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_addrinfo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_endian.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_fnmatch.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_gethostname.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_gssapi.Plo@am__quote@
@@ -980,6 +989,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_ntlm_wb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_rtmp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_sasl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_sasl_gssapi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_sasl_sspi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_sspi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-curl_threads.Plo@am__quote@
@@ -1039,6 +1049,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-sendf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-share.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-slist.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-smb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-smtp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-socks.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcurlu_la-socks_gssapi.Plo@am__quote@
@@ -1813,6 +1824,27 @@ libcurl_la-curl_sasl_sspi.lo: curl_sasl_sspi.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_sasl_sspi.c' object='libcurl_la-curl_sasl_sspi.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -c -o libcurl_la-curl_sasl_sspi.lo `test -f 'curl_sasl_sspi.c' || echo '$(srcdir)/'`curl_sasl_sspi.c
+
+libcurl_la-smb.lo: smb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -MT libcurl_la-smb.lo -MD -MP -MF $(DEPDIR)/libcurl_la-smb.Tpo -c -o libcurl_la-smb.lo `test -f 'smb.c' || echo '$(srcdir)/'`smb.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcurl_la-smb.Tpo $(DEPDIR)/libcurl_la-smb.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='smb.c' object='libcurl_la-smb.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -c -o libcurl_la-smb.lo `test -f 'smb.c' || echo '$(srcdir)/'`smb.c
+
+libcurl_la-curl_sasl_gssapi.lo: curl_sasl_gssapi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -MT libcurl_la-curl_sasl_gssapi.lo -MD -MP -MF $(DEPDIR)/libcurl_la-curl_sasl_gssapi.Tpo -c -o libcurl_la-curl_sasl_gssapi.lo `test -f 'curl_sasl_gssapi.c' || echo '$(srcdir)/'`curl_sasl_gssapi.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcurl_la-curl_sasl_gssapi.Tpo $(DEPDIR)/libcurl_la-curl_sasl_gssapi.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_sasl_gssapi.c' object='libcurl_la-curl_sasl_gssapi.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -c -o libcurl_la-curl_sasl_gssapi.lo `test -f 'curl_sasl_gssapi.c' || echo '$(srcdir)/'`curl_sasl_gssapi.c
+
+libcurl_la-curl_endian.lo: curl_endian.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -MT libcurl_la-curl_endian.lo -MD -MP -MF $(DEPDIR)/libcurl_la-curl_endian.Tpo -c -o libcurl_la-curl_endian.lo `test -f 'curl_endian.c' || echo '$(srcdir)/'`curl_endian.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcurl_la-curl_endian.Tpo $(DEPDIR)/libcurl_la-curl_endian.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_endian.c' object='libcurl_la-curl_endian.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -c -o libcurl_la-curl_endian.lo `test -f 'curl_endian.c' || echo '$(srcdir)/'`curl_endian.c
 
 vtls/libcurl_la-openssl.lo: vtls/openssl.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurl_la_CPPFLAGS) $(CPPFLAGS) $(libcurl_la_CFLAGS) $(CFLAGS) -MT vtls/libcurl_la-openssl.lo -MD -MP -MF vtls/$(DEPDIR)/libcurl_la-openssl.Tpo -c -o vtls/libcurl_la-openssl.lo `test -f 'vtls/openssl.c' || echo '$(srcdir)/'`vtls/openssl.c
@@ -2597,6 +2629,27 @@ libcurlu_la-curl_sasl_sspi.lo: curl_sasl_sspi.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_sasl_sspi.c' object='libcurlu_la-curl_sasl_sspi.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -c -o libcurlu_la-curl_sasl_sspi.lo `test -f 'curl_sasl_sspi.c' || echo '$(srcdir)/'`curl_sasl_sspi.c
+
+libcurlu_la-smb.lo: smb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -MT libcurlu_la-smb.lo -MD -MP -MF $(DEPDIR)/libcurlu_la-smb.Tpo -c -o libcurlu_la-smb.lo `test -f 'smb.c' || echo '$(srcdir)/'`smb.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcurlu_la-smb.Tpo $(DEPDIR)/libcurlu_la-smb.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='smb.c' object='libcurlu_la-smb.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -c -o libcurlu_la-smb.lo `test -f 'smb.c' || echo '$(srcdir)/'`smb.c
+
+libcurlu_la-curl_sasl_gssapi.lo: curl_sasl_gssapi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -MT libcurlu_la-curl_sasl_gssapi.lo -MD -MP -MF $(DEPDIR)/libcurlu_la-curl_sasl_gssapi.Tpo -c -o libcurlu_la-curl_sasl_gssapi.lo `test -f 'curl_sasl_gssapi.c' || echo '$(srcdir)/'`curl_sasl_gssapi.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcurlu_la-curl_sasl_gssapi.Tpo $(DEPDIR)/libcurlu_la-curl_sasl_gssapi.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_sasl_gssapi.c' object='libcurlu_la-curl_sasl_gssapi.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -c -o libcurlu_la-curl_sasl_gssapi.lo `test -f 'curl_sasl_gssapi.c' || echo '$(srcdir)/'`curl_sasl_gssapi.c
+
+libcurlu_la-curl_endian.lo: curl_endian.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -MT libcurlu_la-curl_endian.lo -MD -MP -MF $(DEPDIR)/libcurlu_la-curl_endian.Tpo -c -o libcurlu_la-curl_endian.lo `test -f 'curl_endian.c' || echo '$(srcdir)/'`curl_endian.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcurlu_la-curl_endian.Tpo $(DEPDIR)/libcurlu_la-curl_endian.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_endian.c' object='libcurlu_la-curl_endian.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -c -o libcurlu_la-curl_endian.lo `test -f 'curl_endian.c' || echo '$(srcdir)/'`curl_endian.c
 
 vtls/libcurlu_la-openssl.lo: vtls/openssl.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurlu_la_CPPFLAGS) $(CPPFLAGS) $(libcurlu_la_CFLAGS) $(CFLAGS) -MT vtls/libcurlu_la-openssl.lo -MD -MP -MF vtls/$(DEPDIR)/libcurlu_la-openssl.Tpo -c -o vtls/libcurlu_la-openssl.lo `test -f 'vtls/openssl.c' || echo '$(srcdir)/'`vtls/openssl.c

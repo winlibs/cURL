@@ -152,7 +152,8 @@ static const char *const helptext[] = {
   "     --oauth2-bearer TOKEN  OAuth 2 Bearer Token (IMAP, POP3, SMTP)",
   " -o, --output FILE   Write to FILE instead of stdout",
   "     --pass PASS     Pass phrase for the private key (SSL/SSH)",
-  "     --pinnedpubkey FILE Public key (DER) to verify peer against (OpenSSL)",
+  "     --pinnedpubkey FILE  Public key (PEM/DER) to verify peer against "
+  "(OpenSSL/GnuTLS/GSKit only)",
   "     --post301       "
   "Do not switch to GET after following a 301 redirect (H)",
   "     --post302       "
@@ -230,6 +231,7 @@ static const char *const helptext[] = {
   "     --tlsuser USER  TLS username",
   "     --tlspassword STRING  TLS password",
   "     --tlsauthtype STRING  TLS authentication type (default: SRP)",
+  "     --unix-socket FILE    Connect through this Unix domain socket",
   " -A, --user-agent STRING  Send User-Agent STRING to server (H)",
   " -v, --verbose       Make the operation more talkative",
   " -V, --version       Show version number and quit",
@@ -264,15 +266,16 @@ static const struct feat feats[] = {
   {"Largefile",      CURL_VERSION_LARGEFILE},
   {"SSPI",           CURL_VERSION_SSPI},
   {"GSS-API",        CURL_VERSION_GSSAPI},
+  {"Kerberos",       CURL_VERSION_KERBEROS5},
   {"SPNEGO",         CURL_VERSION_SPNEGO},
   {"NTLM",           CURL_VERSION_NTLM},
   {"NTLM_WB",        CURL_VERSION_NTLM_WB},
   {"SSL",            CURL_VERSION_SSL},
-  {"krb4",           CURL_VERSION_KERBEROS4},
   {"libz",           CURL_VERSION_LIBZ},
   {"CharConv",       CURL_VERSION_CONV},
   {"TLS-SRP",        CURL_VERSION_TLSAUTH_SRP},
-  {"HTTP2",          CURL_VERSION_HTTP2}
+  {"HTTP2",          CURL_VERSION_HTTP2},
+  {"UnixSockets",    CURL_VERSION_UNIX_SOCKETS},
 };
 
 void tool_help(void)

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -61,7 +61,6 @@
 #include <curl/curl.h>
 #include "urldata.h"
 #include "sendf.h"
-#include "if2ip.h"
 #include "hostip.h"
 #include "progress.h"
 #include "transfer.h"
@@ -1300,7 +1299,7 @@ static CURLcode imap_state_auth_ntlm_type2msg_resp(struct connectdata *conn,
 }
 #endif
 
-#if defined(USE_KRB5)
+#if defined(USE_KERBEROS5)
 /* For AUTHENTICATE GSSAPI (without initial response) responses */
 static CURLcode imap_state_auth_gssapi_resp(struct connectdata *conn,
                                             int imapcode,
@@ -1911,7 +1910,7 @@ static CURLcode imap_statemach_act(struct connectdata *conn)
       break;
 #endif
 
-#if defined(USE_KRB5)
+#if defined(USE_KERBEROS5)
     case IMAP_AUTHENTICATE_GSSAPI:
       result = imap_state_auth_gssapi_resp(conn, imapcode, imapc->state);
       break;
@@ -2448,7 +2447,7 @@ static char *imap_atom(const char *str)
   if(!str)
     return NULL;
 
-  /* Count any unescapped characters */
+  /* Count any unescaped characters */
   p1 = str;
   while(*p1) {
     if(*p1 == '\\')
@@ -2461,7 +2460,7 @@ static char *imap_atom(const char *str)
     p1++;
   }
 
-  /* Does the input contain any unescapped characters? */
+  /* Does the input contain any unescaped characters? */
   if(!backsp_count && !quote_count && !space_exists)
     return strdup(str);
 
@@ -2803,7 +2802,7 @@ static CURLcode imap_calc_sasl_details(struct connectdata *conn,
 
   /* Calculate the supported authentication mechanism, by decreasing order of
      security, as well as the initial response where appropriate */
-#if defined(USE_KRB5)
+#if defined(USE_KERBEROS5)
     if((imapc->authmechs & SASL_MECH_GSSAPI) &&
        (imapc->prefmech & SASL_MECH_GSSAPI)) {
     imapc->mutual_auth = FALSE; /* TODO: Calculate mutual authentication */

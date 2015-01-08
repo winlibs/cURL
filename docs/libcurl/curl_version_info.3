@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl_version_info 3 "2 Aug 2014" "libcurl 7.38.0" "libcurl Manual"
+.TH curl_version_info 3 "2 Nov 2014" "libcurl 7.40.0" "libcurl Manual"
 .SH NAME
 curl_version_info - returns run-time libcurl version info
 .SH SYNOPSIS
@@ -96,7 +96,10 @@ bits are:
 .IP CURL_VERSION_IPV6
 supports IPv6
 .IP CURL_VERSION_KERBEROS4
-supports kerberos4 (when using FTP)
+supports Kerberos V4 (when using FTP)
+.IP CURL_VERSION_KERBEROS5
+supports Kerberos V5 authentication for FTP, IMAP, POP3, SMTP and SOCKSv5 proxy
+(Added in 7.40.0)
 .IP CURL_VERSION_SSL
 supports SSL (HTTPS/FTPS) (Added in 7.10)
 .IP CURL_VERSION_LIBZ
@@ -125,7 +128,7 @@ letters. (Added in 7.12.0)
 .IP CURL_VERSION_SSPI
 libcurl was built with support for SSPI. This is only available on Windows and
 makes libcurl use Windows-provided functions for Kerberos, NTLM, SPNEGO and
-SASL DIGEST-MD5 authentication. It also allows libcurl to use the current user
+Digest authentication. It also allows libcurl to use the current user
 credentials without the app having to pass them on. (Added in 7.13.2)
 .IP CURL_VERSION_GSSAPI
 libcurl was built with support for GSS-API. This makes libcurl use provided
@@ -143,6 +146,9 @@ libcurl was built with support for NTLM delegation to a winbind helper.
 .IP CURL_VERSION_HTTP2
 libcurl was built with support for HTTP2.
 (Added in 7.33.0)
+.IP CURL_VERSION_UNIX_SOCKETS
+libcurl was built with support for Unix domain sockets.
+(Added in 7.40.0)
 .RE
 \fIssl_version\fP is an ASCII string for the OpenSSL version used. If libcurl
 has no SSL support, this is NULL.

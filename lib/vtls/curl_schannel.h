@@ -72,30 +72,8 @@
 #define SECBUFFER_ALERT                 17
 #endif
 
-#ifndef ISC_RET_REPLAY_DETECT
-#define ISC_RET_REPLAY_DETECT           0x00000004
-#endif
-
-#ifndef ISC_RET_SEQUENCE_DETECT
-#define ISC_RET_SEQUENCE_DETECT         0x00000008
-#endif
-
-#ifndef ISC_RET_CONFIDENTIALITY
-#define ISC_RET_CONFIDENTIALITY         0x00000010
-#endif
-
-#ifndef ISC_RET_ALLOCATED_MEMORY
-#define ISC_RET_ALLOCATED_MEMORY        0x00000100
-#endif
-
-#ifndef ISC_RET_STREAM
-#define ISC_RET_STREAM                  0x00008000
-#endif
-
-
 #define CURL_SCHANNEL_BUFFER_INIT_SIZE   4096
 #define CURL_SCHANNEL_BUFFER_FREE_SIZE   1024
-#define CURL_SCHANNEL_BUFFER_STEP_FACTOR 2
 
 
 CURLcode Curl_schannel_connect(struct connectdata *conn, int sockindex);
@@ -121,14 +99,14 @@ int Curl_schannel_random(unsigned char *entropy, size_t length);
 #define curlssl_connect Curl_schannel_connect
 #define curlssl_connect_nonblocking Curl_schannel_connect_nonblocking
 #define curlssl_session_free Curl_schannel_session_free
-#define curlssl_close_all(x) (x=x, CURLE_NOT_BUILT_IN)
+#define curlssl_close_all(x) ((void)x)
 #define curlssl_close Curl_schannel_close
 #define curlssl_shutdown Curl_schannel_shutdown
-#define curlssl_set_engine(x,y) (x=x, y=y, CURLE_NOT_BUILT_IN)
-#define curlssl_set_engine_default(x) (x=x, CURLE_NOT_BUILT_IN)
-#define curlssl_engines_list(x) (x=x, (struct curl_slist *)NULL)
+#define curlssl_set_engine(x,y) ((void)x, (void)y, CURLE_NOT_BUILT_IN)
+#define curlssl_set_engine_default(x) ((void)x, CURLE_NOT_BUILT_IN)
+#define curlssl_engines_list(x) ((void)x, (struct curl_slist *)NULL)
 #define curlssl_version Curl_schannel_version
-#define curlssl_check_cxn(x) (x=x, -1)
+#define curlssl_check_cxn(x) ((void)x, -1)
 #define curlssl_data_pending Curl_schannel_data_pending
 #define CURL_SSL_BACKEND CURLSSLBACKEND_SCHANNEL
 #define curlssl_random(x,y,z) ((void)x, Curl_schannel_random(y,z))

@@ -152,6 +152,10 @@ CURLcode Curl_conncache_add_conn(struct conncache *connc,
   conn->connection_id = connc->next_connection_id++;
   connc->num_connections++;
 
+  DEBUGF(infof(conn->data, "Added connection %ld. "
+               "The cache now contains %" CURL_FORMAT_CURL_OFF_TU " members\n",
+               conn->connection_id, (curl_off_t) connc->num_connections));
+
   return CURLE_OK;
 }
 
@@ -171,8 +175,9 @@ void Curl_conncache_remove_conn(struct conncache *connc,
     if(connc) {
       connc->num_connections--;
 
-      DEBUGF(infof(conn->data, "The cache now contains %d members\n",
-                   connc->num_connections));
+      DEBUGF(infof(conn->data, "The cache now contains %"
+                   CURL_FORMAT_CURL_OFF_TU " members\n",
+                   (curl_off_t) connc->num_connections));
     }
   }
 }

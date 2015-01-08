@@ -22,7 +22,8 @@
 
 #include "curl_setup.h"
 
-#if defined(USE_NTLM) && defined(NTLM_WB_ENABLED)
+#if !defined(CURL_DISABLE_HTTP) && defined(USE_NTLM) && \
+    defined(NTLM_WB_ENABLED)
 
 /*
  * NTLM details:
@@ -293,7 +294,7 @@ static CURLcode ntlm_wb_response(struct connectdata *conn,
     len_out += size;
     if(buf[len_out - 1] == '\n') {
       buf[len_out - 1] = '\0';
-      goto wrfinish;
+      break;
     }
     newbuf = realloc(buf, len_out + NTLM_BUFSIZE);
     if(!newbuf) {
@@ -302,8 +303,7 @@ static CURLcode ntlm_wb_response(struct connectdata *conn,
     }
     buf = newbuf;
   }
-  goto done;
-wrfinish:
+
   /* Samba/winbind installed but not configured */
   if(state == NTLMSTATE_TYPE1 &&
      len_out == 3 &&
@@ -432,4 +432,4 @@ CURLcode Curl_output_ntlm_wb(struct connectdata *conn,
   return CURLE_OK;
 }
 
-#endif /* USE_NTLM && NTLM_WB_ENABLED */
+#endif /* !CURL_DISABLE_HTTP && USE_NTLM && NTLM_WB_ENABLED */

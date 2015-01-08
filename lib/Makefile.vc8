@@ -65,7 +65,7 @@
 !INCLUDE ..\winbuild\Makefile.msvc.names
 
 !IFNDEF OPENSSL_PATH
-OPENSSL_PATH   = ../../openssl-0.9.8y
+OPENSSL_PATH   = ../../openssl-0.9.8zc
 !ENDIF
 
 !IFNDEF LIBSSH2_PATH
@@ -128,6 +128,10 @@ CFLAGS = $(CFLAGS) /DUSE_WINDOWS_SSPI /I$(WINDOWS_SDK_PATH)\include
 
 !IFDEF USE_IPV6
 CFLAGS = $(CFLAGS) /DUSE_IPV6
+!ENDIF
+
+!IFDEF USE_IDN
+CFLAGS = $(CFLAGS) /DUSE_WIN32_IDN /DWANT_IDN_PROTOTYPES
 !ENDIF
 
 ##############################################################
@@ -531,6 +535,7 @@ X_OBJS= \
 	$(DIROBJ)\cookie.obj \
 	$(DIROBJ)\curl_addrinfo.obj \
 	$(DIROBJ)\curl_darwinssl.obj \
+	$(DIROBJ)\curl_endian.obj \
 	$(DIROBJ)\curl_fnmatch.obj \
 	$(DIROBJ)\curl_gethostname.obj \
 	$(DIROBJ)\curl_gssapi.obj \
@@ -542,6 +547,7 @@ X_OBJS= \
 	$(DIROBJ)\curl_ntlm_wb.obj \
 	$(DIROBJ)\curl_rtmp.obj \
 	$(DIROBJ)\curl_sasl.obj \
+	$(DIROBJ)\curl_sasl_gssapi.obj \
 	$(DIROBJ)\curl_sasl_sspi.obj \
 	$(DIROBJ)\curl_schannel.obj \
 	$(DIROBJ)\curl_sspi.obj \
@@ -606,6 +612,7 @@ X_OBJS= \
 	$(DIROBJ)\sendf.obj \
 	$(DIROBJ)\share.obj \
 	$(DIROBJ)\slist.obj \
+	$(DIROBJ)\smb.obj \
 	$(DIROBJ)\smtp.obj \
 	$(DIROBJ)\socks.obj \
 	$(DIROBJ)\socks_gssapi.obj \

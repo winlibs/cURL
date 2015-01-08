@@ -540,6 +540,12 @@
 /* Define to use the GSKit package. */
 #define USE_GSKIT
 
+/* Define to use the OS/400 crypto library. */
+#define USE_OS400CRYPTO
+
+/* Define to use Unix sockets. */
+#define USE_UNIX_SOCKETS
+
 /* Use the system keyring as the default CA bundle. */
 #define CURL_CA_BUNDLE  "/QIBM/UserData/ICSS/Cert/Server/DEFAULT.KDB"
 

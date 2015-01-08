@@ -185,7 +185,9 @@ p.roffit {
 <p class="level0"><a name="CURLOPTTCPKEEPIDLE"></a><span class="nroffip">CURLOPT_TCP_KEEPIDLE</span> 
 <p class="level1">Idle time before sending keep-alive. See <span Class="emphasis">CURLOPT_TCP_KEEPIDLE(3)</span> 
 <p class="level0"><a name="CURLOPTTCPKEEPINTVL"></a><span class="nroffip">CURLOPT_TCP_KEEPINTVL</span> 
-<p class="level1">Interval between keep-alive probes. See <span Class="emphasis">CURLOPT_TCP_KEEPINTVL(3)</span> <a name="NAMES"></a><h2 class="nroffsh">NAMES and PASSWORDS OPTIONS (Authentication)</h2>
+<p class="level1">Interval between keep-alive probes. See <span Class="emphasis">CURLOPT_TCP_KEEPINTVL(3)</span> 
+<p class="level0"><a name="CURLOPTUNIXSOCKETPATH"></a><span class="nroffip">CURLOPT_UNIX_SOCKET_PATH</span> 
+<p class="level1">Path to a Unix domain socket. See <span Class="emphasis">CURLOPT_UNIX_SOCKET_PATH(3)</span> <a name="NAMES"></a><h2 class="nroffsh">NAMES and PASSWORDS OPTIONS (Authentication)</h2>
 <p class="level0">
 <p class="level0"><a name="CURLOPTNETRC"></a><span class="nroffip">CURLOPT_NETRC</span> 
 <p class="level1">Enable .netrc parsing. See <span Class="emphasis">CURLOPT_NETRC(3)</span> 
@@ -445,6 +447,8 @@ p.roffit {
 <p class="level1">Verify the host name in the SSL certificate. See <span Class="emphasis">CURLOPT_SSL_VERIFYHOST(3)</span> 
 <p class="level0"><a name="CURLOPTCERTINFO"></a><span class="nroffip">CURLOPT_CERTINFO</span> 
 <p class="level1">Extract certificate info. See <span Class="emphasis">CURLOPT_CERTINFO(3)</span> 
+<p class="level0"><a name="CURLOPTPINNEDPUBLICKEY"></a><span class="nroffip">CURLOPT_PINNEDPUBLICKEY</span> 
+<p class="level1">Set pinned SSL public key . See <span Class="emphasis">CURLOPT_PINNEDPUBLICKEY(3)</span> 
 <p class="level0"><a name="CURLOPTRANDOMFILE"></a><span class="nroffip">CURLOPT_RANDOM_FILE</span> 
 <p class="level1">Provide source for entropy random data. See <span Class="emphasis">CURLOPT_RANDOM_FILE(3)</span> 
 <p class="level0"><a name="CURLOPTEGDSOCKET"></a><span class="nroffip">CURLOPT_EGDSOCKET</span> 
@@ -486,8 +490,19 @@ p.roffit {
 <p class="level0">
 <p class="level0"><a name="CURLOPTTELNETOPTIONS"></a><span class="nroffip">CURLOPT_TELNETOPTIONS</span> 
 <p class="level1">TELNET options. See <span Class="emphasis">CURLOPT_TELNETOPTIONS(3)</span> <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
-<p class="level0"><span Class="emphasis">CURLE_OK</span> (zero) means that the option was set properly, non-zero means an error occurred as <span Class="emphasis">&lt;curl/curl.h&gt;</span> defines. See the <span Class="emphasis">libcurl-errors(3)</span> man page for the full list with descriptions. 
-<p class="level0">If you try to set an option that libcurl doesn't know about, perhaps because the library is too old to support it or the option was removed in a recent version, this function will return <span Class="emphasis">CURLE_UNKNOWN_OPTION</span>. If support for the option was disabled at compile-time, it will return <span Class="emphasis">CURLE_NOT_BUILT_IN</span>. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./curl_easy_init.html">curl_easy_init</a> <a Class="manpage" href="./curl_easy_cleanup.html">curl_easy_cleanup</a> <a Class="manpage" href="./curl_easy_reset.html">curl_easy_reset</a> <span Class="manpage"> </span> <a Class="manpage" href="./curl_multi_setopt.html">curl_multi_setopt</a> <span Class="manpage"> </span> <p class="roffit">
+<p class="level0"><span Class="emphasis">CURLE_OK</span> (zero) means that the option was set properly, non-zero means an error occurred as <span Class="emphasis">&lt;curl/curl.h&gt;</span> defines. See the <a Class="emphasis" href="./libcurl-errors.html">libcurl-errors</a> man page for the full list with descriptions. 
+<p class="level0">If you try to set an option that libcurl doesn't know about, perhaps because the library is too old to support it or the option was removed in a recent version, this function will return <span Class="emphasis">CURLE_UNKNOWN_OPTION</span>. If support for the option was disabled at compile-time, it will return <span Class="emphasis">CURLE_NOT_BUILT_IN</span>. <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
+<p class="level0"><pre>
+<p class="level0">CURL *curl = curl_easy_init();
+ if(curl) {
+ &nbsp; CURLcode res;
+ &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+ &nbsp; res = curl_easy_perform(curl);
+ &nbsp; curl_easy_cleanup(curl);
+ }}
+ </pre>
+
+<p class="level0"><a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
+<p class="level0"><a Class="manpage" href="./curl_easy_init.html">curl_easy_init</a>, <a Class="manpage" href="./curl_easy_cleanup.html">curl_easy_cleanup</a>, <a Class="manpage" href="./curl_easy_reset.html">curl_easy_reset</a>, <span Class="manpage"> </span> <a Class="manpage" href="./curl_multi_setopt.html">curl_multi_setopt</a>, <span Class="manpage"> </span> <p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

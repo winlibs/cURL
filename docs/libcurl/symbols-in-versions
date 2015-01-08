@@ -529,6 +529,7 @@ CURLOPT_TLSAUTH_TYPE            7.21.4
 CURLOPT_TLSAUTH_USERNAME        7.21.4
 CURLOPT_TRANSFERTEXT            7.1.1
 CURLOPT_TRANSFER_ENCODING       7.21.6
+CURLOPT_UNIX_SOCKET_PATH        7.40.0
 CURLOPT_UNRESTRICTED_AUTH       7.10.4
 CURLOPT_UPLOAD                  7.1
 CURLOPT_URL                     7.1
@@ -574,6 +575,8 @@ CURLPROTO_RTMPTS                7.21.0
 CURLPROTO_RTSP                  7.20.0
 CURLPROTO_SCP                   7.19.4
 CURLPROTO_SFTP                  7.19.4
+CURLPROTO_SMB                   7.40.0
+CURLPROTO_SMBS                  7.40.0
 CURLPROTO_SMTP                  7.20.0
 CURLPROTO_SMTPS                 7.20.0
 CURLPROTO_TELNET                7.19.4
@@ -738,6 +741,7 @@ CURL_VERSION_HTTP2              7.33.0
 CURL_VERSION_IDN                7.12.0
 CURL_VERSION_IPV6               7.10
 CURL_VERSION_KERBEROS4          7.10          7.33.0
+CURL_VERSION_KERBEROS5          7.40.0
 CURL_VERSION_LARGEFILE          7.11.1
 CURL_VERSION_LIBZ               7.10
 CURL_VERSION_NTLM               7.10.6
@@ -746,6 +750,7 @@ CURL_VERSION_SPNEGO             7.10.8
 CURL_VERSION_SSL                7.10
 CURL_VERSION_SSPI               7.13.2
 CURL_VERSION_TLSAUTH_SRP        7.21.4
+CURL_VERSION_UNIX_SOCKETS       7.40.0
 CURL_WAIT_POLLIN                7.28.0
 CURL_WAIT_POLLOUT               7.28.0
 CURL_WAIT_POLLPRI               7.28.0

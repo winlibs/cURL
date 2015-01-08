@@ -42,7 +42,7 @@ Portability
  libidn       0.4.1
  cyassl       2.0.0
  openldap     2.0
- MIT krb5 lib 1.2.4
+ MIT Kerberos 1.2.4
  GSKit        V5R3M0
  NSS          3.14.x
  axTLS        1.2.7
@@ -252,9 +252,9 @@ Library
 
  Kerberos
 
- The kerberos support is mainly in lib/krb5.c and lib/security.c but also
- curl_sasl_sspi.c for the email protocols and socks_gssapi.c & socks_sspi.c for
- SOCKS5 proxy specifics.
+ Kerberos support is mainly in lib/krb5.c and lib/security.c but also
+ curl_sasl_sspi.c and curl_sasl_gssapi.c for the email protocols and
+ socks_gssapi.c & socks_sspi.c for SOCKS5 proxy specifics.
 
  TELNET
 
@@ -263,6 +263,10 @@ Library
  FILE
 
  The file:// protocol is dealt with in lib/file.c.
+
+ SMB
+
+ The smb:// protocol is dealt with in lib/smb.c.
 
  LDAP
 

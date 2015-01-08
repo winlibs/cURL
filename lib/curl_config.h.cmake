@@ -467,6 +467,9 @@
 /* Define to 1 if you have a working POSIX-style strerror_r function. */
 #cmakedefine HAVE_POSIX_STRERROR_R 1
 
+/* Define to 1 if you have the <pthread.h> header file */
+#cmakedefine HAVE_PTHREAD_H 1
+
 /* Define to 1 if you have the <pwd.h> header file. */
 #cmakedefine HAVE_PWD_H 1
 
@@ -879,6 +882,9 @@
 /* Define if you want to enable c-ares support */
 #cmakedefine USE_ARES 1
 
+/* Define if you want to enable POSIX threaded DNS lookup */
+#cmakedefine USE_THREADS_POSIX 1
+
 /* Define to disable non-blocking sockets. */
 #cmakedefine USE_BLOCKING_SOCKETS 1
 
@@ -905,6 +911,9 @@
 
 /* if SSL is enabled */
 #cmakedefine USE_SSLEAY 1
+
+/* if Unix domain sockets are enabled  */
+#cmakedefine USE_UNIX_SOCKETS
 
 /* Define to 1 if you are building a Windows target without large file
    support. */

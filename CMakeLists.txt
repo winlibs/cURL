@@ -74,12 +74,17 @@ include_directories( ${CURL_SOURCE_DIR}/include )
 option(BUILD_CURL_EXE "Set to ON to build cURL executable." ON)
 option(BUILD_CURL_TESTS "Set to ON to build cURL tests." ON)
 option(CURL_STATICLIB "Set to ON to build libcurl with static linking." OFF)
-option(CURL_USE_ARES "Set to ON to enable c-ares support" OFF)
+option(ENABLE_ARES "Set to ON to enable c-ares support" OFF)
+option(ENABLE_THREADED_RESOLVER "Set to ON to enable POSIX threaded DNS lookup" OFF)
 # initialize CURL_LIBS
 set(CURL_LIBS "")
 
-if(CURL_USE_ARES)
-  set(USE_ARES ${CURL_USE_ARES})
+if(ENABLE_THREADED_RESOLVER AND ENABLE_ARES)
+  message(FATAL_ERROR "Options ENABLE_THREADED_RESOLVER and ENABLE_ARES are mutually exclusive")
+endif()
+
+if(ENABLE_ARES)
+  set(USE_ARES 1)
   find_package(CARES REQUIRED)
   list(APPEND CURL_LIBS ${CARES_LIBRARY} )
   set(CURL_LIBS ${CURL_LIBS} ${CARES_LIBRARY})
@@ -236,6 +241,18 @@ if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/CMake/Platforms/WindowsCache.cmake)
 endif(WIN32)
 
+if(ENABLE_THREADED_RESOLVER)
+  check_include_file_concat("pthread.h" HAVE_PTHREAD_H)
+  if(HAVE_PTHREAD_H)
+    set(CMAKE_THREAD_PREFER_PTHREAD 1)
+    find_package(Threads)
+    if(CMAKE_USE_PTHREADS_INIT)
+      set(CURL_LIBS ${CURL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+      set(USE_THREADS_POSIX 1)
+    endif()
+  endif()
+endif()
+
 # Check for all needed libraries
 check_library_exists_concat("dl"     dlopen       HAVE_LIBDL)
 check_library_exists_concat("socket" connect      HAVE_LIBSOCKET)
@@ -251,6 +268,8 @@ endif(BEOS)
 if(NOT NOT_NEED_LIBNSL)
   check_library_exists_concat("nsl"    gethostbyname  HAVE_LIBNSL)
 endif(NOT NOT_NEED_LIBNSL)
+
+check_function_exists(gethostname HAVE_GETHOSTNAME)
 
 if(WIN32)
   check_library_exists_concat("ws2_32" getch        HAVE_LIBWS2_32)
@@ -506,6 +525,14 @@ if(CMAKE_USE_GSSAPI)
   else()
     message(WARNING "GSSAPI support has been requested but no supporting libraries found. Skipping.")
   endif()
+endif()
+
+option(ENABLE_UNIX_SOCKETS "Define if you want Unix domain sockets support" ON)
+if(ENABLE_UNIX_SOCKETS)
+  include(CheckStructHasMember)
+  check_struct_has_member("struct sockaddr_un" sun_path "sys/un.h" USE_UNIX_SOCKETS)
+else()
+  unset(USE_UNIX_SOCKETS CACHE)
 endif()
 
 # Check for header files
@@ -1001,9 +1028,7 @@ _add_if("SSL"           SSL_ENABLED)
 _add_if("IPv6"          ENABLE_IPV6)
 _add_if("unix-sockets"  USE_UNIX_SOCKETS)
 _add_if("libz"          HAVE_LIBZ)
-find_package(Threads)
-# AsynchDNS depends or USE_ARES or pthreads (mutually exclusive)
-_add_if("AsynchDNS"     USE_ARES OR CMAKE_USE_PTHREADS_INIT)
+_add_if("AsynchDNS"     USE_ARES OR USE_THREADS_POSIX)
 _add_if("IDN"           HAVE_LIBIDN)
 # TODO SSP1 (WinSSL) check is missing
 _add_if("SSPI"          USE_WINDOWS_SSPI)
@@ -1011,13 +1036,15 @@ _add_if("GSS-API"       HAVE_GSS_API)
 # TODO SSP1 missing for SPNEGO
 _add_if("SPNEGO"        NOT CURL_DISABLE_CRYPTO_AUTH AND
                         (HAVE_GSS_API OR USE_WINDOWS_SSPI))
+_add_if("Kerberos"      NOT CURL_DISABLE_CRYPTO_AUTH AND
+                        (HAVE_GSS_API OR USE_WINDOWS_SSPI))
 # NTLM support requires crypto function adaptions from various SSL libs
 # TODO alternative SSL libs tests for SSP1, GNUTLS, NSS, DARWINSSL
-if(NOT CURL_DISABLE_HTTP AND NOT CURL_DISABLE_CRYPTO_AUTH AND (USE_OPENSSL OR
+if(NOT CURL_DISABLE_CRYPTO_AUTH AND (USE_OPENSSL OR
    USE_WINDOWS_SSPI OR GNUTLS_ENABLED OR NSS_ENABLED OR DARWINSSL_ENABLED))
   _add_if("NTLM"        1)
   # TODO missing option (autoconf: --enable-ntlm-wb)
-  _add_if("NTLM_WB"     NTLM_WB_ENABLED)
+  _add_if("NTLM_WB"     NOT CURL_DISABLE_HTTP AND NTLM_WB_ENABLED)
 endif()
 # TODO missing option (--enable-tls-srp), depends on GNUTLS_SRP/OPENSSL_SRP
 _add_if("TLS-SRP"       USE_TLS_SRP)

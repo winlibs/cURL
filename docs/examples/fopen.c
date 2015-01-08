@@ -128,6 +128,7 @@ static int fill_buffer(URL_FILE *file, size_t want)
   fd_set fdexcep;
   struct timeval timeout;
   int rc;
+  CURLMcode mc; /* curl_multi_fdset() return code */
 
   /* only attempt to fill buffer if transactions still running and buffer
    * doesnt exceed required size already
@@ -158,15 +159,35 @@ static int fill_buffer(URL_FILE *file, size_t want)
     }
 
     /* get file descriptors from the transfers */
-    curl_multi_fdset(multi_handle, &fdread, &fdwrite, &fdexcep, &maxfd);
+    mc = curl_multi_fdset(multi_handle, &fdread, &fdwrite, &fdexcep, &maxfd);
 
-    /* In a real-world program you OF COURSE check the return code of the
-       function calls.  On success, the value of maxfd is guaranteed to be
-       greater or equal than -1.  We call select(maxfd + 1, ...), specially
-       in case of (maxfd == -1), we call select(0, ...), which is basically
-       equal to sleep. */
+    if(mc != CURLM_OK)
+    {
+      fprintf(stderr, "curl_multi_fdset() failed, code %d.\n", mc);
+      break;
+    }
 
-    rc = select(maxfd+1, &fdread, &fdwrite, &fdexcep, &timeout);
+    /* On success the value of maxfd is guaranteed to be >= -1. We call
+       select(maxfd + 1, ...); specially in case of (maxfd == -1) there are
+       no fds ready yet so we call select(0, ...) --or Sleep() on Windows--
+       to sleep 100ms, which is the minimum suggested value in the
+       curl_multi_fdset() doc. */
+
+    if(maxfd == -1) {
+#ifdef _WIN32
+      Sleep(100);
+      rc = 0;
+#else
+      /* Portable sleep for platforms other than Windows. */
+      struct timeval wait = { 0, 100 * 1000 }; /* 100ms */
+      rc = select(0, NULL, NULL, NULL, &wait);
+#endif
+    }
+    else {
+      /* Note that on some platforms 'timeout' may be modified by select().
+         If you need access to the original value save a copy beforehand. */
+      rc = select(maxfd+1, &fdread, &fdwrite, &fdexcep, &timeout);
+    }
 
     switch(rc) {
     case -1:
