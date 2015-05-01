@@ -5,8 +5,8 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
+ * Copyright (C) 2014 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  * Copyright (C) 2014, Steve Holme, <steve_holme@hotmail.com>.
- * Copyright (C) 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -36,15 +36,13 @@
 #include "urldata.h"
 #include "curl_base64.h"
 #include "warnless.h"
-#include "curl_memory.h"
 #include "curl_multibyte.h"
 #include "sendf.h"
 #include "strdup.h"
+#include "curl_printf.h"
 
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
-/* The last #include file should be: */
+/* The last #include files should be: */
+#include "curl_memory.h"
 #include "memdebug.h"
 
 /*
@@ -80,7 +78,7 @@ TCHAR *Curl_sasl_build_spn(const char *service, const char *host)
   /* Allocate our TCHAR based SPN */
   tchar_spn = Curl_convert_UTF8_to_tchar(utf8_spn);
   if(!tchar_spn) {
-    Curl_safefree(utf8_spn);
+    free(utf8_spn);
 
     return NULL;
   }
@@ -156,7 +154,7 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
   status = s_pSecFn->QuerySecurityPackageInfo((TCHAR *) TEXT(SP_NAME_DIGEST),
                                               &SecurityPackage);
   if(status != SEC_E_OK) {
-    Curl_safefree(input_token);
+    free(input_token);
 
     return CURLE_NOT_BUILT_IN;
   }
@@ -169,7 +167,7 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
   /* Allocate our response buffer */
   output_token = malloc(token_max);
   if(!output_token) {
-    Curl_safefree(input_token);
+    free(input_token);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -177,8 +175,8 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
   /* Generate our SPN */
   spn = Curl_sasl_build_spn(service, data->easy_conn->host.name);
   if(!spn) {
-    Curl_safefree(output_token);
-    Curl_safefree(input_token);
+    free(output_token);
+    free(input_token);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -187,9 +185,9 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
     /* Populate our identity structure */
     result = Curl_create_sspi_identity(userp, passwdp, &identity);
     if(result) {
-      Curl_safefree(spn);
-      Curl_safefree(output_token);
-      Curl_safefree(input_token);
+      free(spn);
+      free(output_token);
+      free(input_token);
 
       return result;
     }
@@ -210,9 +208,9 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
 
   if(status != SEC_E_OK) {
     Curl_sspi_free_identity(p_identity);
-    Curl_safefree(spn);
-    Curl_safefree(output_token);
-    Curl_safefree(input_token);
+    free(spn);
+    free(output_token);
+    free(input_token);
 
     return CURLE_LOGIN_DENIED;
   }
@@ -245,9 +243,9 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
   else if(status != SEC_E_OK && status != SEC_I_CONTINUE_NEEDED) {
     s_pSecFn->FreeCredentialsHandle(&credentials);
     Curl_sspi_free_identity(p_identity);
-    Curl_safefree(spn);
-    Curl_safefree(output_token);
-    Curl_safefree(input_token);
+    free(spn);
+    free(output_token);
+    free(input_token);
 
     return CURLE_RECV_ERROR;
   }
@@ -264,13 +262,13 @@ CURLcode Curl_sasl_create_digest_md5_message(struct SessionHandle *data,
   Curl_sspi_free_identity(p_identity);
 
   /* Free the SPN */
-  Curl_safefree(spn);
+  free(spn);
 
   /* Free the response buffer */
-  Curl_safefree(output_token);
+  free(output_token);
 
   /* Free the decoded challenge message */
-  Curl_safefree(input_token);
+  free(input_token);
 
   return result;
 }
@@ -390,7 +388,7 @@ CURLcode Curl_sasl_create_digest_http_message(struct SessionHandle *data,
                                               p_identity, NULL, NULL,
                                               &credentials, &expiry);
   if(status != SEC_E_OK) {
-    Curl_safefree(output_token);
+    free(output_token);
 
     return CURLE_LOGIN_DENIED;
   }
@@ -430,7 +428,7 @@ CURLcode Curl_sasl_create_digest_http_message(struct SessionHandle *data,
   else if(status != SEC_E_OK && status != SEC_I_CONTINUE_NEEDED) {
     s_pSecFn->FreeCredentialsHandle(&credentials);
 
-    Curl_safefree(output_token);
+    free(output_token);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -440,7 +438,7 @@ CURLcode Curl_sasl_create_digest_http_message(struct SessionHandle *data,
     s_pSecFn->DeleteSecurityContext(&context);
     s_pSecFn->FreeCredentialsHandle(&credentials);
 
-    Curl_safefree(output_token);
+    free(output_token);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -461,7 +459,7 @@ CURLcode Curl_sasl_create_digest_http_message(struct SessionHandle *data,
   Curl_sspi_free_identity(p_identity);
 
   /* Free the response buffer */
-  Curl_safefree(output_token);
+  free(output_token);
 
   return CURLE_OK;
 }
@@ -912,7 +910,7 @@ CURLcode Curl_sasl_create_gssapi_user_message(struct SessionHandle *data,
                                                &expiry);
 
   if(status != SEC_E_OK && status != SEC_I_CONTINUE_NEEDED) {
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_RECV_ERROR;
   }
@@ -930,7 +928,7 @@ CURLcode Curl_sasl_create_gssapi_user_message(struct SessionHandle *data,
   }
 
   /* Free the decoded challenge */
-  Curl_safefree(chlg);
+  free(chlg);
 
   return result;
 }
@@ -1001,7 +999,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
                                             SECPKG_ATTR_SIZES,
                                             &sizes);
   if(status != SEC_E_OK) {
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -1011,7 +1009,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
                                                 SECPKG_CRED_ATTR_NAMES,
                                                 &names);
   if(status != SEC_E_OK) {
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_RECV_ERROR;
   }
@@ -1032,7 +1030,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   if(status != SEC_E_OK) {
     infof(data, "GSSAPI handshake failure (empty security message)\n");
 
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_BAD_CONTENT_ENCODING;
   }
@@ -1041,7 +1039,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   if(input_buf[1].cbBuffer != 4) {
     infof(data, "GSSAPI handshake failure (invalid security data)\n");
 
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_BAD_CONTENT_ENCODING;
   }
@@ -1049,7 +1047,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   /* Copy the data out and free the challenge as it is not required anymore */
   memcpy(&indata, input_buf[1].pvBuffer, 4);
   s_pSecFn->FreeContextBuffer(input_buf[1].pvBuffer);
-  Curl_safefree(chlg);
+  free(chlg);
 
   /* Extract the security layer */
   sec_layer = indata & 0x000000FF;
@@ -1076,7 +1074,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   /* Convert the user name to UTF8 when operating with Unicode */
   user_name = Curl_convert_tchar_to_UTF8(names.sUserName);
   if(!user_name) {
-    Curl_safefree(trailer);
+    free(trailer);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -1085,7 +1083,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   messagelen = sizeof(outdata) + strlen(user_name) + 1;
   message = malloc(messagelen);
   if(!message) {
-    Curl_safefree(trailer);
+    free(trailer);
     Curl_unicodefree(user_name);
 
     return CURLE_OUT_OF_MEMORY;
@@ -1104,8 +1102,8 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   /* Allocate the padding */
   padding = malloc(sizes.cbBlockSize);
   if(!padding) {
-    Curl_safefree(message);
-    Curl_safefree(trailer);
+    free(message);
+    free(trailer);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -1128,9 +1126,9 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   status = s_pSecFn->EncryptMessage(krb5->context, KERB_WRAP_NO_ENCRYPT,
                                     &wrap_desc, 0);
   if(status != SEC_E_OK) {
-    Curl_safefree(padding);
-    Curl_safefree(message);
-    Curl_safefree(trailer);
+    free(padding);
+    free(message);
+    free(trailer);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -1140,9 +1138,9 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
                wrap_buf[2].cbBuffer;
   appdata = malloc(appdatalen);
   if(!appdata) {
-    Curl_safefree(padding);
-    Curl_safefree(message);
-    Curl_safefree(trailer);
+    free(padding);
+    free(message);
+    free(trailer);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -1159,10 +1157,10 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
                               outlen);
 
   /* Free all of our local buffers */
-  Curl_safefree(appdata);
-  Curl_safefree(padding);
-  Curl_safefree(message);
-  Curl_safefree(trailer);
+  free(appdata);
+  free(padding);
+  free(message);
+  free(trailer);
 
   return result;
 }

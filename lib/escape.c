@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -27,16 +27,14 @@
 
 #include <curl/curl.h>
 
-#include "curl_memory.h"
 #include "urldata.h"
 #include "warnless.h"
 #include "non-ascii.h"
 #include "escape.h"
+#include "curl_printf.h"
 
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
-/* The last #include file should be: */
+/* The last #include files should be: */
+#include "curl_memory.h"
 #include "memdebug.h"
 
 /* Portable character check (remember EBCDIC). Do not use isalnum() because
@@ -229,6 +227,5 @@ char *curl_easy_unescape(CURL *handle, const char *string, int length,
    the library's memory system */
 void curl_free(void *p)
 {
-  if(p)
-    free(p);
+  free(p);
 }

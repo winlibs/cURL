@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -523,6 +523,7 @@ typedef enum {
                                     session will be queued */
   CURLE_SSL_PINNEDPUBKEYNOTMATCH, /* 90 - specified pinned public key did not
                                      match */
+  CURLE_SSL_INVALIDCERTSTATUS,   /* 91 - invalid certificate status */
   CURL_LAST /* never use! */
 } CURLcode;
 
@@ -845,7 +846,7 @@ typedef enum {
   CINIT(WRITEDATA, OBJECTPOINT, 1),
 
   /* The full URL to get/put */
-  CINIT(URL,  OBJECTPOINT, 2),
+  CINIT(URL, OBJECTPOINT, 2),
 
   /* Port number to connect to, if other than default. */
   CINIT(PORT, LONG, 3),
@@ -1621,6 +1622,15 @@ typedef enum {
 
   /* Path to Unix domain socket */
   CINIT(UNIX_SOCKET_PATH, OBJECTPOINT, 231),
+
+  /* Set if we should verify the certificate status. */
+  CINIT(SSL_VERIFYSTATUS, LONG, 232),
+
+  /* Set if we should enable TLS false start. */
+  CINIT(SSL_FALSESTART, LONG, 233),
+
+  /* Do not squash dot-dot sequences */
+  CINIT(PATH_AS_IS, LONG, 234),
 
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;

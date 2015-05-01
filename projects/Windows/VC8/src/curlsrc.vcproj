@@ -53,7 +53,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -72,7 +71,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="1"
@@ -88,8 +86,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -141,7 +137,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -160,7 +155,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="17"
@@ -176,8 +170,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -228,7 +220,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -247,7 +238,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="1"
@@ -263,8 +253,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -316,7 +304,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -335,7 +322,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="17"
@@ -351,8 +337,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -397,12 +381,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -422,7 +405,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -440,8 +422,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -487,12 +467,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -512,7 +491,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -530,8 +508,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -576,12 +552,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -601,7 +576,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -619,8 +593,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -666,12 +638,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -691,7 +662,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -709,8 +679,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -755,12 +723,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -780,7 +747,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -798,8 +764,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -845,12 +809,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -870,7 +833,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -888,8 +850,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -934,12 +894,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -959,7 +918,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -977,8 +935,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1024,12 +980,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -1049,7 +1004,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -1067,8 +1021,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1119,7 +1071,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -1138,7 +1089,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="1"
@@ -1154,8 +1104,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1207,7 +1155,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -1226,7 +1173,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="17"
@@ -1242,8 +1188,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1294,7 +1238,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -1313,7 +1256,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="1"
@@ -1329,8 +1271,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1382,7 +1322,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -1401,7 +1340,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="17"
@@ -1417,8 +1355,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1463,12 +1399,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -1488,7 +1423,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -1506,8 +1440,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1553,12 +1485,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -1578,7 +1509,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -1596,8 +1526,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1648,7 +1576,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -1667,7 +1594,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="1"
@@ -1683,8 +1609,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1736,7 +1660,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -1755,7 +1678,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="17"
@@ -1771,8 +1693,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1817,12 +1737,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -1842,7 +1761,6 @@
 				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC8\LIB Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -1860,8 +1778,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -1907,12 +1823,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -1932,7 +1847,6 @@
 				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC8\LIB Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -1950,8 +1864,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2002,7 +1914,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -2021,7 +1932,6 @@
 				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC8\LIB Release"
 				SubSystem="1"
 				TargetMachine="1"
@@ -2037,8 +1947,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2090,7 +1998,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -2109,7 +2016,6 @@
 				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC8\LIB Release"
 				SubSystem="1"
 				TargetMachine="17"
@@ -2125,8 +2031,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2171,12 +2075,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -2196,7 +2099,6 @@
 				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC8\LIB Debug;..\..\..\..\..\libssh2\build\Win32\VC8\LIB Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -2214,8 +2116,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2261,12 +2161,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -2286,7 +2185,6 @@
 				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC8\LIB Debug;..\..\..\..\..\libssh2\build\Win64\VC8\LIB Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -2304,8 +2202,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2356,7 +2252,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -2375,7 +2270,6 @@
 				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC8\LIB Release;..\..\..\..\..\libssh2\build\Win32\VC8\LIB Release"
 				SubSystem="1"
 				TargetMachine="1"
@@ -2391,8 +2285,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2444,7 +2336,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -2463,7 +2354,6 @@
 				AdditionalDependencies="crypt32.lib ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC8\LIB Release;..\..\..\..\..\libssh2\build\Win64\VC8\LIB Release"
 				SubSystem="1"
 				TargetMachine="17"
@@ -2479,8 +2369,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2525,12 +2413,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -2550,7 +2437,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC8\DLL Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -2568,8 +2454,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2615,12 +2499,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -2640,7 +2523,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC8\DLL Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -2658,8 +2540,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2710,7 +2590,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -2729,7 +2608,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC8\DLL Release"
 				SubSystem="1"
 				TargetMachine="1"
@@ -2745,8 +2623,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2798,7 +2674,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -2817,7 +2692,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC8\DLL Release"
 				SubSystem="1"
 				TargetMachine="17"
@@ -2833,8 +2707,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2879,12 +2751,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -2904,7 +2775,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC8\DLL Debug;..\..\..\..\..\libssh2\build\Win32\VC8\DLL Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -2922,8 +2792,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -2969,12 +2837,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -2994,7 +2861,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib libeay32.lib ssleay32.lib libssh2d.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC8\DLL Debug;..\..\..\..\..\libssh2\build\Win64\VC8\DLL Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -3012,8 +2878,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3064,7 +2928,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -3083,7 +2946,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib libeay32.lib ssleay32.lib libssh2.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win32\VC8\DLL Release;..\..\..\..\..\libssh2\build\Win32\VC8\DLL Release"
 				SubSystem="1"
 				TargetMachine="1"
@@ -3099,8 +2961,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3152,7 +3012,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -3171,7 +3030,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib libssh2.lib libeay32.lib ssleay32.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName);..\..\..\..\..\openssl\build\Win64\VC8\DLL Release;..\..\..\..\..\libssh2\build\Win64\VC8\DLL Release"
 				SubSystem="1"
 				TargetMachine="17"
@@ -3187,8 +3045,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3233,12 +3089,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -3258,7 +3113,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -3276,8 +3130,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3323,12 +3175,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -3348,7 +3199,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -3366,8 +3216,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3418,7 +3266,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -3437,7 +3284,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="1"
@@ -3453,8 +3299,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3506,7 +3350,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -3525,7 +3368,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="17"
@@ -3541,8 +3383,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3587,12 +3427,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -3612,7 +3451,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -3630,8 +3468,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3677,12 +3513,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -3702,7 +3537,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -3720,8 +3554,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3772,7 +3604,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -3791,7 +3622,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="1"
@@ -3807,8 +3637,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3860,7 +3688,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -3879,7 +3706,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="17"
@@ -3895,8 +3721,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3941,12 +3765,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -3966,7 +3789,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib normaliz.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -3984,8 +3806,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -4031,12 +3851,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;DEBUGBUILD;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -4056,7 +3875,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib normaliz.lib libcurld.lib"
 				OutputFile="$(OutDir)\curld.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
@@ -4074,8 +3892,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -4126,7 +3942,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -4145,7 +3960,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib normaliz.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win32\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="1"
@@ -4161,8 +3975,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -4214,7 +4026,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -4233,7 +4044,6 @@
 				AdditionalDependencies="ws2_32.lib wldap32.lib normaliz.lib libcurl.lib"
 				OutputFile="$(OutDir)\curl.exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\build\Win64\VC8\$(ConfigurationName)"
 				SubSystem="1"
 				TargetMachine="17"
@@ -4249,8 +4059,6 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="$(TargetDir)$(TargetName).bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

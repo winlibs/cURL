@@ -4,15 +4,20 @@
 <title>CURLOPT_CHUNK_BGN_FUNCTION man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,13 +52,15 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_CHUNK_BGN_FUNCTION - callback before a transfer with FTP wildcardmatch <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0"><pre>
-<p class="level0">#include &lt;curl/curl.h&gt;
- <p class="level0">long chunk_bgn_callback(const void *transfer_info, void *ptr,
- &nbsp;                       int remains);
- <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_CHUNK_BGN_FUNCTION,
- &nbsp;                         chunk_bgn_callback);
- </pre>
+<p class="level0"><pre class="level0">
+&#35;include &lt;curl/curl.h&gt;
+
+long chunk_bgn_callback(const void *transfer_info, void *ptr,
+&nbsp;                       int remains);
+
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_CHUNK_BGN_FUNCTION,
+&nbsp;                         chunk_bgn_callback);
+</pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a pointer to your callback function, which should match the prototype shown above. 
 <p class="level0">This callback function gets called by libcurl before a part of the stream is going to be transferred (if the transfer supports chunks). 

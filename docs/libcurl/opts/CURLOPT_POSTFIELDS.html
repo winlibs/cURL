@@ -4,15 +4,20 @@
 <title>CURLOPT_POSTFIELDS man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,7 +52,7 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_POSTFIELDS - specify data to POST to server <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0">#include &lt;curl/curl.h&gt; 
+<p class="level0">&#35;include &lt;curl/curl.h&gt; 
 <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_POSTFIELDS, char *postdata); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a char * as parameter, pointing to the full data to send in a HTTP POST operation. You must make sure that the data is formatted the way you want the server to receive it. libcurl will not convert or encode it for you in any way. For example, the web server may assume that this data is url-encoded. 
 <p class="level0">The data pointed to is NOT copied by the library: as a consequence, it must be preserved by the calling application until the associated transfer finishes. This behaviour can be changed (so libcurl does copy the data) by setting the <a Class="emphasis" href="./CURLOPT_COPYPOSTFIELDS.html">CURLOPT_COPYPOSTFIELDS</a> option. 
@@ -58,18 +63,22 @@ p.roffit {
 <p class="level0">To make multipart/formdata posts (aka <a href="http://www.ietf.org/rfc/rfc2388.txt">RFC 2388</a>-posts), check out the <a Class="emphasis" href="./CURLOPT_HTTPPOST.html">CURLOPT_HTTPPOST</a> option combined with <span Class="emphasis">curl_formadd(3)</span>. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">NULL <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">HTTP <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0"><pre>
-<p class="level0">CURL *curl = curl_easy_init();
- if(curl) {
- &nbsp; const char *data = "data to send";
- <p class="level0">&nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
- <p class="level0">&nbsp; /* size of the POST data */
- &nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 12L);
- <p class="level0">&nbsp; /* pass in a pointer to the data - libcurl will not copy */
- &nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
- <p class="level0">&nbsp; curl_easy_perform(curl);
- }
- </pre>
+<p class="level0"><pre class="level0">
+CURL *curl = curl_easy_init();
+if(curl) {
+&nbsp; const char *data = "data to send";
+
+&nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+
+&nbsp; /* size of the POST data */
+&nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 12L);
+
+&nbsp; /* pass in a pointer to the data - libcurl will not copy */
+&nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+
+&nbsp; curl_easy_perform(curl);
+}
+</pre>
 
 <p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Always <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>

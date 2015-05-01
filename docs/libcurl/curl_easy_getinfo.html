@@ -4,15 +4,20 @@
 <title>curl_easy_getinfo man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -133,6 +138,25 @@ p.roffit {
 <p class="level0"><a name="CURLINFOTLSSESSION"></a><span class="nroffip">CURLINFO_TLS_SESSION</span> 
 <p class="level1">Pass a pointer to a 'struct curl_tlssessioninfo *'.  The pointer will be initialized to refer to a 'struct curl_tlssessioninfo *' that will contain an enum indicating the SSL library used for the handshake and the respective internal TLS session structure of this underlying SSL library. 
 <p class="level1">This may then be used to extract certificate information in a format convenient for further processing, such as manual validation. NOTE: this option may not be available for all SSL backends; unsupported SSL backends will return 'CURLSSLBACKEND_NONE' to indicate that they are not supported; this does not mean that no SSL backend was used. (Added in 7.34.0) 
+<p class="level1"><pre class="level1">
+struct curl_tlssessioninfo {
+&nbsp; curl_sslbackend backend;
+&nbsp; void *internals;
+};
+</pre>
+
+<p class="level1">
+<p class="level1">The <span Class="emphasis">internals</span> struct member will point to a TLS library specific pointer with the following underlying types: 
+<p class="level2">
+<p class="level1"><a name="OpenSSL"></a><span class="nroffip">OpenSSL</span> 
+<p class="level2">SSL_CTX * 
+<p class="level1"><a name="GnuTLS"></a><span class="nroffip">GnuTLS</span> 
+<p class="level2">gnutls_session_t 
+<p class="level1"><a name="NSS"></a><span class="nroffip">NSS</span> 
+<p class="level2">PRFileDesc * 
+<p class="level1"><a name="gskit"></a><span class="nroffip">gskit</span> 
+<p class="level2">gsk_handle 
+<p class="level1">
 <p class="level1">
 <p class="level0"><a name="CURLINFOCONDITIONUNMET"></a><span class="nroffip">CURLINFO_CONDITION_UNMET</span> 
 <p class="level1">Pass a pointer to a long to receive the number 1 if the condition provided in the previous request didn't match (see <span Class="emphasis">CURLOPT_TIMECONDITION(3)</span>). Alas, if this returns a 1 you know that the reason you didn't get data in return is because it didn't fulfill the condition. The long ths argument points to will get a zero stored if the condition instead was met. (Added in 7.19.4) 
@@ -147,18 +171,19 @@ p.roffit {
 <p class="level1">Applications wishing to resume an RTSP session on another connection should retrieve this info before closing the active connection. 
 <p class="level0"><a name="CURLINFORTSPCSEQRECV"></a><span class="nroffip">CURLINFO_RTSP_CSEQ_RECV</span> 
 <p class="level1">Pass a pointer to a long to receive the most recently received CSeq from the server. If your application encounters a <span Class="emphasis">CURLE_RTSP_CSEQ_ERROR</span> then you may wish to troubleshoot and/or fix the CSeq mismatch by peeking at this value. <a name="TIMES"></a><h2 class="nroffsh">TIMES</h2>
-<p class="level0"><pre>
-<p class="level0">An overview of the six time values available from curl_easy_getinfo()
- <p class="level0">curl_easy_perform()
- &nbsp;   |
- &nbsp;   |--NAMELOOKUP
- &nbsp;   |--|--CONNECT
- &nbsp;   |--|--|--APPCONNECT
- &nbsp;   |--|--|--|--PRETRANSFER
- &nbsp;   |--|--|--|--|--STARTTRANSFER
- &nbsp;   |--|--|--|--|--|--TOTAL
- &nbsp;   |--|--|--|--|--|--REDIRECT
- </pre>
+<p class="level0"><pre class="level0">
+An overview of the six time values available from curl_easy_getinfo()
+
+curl_easy_perform()
+&nbsp;   |
+&nbsp;   |--NAMELOOKUP
+&nbsp;   |--|--CONNECT
+&nbsp;   |--|--|--APPCONNECT
+&nbsp;   |--|--|--|--PRETRANSFER
+&nbsp;   |--|--|--|--|--STARTTRANSFER
+&nbsp;   |--|--|--|--|--|--TOTAL
+&nbsp;   |--|--|--|--|--|--REDIRECT
+</pre>
 
 <p class="level0">
 <p class="level0"><a name="NAMELOOKUP"></a><span class="nroffip">NAMELOOKUP</span> 

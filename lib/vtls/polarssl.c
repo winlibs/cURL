@@ -6,7 +6,7 @@
  *                             \___|\___/|_| \_\_____|
  *
  * Copyright (C) 2010 - 2011, Hoi-Ho Chan, <hoiho.chan@gmail.com>
- * Copyright (C) 2012 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -55,9 +55,7 @@
 #include "select.h"
 #include "rawstr.h"
 #include "polarssl_threadlock.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
+#include "curl_printf.h"
 #include "curl_memory.h"
 /* The last #include file should be: */
 #include "memdebug.h"
@@ -120,11 +118,8 @@ static void polarssl_debug(void *context, int level, const char *line)
 #endif
 
 /* ALPN for http2? */
-#ifdef USE_NGHTTP2
-#  undef HAS_ALPN
-#  ifdef POLARSSL_SSL_ALPN
-#    define HAS_ALPN
-#  endif
+#ifdef POLARSSL_SSL_ALPN
+#  define HAS_ALPN
 #endif
 
 static Curl_recv polarssl_recv;
@@ -289,26 +284,35 @@ polarssl_connect_step1(struct connectdata *conn,
   switch(data->set.ssl.version) {
   default:
   case CURL_SSLVERSION_DEFAULT:
+  case CURL_SSLVERSION_TLSv1:
     ssl_set_min_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
                         SSL_MINOR_VERSION_1);
     break;
   case CURL_SSLVERSION_SSLv3:
     ssl_set_min_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
                         SSL_MINOR_VERSION_0);
+    ssl_set_max_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
+                        SSL_MINOR_VERSION_0);
     infof(data, "PolarSSL: Forced min. SSL Version to be SSLv3\n");
     break;
   case CURL_SSLVERSION_TLSv1_0:
     ssl_set_min_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
+                        SSL_MINOR_VERSION_1);
+    ssl_set_max_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
                         SSL_MINOR_VERSION_1);
     infof(data, "PolarSSL: Forced min. SSL Version to be TLS 1.0\n");
     break;
   case CURL_SSLVERSION_TLSv1_1:
     ssl_set_min_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
                         SSL_MINOR_VERSION_2);
+    ssl_set_max_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
+                        SSL_MINOR_VERSION_2);
     infof(data, "PolarSSL: Forced min. SSL Version to be TLS 1.1\n");
     break;
   case CURL_SSLVERSION_TLSv1_2:
     ssl_set_min_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
+                        SSL_MINOR_VERSION_3);
+    ssl_set_max_version(&connssl->ssl, SSL_MAJOR_VERSION_3,
                         SSL_MINOR_VERSION_3);
     infof(data, "PolarSSL: Forced min. SSL Version to be TLS 1.2\n");
     break;
@@ -350,16 +354,23 @@ polarssl_connect_step1(struct connectdata *conn,
   }
 
 #ifdef HAS_ALPN
-  if(data->set.httpversion == CURL_HTTP_VERSION_2_0) {
-    if(data->set.ssl_enable_alpn) {
-      static const char* protocols[] = {
-        NGHTTP2_PROTO_VERSION_ID, ALPN_HTTP_1_1, NULL
-      };
-      ssl_set_alpn_protocols(&connssl->ssl, protocols);
-      infof(data, "ALPN, offering %s, %s\n", protocols[0],
-            protocols[1]);
-      connssl->asked_for_h2 = TRUE;
+  if(data->set.ssl_enable_alpn) {
+    static const char* protocols[3];
+    int cur = 0;
+
+#ifdef USE_NGHTTP2
+    if(data->set.httpversion == CURL_HTTP_VERSION_2_0) {
+      protocols[cur++] = NGHTTP2_PROTO_VERSION_ID;
+      infof(data, "ALPN, offering %s\n", NGHTTP2_PROTO_VERSION_ID);
     }
+#endif
+
+    protocols[cur++] = ALPN_HTTP_1_1;
+    infof(data, "ALPN, offering %s\n", ALPN_HTTP_1_1);
+
+    protocols[cur] = NULL;
+
+    ssl_set_alpn_protocols(&connssl->ssl, protocols);
   }
 #endif
 
@@ -381,47 +392,37 @@ polarssl_connect_step2(struct connectdata *conn,
   struct ssl_connect_data* connssl = &conn->ssl[sockindex];
   char buffer[1024];
 
-#ifdef HAS_ALPN
-  const char* next_protocol;
-#endif
-
   char errorbuf[128];
   errorbuf[0] = 0;
 
   conn->recv[sockindex] = polarssl_recv;
   conn->send[sockindex] = polarssl_send;
 
-  for(;;) {
-    if(!(ret = ssl_handshake(&connssl->ssl)))
-      break;
-    else if(ret != POLARSSL_ERR_NET_WANT_READ &&
-            ret != POLARSSL_ERR_NET_WANT_WRITE) {
+  ret = ssl_handshake(&connssl->ssl);
+
+  switch(ret) {
+  case 0:
+    break;
+
+  case POLARSSL_ERR_NET_WANT_READ:
+    connssl->connecting_state = ssl_connect_2_reading;
+    return CURLE_OK;
+
+  case POLARSSL_ERR_NET_WANT_WRITE:
+    connssl->connecting_state = ssl_connect_2_writing;
+    return CURLE_OK;
+
+  default:
 #ifdef POLARSSL_ERROR_C
-     error_strerror(ret, errorbuf, sizeof(errorbuf));
+    error_strerror(ret, errorbuf, sizeof(errorbuf));
 #endif /* POLARSSL_ERROR_C */
-     failf(data, "ssl_handshake returned - PolarSSL: (-0x%04X) %s",
-                                                    -ret, errorbuf);
-
-     return CURLE_SSL_CONNECT_ERROR;
-    }
-    else {
-      if(ret == POLARSSL_ERR_NET_WANT_READ) {
-        connssl->connecting_state = ssl_connect_2_reading;
-        return CURLE_OK;
-      }
-      if(ret == POLARSSL_ERR_NET_WANT_WRITE) {
-        connssl->connecting_state = ssl_connect_2_writing;
-        return CURLE_OK;
-      }
-      failf(data, "SSL_connect failed with error %d.", ret);
-      return CURLE_SSL_CONNECT_ERROR;
-
-    }
+    failf(data, "ssl_handshake returned - PolarSSL: (-0x%04X) %s",
+          -ret, errorbuf);
+    return CURLE_SSL_CONNECT_ERROR;
   }
 
   infof(data, "PolarSSL: Handshake complete, cipher is %s\n",
-        ssl_get_ciphersuite(&conn->ssl[sockindex].ssl)
-    );
+        ssl_get_ciphersuite(&conn->ssl[sockindex].ssl) );
 
   ret = ssl_get_verify_result(&conn->ssl[sockindex].ssl);
 
@@ -454,22 +455,24 @@ polarssl_connect_step2(struct connectdata *conn,
 
 #ifdef HAS_ALPN
   if(data->set.ssl_enable_alpn) {
-    next_protocol = ssl_get_alpn_protocol(&connssl->ssl);
+    const char *next_protocol = ssl_get_alpn_protocol(&connssl->ssl);
 
     if(next_protocol != NULL) {
       infof(data, "ALPN, server accepted to use %s\n", next_protocol);
 
-      if(strncmp(next_protocol, NGHTTP2_PROTO_VERSION_ID,
+#ifdef USE_NGHTTP2
+      if(!strncmp(next_protocol, NGHTTP2_PROTO_VERSION_ID,
                   NGHTTP2_PROTO_VERSION_ID_LEN)) {
-        conn->negnpn = NPN_HTTP2;
+        conn->negnpn = CURL_HTTP_VERSION_2_0;
       }
-      else if(strncmp(next_protocol, ALPN_HTTP_1_1, ALPN_HTTP_1_1_LENGTH)) {
-        conn->negnpn = NPN_HTTP1_1;
+      else
+#endif
+      if(!strncmp(next_protocol, ALPN_HTTP_1_1, ALPN_HTTP_1_1_LENGTH)) {
+        conn->negnpn = CURL_HTTP_VERSION_1_1;
       }
     }
-    else if(connssl->asked_for_h2) {
+    else
       infof(data, "ALPN, server did not agree to a protocol\n");
-    }
   }
 #endif
 
@@ -487,7 +490,7 @@ polarssl_connect_step3(struct connectdata *conn,
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   struct SessionHandle *data = conn->data;
   void *old_ssl_sessionid = NULL;
-  ssl_session *our_ssl_sessionid = &conn->ssl[sockindex].ssn ;
+  ssl_session *our_ssl_sessionid = &conn->ssl[sockindex].ssn;
   bool incache;
 
   DEBUGASSERT(ssl_connect_3 == connssl->connecting_state);
@@ -544,11 +547,6 @@ static ssize_t polarssl_send(struct connectdata *conn,
   return ret;
 }
 
-void Curl_polarssl_close_all(struct SessionHandle *data)
-{
-  (void)data;
-}
-
 void Curl_polarssl_close(struct connectdata *conn, int sockindex)
 {
   rsa_free(&conn->ssl[sockindex].rsa);
@@ -589,11 +587,15 @@ void Curl_polarssl_session_free(void *ptr)
   free(ptr);
 }
 
+/* 1.3.10 was the first rebranded version. All new releases (in 1.3 branch and
+   higher) will be mbed TLS branded.. */
+
 size_t Curl_polarssl_version(char *buffer, size_t size)
 {
   unsigned int version = version_get_number();
-  return snprintf(buffer, size, "PolarSSL/%d.%d.%d", version>>24,
-                  (version>>16)&0xff, (version>>8)&0xff);
+  return snprintf(buffer, size, "%s/%d.%d.%d",
+                  version >= 0x01030A00?"mbedTLS":"PolarSSL",
+                  version>>24, (version>>16)&0xff, (version>>8)&0xff);
 }
 
 static CURLcode

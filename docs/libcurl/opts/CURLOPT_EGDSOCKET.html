@@ -4,15 +4,20 @@
 <title>CURLOPT_EGDSOCKET man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,7 +52,7 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_EGDSOCKET - set EGD socket path <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0">#include &lt;curl/curl.h&gt; 
+<p class="level0">&#35;include &lt;curl/curl.h&gt; 
 <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_EGDSOCKET, char *path); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a char * to the zero terminated path name to the Entropy Gathering Daemon socket. It will be used to seed the random engine for SSL. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">NULL <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>

@@ -333,7 +333,7 @@ GREP = @GREP@
 HAVE_GNUTLS_SRP = @HAVE_GNUTLS_SRP@
 HAVE_LDAP_SSL = @HAVE_LDAP_SSL@
 HAVE_LIBZ = @HAVE_LIBZ@
-HAVE_SSLEAY_SRP = @HAVE_SSLEAY_SRP@
+HAVE_OPENSSL_SRP = @HAVE_OPENSSL_SRP@
 IDN_ENABLED = @IDN_ENABLED@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -390,6 +390,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SSL_ENABLED = @SSL_ENABLED@
+SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 SUPPORT_FEATURES = @SUPPORT_FEATURES@
 SUPPORT_PROTOCOLS = @SUPPORT_PROTOCOLS@
@@ -406,7 +407,6 @@ USE_NSS = @USE_NSS@
 USE_OPENLDAP = @USE_OPENLDAP@
 USE_POLARSSL = @USE_POLARSSL@
 USE_SCHANNEL = @USE_SCHANNEL@
-USE_SSLEAY = @USE_SSLEAY@
 USE_UNIX_SOCKETS = @USE_UNIX_SOCKETS@
 USE_WINDOWS_SSPI = @USE_WINDOWS_SSPI@
 VERSION = @VERSION@
@@ -474,7 +474,7 @@ top_srcdir = @top_srcdir@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -609,7 +609,7 @@ CURL_HFILES = \
 
 CURL_RCFILES = curl.rc
 curl_SOURCES = $(CURL_CFILES) $(CURLX_CFILES) $(CURL_HFILES)
-@USE_EXPLICIT_LIB_DEPS_FALSE@curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBMETALINK_LIBS@ @NSS_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
+@USE_EXPLICIT_LIB_DEPS_FALSE@curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBMETALINK_LIBS@ @NSS_LIBS@ @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
 @USE_EXPLICIT_LIB_DEPS_TRUE@curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBMETALINK_LIBS@ @LIBCURL_LIBS@
 curl_LDFLAGS = @LIBMETALINK_LDFLAGS@
 curl_CPPFLAGS = $(AM_CPPFLAGS) $(LIBMETALINK_CPPFLAGS)
@@ -623,11 +623,11 @@ curl_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
 @BUILD_UNITTESTS_TRUE@libcurltool_la_SOURCES = $(curl_SOURCES)
 BUILT_SOURCES = tool_hugehelp.c
 CLEANFILES = tool_hugehelp.c
-EXTRA_DIST = mkhelp.pl makefile.dj Makefile.vc6 Makefile.b32 Makefile.m32 \
-	macos/curl.mcp.xml.sit.hqx                                        \
-	macos/MACINSTALL.TXT macos/src/curl_GUSIConfig.cpp \
-	macos/src/macos_main.cpp makefile.amiga curl.rc                   \
-	Makefile.netware Makefile.inc Makefile.Watcom CMakeLists.txt
+EXTRA_DIST = mkhelp.pl makefile.dj Makefile.vc6 Makefile.b32		\
+ Makefile.m32 macos/curl.mcp.xml.sit.hqx macos/MACINSTALL.TXT		\
+ macos/src/curl_GUSIConfig.cpp macos/src/macos_main.cpp makefile.amiga	\
+ curl.rc Makefile.netware Makefile.inc Makefile.Watcom CMakeLists.txt	\
+ checksrc.whitelist
 
 MANPAGE = $(top_srcdir)/docs/curl.1
 README = $(top_srcdir)/docs/MANUAL

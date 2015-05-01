@@ -4,15 +4,20 @@
 <title>CURLOPT_MAIL_AUTH man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,7 +52,7 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_MAIL_AUTH - SMTP authentication address <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0">#include &lt;curl/curl.h&gt; 
+<p class="level0">&#35;include &lt;curl/curl.h&gt; 
 <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAIL_AUTH, char *auth); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a pointer to a zero terminated string as parameter. This will be used to specify the authentication address (identity) of a submitted message that is being relayed to another server. 
 <p class="level0">This optional parameter allows co-operating agents in a trusted environment to communicate the authentication of individual messages and should only be used by the application program, using libcurl, if the application is itself a mail server acting in such an environment. If the application is operating as such and the AUTH address is not known or is invalid, then an empty string should be used for this parameter. 

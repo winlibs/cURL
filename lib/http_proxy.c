@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -35,10 +35,7 @@
 #include "progress.h"
 #include "non-ascii.h"
 #include "connect.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
+#include "curl_printf.h"
 #include "curlx.h"
 
 #include "curl_memory.h"
@@ -75,6 +72,7 @@ CURLcode Curl_proxy_connect(struct connectdata *conn)
     conn->data->req.protop = prot_save;
     if(CURLE_OK != result)
       return result;
+    Curl_safefree(conn->allocptr.proxyuserpwd);
 #else
     return CURLE_NOT_BUILT_IN;
 #endif
@@ -123,13 +121,11 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
       infof(data, "Establish HTTP proxy tunnel to %s:%hu\n",
             hostname, remote_port);
 
-      if(data->req.newurl) {
         /* This only happens if we've looped here due to authentication
            reasons, and we don't really use the newly cloned URL here
            then. Just free() it. */
-        free(data->req.newurl);
-        data->req.newurl = NULL;
-      }
+      free(data->req.newurl);
+      data->req.newurl = NULL;
 
       /* initialize a dynamic send-buffer */
       req_buffer = Curl_add_buffer_init();
@@ -216,7 +212,7 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
           failf(data, "Failed sending CONNECT to proxy");
       }
 
-      Curl_safefree(req_buffer);
+      free(req_buffer);
       if(result)
         return result;
 
@@ -467,7 +463,7 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
 
                     result = Curl_http_input_auth(conn, proxy, auth);
 
-                    Curl_safefree(auth);
+                    free(auth);
 
                     if(result)
                       return result;
@@ -554,11 +550,8 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
       infof(data, "Connect me again please\n");
     }
     else {
-      if(data->req.newurl) {
-        /* this won't be used anymore for the CONNECT so free it now */
-        free(data->req.newurl);
-        data->req.newurl = NULL;
-      }
+      free(data->req.newurl);
+      data->req.newurl = NULL;
       /* failure, close this connection to avoid re-use */
       connclose(conn, "proxy CONNECT failure");
       Curl_closesocket(conn, conn->sock[sockindex]);

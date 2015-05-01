@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -75,16 +75,14 @@
 #include "curl_ntlm.h"
 #include "http_negotiate.h"
 #include "share.h"
-#include "curl_memory.h"
 #include "select.h"
 #include "multiif.h"
 #include "connect.h"
 #include "non-ascii.h"
+#include "curl_printf.h"
 
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
-/* The last #include file should be: */
+/* The last #include files should be: */
+#include "curl_memory.h"
 #include "memdebug.h"
 
 /*
@@ -216,7 +214,7 @@ CURLcode Curl_fillreadbuffer(struct connectdata *conn, int bytes, int *nreadp)
     result = Curl_convert_to_network(data, data->req.upload_fromhere, length);
     /* Curl_convert_to_network calls failf if unsuccessful */
     if(result)
-      return(result);
+      return result;
 #endif /* CURL_DOES_CONVERSIONS */
 
     if((nread - hexlen) == 0)
@@ -1272,7 +1270,7 @@ long Curl_sleep_time(curl_off_t rate_bps, curl_off_t cur_rate_bps,
    * the next packet at the adjusted rate.  We should wait
    * longer when using larger packets, for instance.
    */
-  rv = ((curl_off_t)((pkt_size * 8) * 1000) / rate_bps);
+  rv = ((curl_off_t)(pkt_size * 1000) / rate_bps);
 
   /* Catch rounding errors and always slow down at least 1ms if
    * we are running too fast.
@@ -1342,6 +1340,7 @@ CURLcode Curl_pretransfer(struct SessionHandle *data)
 #endif
 
     Curl_initinfo(data); /* reset session-specific information "variables" */
+    Curl_pgrsResetTimesSizes(data);
     Curl_pgrsStartNow(data);
 
     if(data->set.timeout)
@@ -1633,7 +1632,7 @@ CURLcode Curl_follow(struct SessionHandle *data,
   if(type == FOLLOW_REDIR) {
     if((data->set.maxredirs != -1) &&
         (data->set.followlocation >= data->set.maxredirs)) {
-      failf(data,"Maximum (%ld) redirects followed", data->set.maxredirs);
+      failf(data, "Maximum (%ld) redirects followed", data->set.maxredirs);
       return CURLE_TOO_MANY_REDIRECTS;
     }
 

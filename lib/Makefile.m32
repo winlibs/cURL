@@ -55,7 +55,7 @@ LIBCARES_PATH = $(PROOT)/ares
 endif
 
 CC	= $(CROSSPREFIX)gcc
-CFLAGS	= -g -O2 -Wall
+CFLAGS	= $(CURL_CFLAG_EXTRAS) -g -O2 -Wall
 CFLAGS	+= -fno-strict-aliasing
 # comment LDFLAGS below to keep debug info
 LDFLAGS	= -s
@@ -75,7 +75,7 @@ endif
 endif
 
 ifeq ($(ARCH),w64)
-CFLAGS  += -D_AMD64_
+CFLAGS  += -m64 -D_AMD64_
 RCFLAGS += -F pe-x86-64
 else
 CFLAGS  += -m32
@@ -214,14 +214,17 @@ ifdef SSL
       OPENSSL_LIBS = -lcrypto -lssl
     endif
   endif
+  ifndef DYN
+    OPENSSL_LIBS += -lgdi32 -lcrypt32
+  endif
   INCLUDES += -I"$(OPENSSL_INCLUDE)"
-  CFLAGS += -DUSE_SSLEAY -DUSE_OPENSSL -DHAVE_OPENSSL_ENGINE_H -DHAVE_OPENSSL_PKCS12_H \
+  CFLAGS += -DUSE_OPENSSL -DHAVE_OPENSSL_ENGINE_H -DHAVE_OPENSSL_PKCS12_H \
             -DHAVE_ENGINE_LOAD_BUILTIN_ENGINES -DOPENSSL_NO_KRB5 \
             -DCURL_WANTS_CA_BUNDLE_ENV
   DLL_LIBS += -L"$(OPENSSL_LIBPATH)" $(OPENSSL_LIBS)
   ifdef SRP
     ifeq "$(wildcard $(OPENSSL_INCLUDE)/openssl/srp.h)" "$(OPENSSL_INCLUDE)/openssl/srp.h"
-      CFLAGS += -DHAVE_SSLEAY_SRP -DUSE_TLS_SRP
+      CFLAGS += -DHAVE_OPENSSL_SRP -DUSE_TLS_SRP
     endif
   endif
 endif
@@ -323,5 +326,3 @@ $(PROOT)/include/curl/curlbuild.h:
 
 $(LIBCARES_PATH)/libcares.a:
 	$(MAKE) -C $(LIBCARES_PATH) -f Makefile.m32
-
-

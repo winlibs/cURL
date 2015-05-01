@@ -4,15 +4,20 @@
 <title>CURLOPT_HTTPAUTH man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,10 +52,11 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_HTTPAUTH - set HTTP server authentication methods to try <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0"><pre>
-<p class="level0">#include &lt;curl/curl.h&gt;
- <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HTTPAUTH, long bitmask);
- </pre>
+<p class="level0"><pre class="level0">
+&#35;include &lt;curl/curl.h&gt;
+
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HTTPAUTH, long bitmask);
+</pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a long as parameter, which is set to a bitmask, to tell libcurl which authentication method(s) you want it to use speaking to the remote server. 
 <p class="level0">The available bits are listed below. If more than one bit is set, libcurl will first query the site to see which authentication methods it supports and then pick the best one you allow it to use. For some methods, this will induce an extra network round-trip. Set the actual name and password with the <a Class="emphasis" href="./CURLOPT_USERPWD.html">CURLOPT_USERPWD</a> option or with the <a Class="emphasis" href="./CURLOPT_USERNAME.html">CURLOPT_USERNAME</a> and the <a Class="emphasis" href="./CURLOPT_PASSWORD.html">CURLOPT_PASSWORD</a> options. 

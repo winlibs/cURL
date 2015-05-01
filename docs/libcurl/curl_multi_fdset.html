@@ -4,15 +4,20 @@
 <title>curl_multi_fdset man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,14 +52,15 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">curl_multi_fdset - extracts file descriptor information from a multi handle <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0"><pre>
-<p class="level0">#include &lt;curl/curl.h&gt;
- <p class="level0">CURLMcode curl_multi_fdset(CURLM *multi_handle,
- &nbsp;                          fd_set *read_fd_set,
- &nbsp;                          fd_set *write_fd_set,
- &nbsp;                          fd_set *exc_fd_set,
- &nbsp;                          int *max_fd);
- <p class="level0"></pre>
+<p class="level0"><pre class="level0">
+&#35;include &lt;curl/curl.h&gt;
+
+CURLMcode curl_multi_fdset(CURLM *multi_handle,
+&nbsp;                          fd_set *read_fd_set,
+&nbsp;                          fd_set *write_fd_set,
+&nbsp;                          fd_set *exc_fd_set,
+&nbsp;                          int *max_fd);
+</pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">This function extracts file descriptor information from a given multi_handle. libcurl returns its fd_set sets. The application can use these to select() on, but be sure to FD_ZERO them before calling this function as <a Class="emphasis" href="./curl_multi_fdset.html">curl_multi_fdset</a> only adds its own descriptors, it doesn't zero or otherwise remove any others. The <a Class="emphasis" href="./curl_multi_perform.html">curl_multi_perform</a> function should be called as soon as one of them is ready to be read from or written to. 
 <p class="level0">If the <span Class="emphasis">read_fd_set</span> argument is not a null pointer, it points to an object of type fd_set that on returns specifies the file descriptors to be checked for being ready to read. 

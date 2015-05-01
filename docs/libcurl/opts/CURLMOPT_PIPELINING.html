@@ -4,15 +4,20 @@
 <title>CURLMOPT_PIPELINING man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,7 +52,7 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLMOPT_PIPELINING - enable/disable HTTP pipelining <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0">#include &lt;curl/curl.h&gt; 
+<p class="level0">&#35;include &lt;curl/curl.h&gt; 
 <p class="level0">CURLMcode curl_multi_setopt(CURLM *handle, CURLMOPT_PIPELINING, bool onoff); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Set the <span Class="bold">onoff</span> parameter to 1 to make libcurl use HTTP pipelining for HTTP transfers done using this multi handle, as far as possible. This means that if you add a second request that can use an already existing connection, the second request will be "piped" on the same connection rather than being executed in parallel. 
 <p class="level0">When using pipelining, there are also several other related options that are interesting to tweak and adjust to alter how libcurl spreads out requests on different connections or not etc. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>

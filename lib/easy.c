@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -60,7 +60,6 @@
 #include "hostip.h"
 #include "share.h"
 #include "strdup.h"
-#include "curl_memory.h"
 #include "progress.h"
 #include "easyif.h"
 #include "select.h"
@@ -75,11 +74,10 @@
 #include "multiif.h"
 #include "sigpipe.h"
 #include "ssh.h"
+#include "curl_printf.h"
 
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
-/* The last #include file should be: */
+/* The last #include files should be: */
+#include "curl_memory.h"
 #include "memdebug.h"
 
 /* win32_cleanup() is for win32 socket cleanup functionality, the opposite

@@ -5,7 +5,8 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2014, Steve Holme, <steve_holme@hotmail.com>.
+ * Copyright (C) 2014 - 2015, Steve Holme, <steve_holme@hotmail.com>.
+ * Copyright (C) 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -26,28 +27,17 @@
 
 #if defined(HAVE_GSSAPI) && defined(USE_KERBEROS5)
 
-#ifdef HAVE_OLD_GSSMIT
-#define GSS_C_NT_HOSTBASED_SERVICE gss_nt_service_name
-#define NCOMPAT 1
-#endif
-
-#define GSSAUTH_P_NONE      1
-#define GSSAUTH_P_INTEGRITY 2
-#define GSSAUTH_P_PRIVACY   4
-
 #include <curl/curl.h>
 
 #include "curl_sasl.h"
 #include "urldata.h"
 #include "curl_base64.h"
 #include "curl_gssapi.h"
-#include "curl_memory.h"
 #include "sendf.h"
+#include "curl_printf.h"
 
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
-/* The last #include file should be: */
+/* The last #include files should be: */
+#include "curl_memory.h"
 #include "memdebug.h"
 
 /*
@@ -62,7 +52,7 @@
 *
 * Returns a pointer to the newly allocated SPN.
 */
-static char *Curl_sasl_build_gssapi_spn(const char *service, const char *host)
+char *Curl_sasl_build_gssapi_spn(const char *service, const char *host)
 {
   /* Generate and return our SPN */
   return aprintf("%s@%s", service, host);
@@ -126,12 +116,16 @@ CURLcode Curl_sasl_create_gssapi_user_message(struct SessionHandle *data,
 
     /* Import the SPN */
     gss_major_status = gss_import_name(&gss_minor_status, &spn_token,
-                                       gss_nt_service_name, &krb5->spn);
+                                       GSS_C_NT_HOSTBASED_SERVICE, &krb5->spn);
     if(GSS_ERROR(gss_major_status)) {
       Curl_gss_log_error(data, gss_minor_status, "gss_import_name() failed: ");
 
+      free(spn);
+
       return CURLE_OUT_OF_MEMORY;
     }
+
+    free(spn);
   }
   else {
     /* Decode the base-64 encoded challenge message */
@@ -164,7 +158,7 @@ CURLcode Curl_sasl_create_gssapi_user_message(struct SessionHandle *data,
                                                mutual_auth,
                                                NULL);
 
-  Curl_safefree(input_token.value);
+  free(input_token.value);
 
   if(GSS_ERROR(gss_major_status)) {
     if(output_token.value)
@@ -250,7 +244,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
     Curl_gss_log_error(data, gss_minor_status,
                        "gss_inquire_context() failed: ");
 
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -261,7 +255,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   if(GSS_ERROR(gss_major_status)) {
     Curl_gss_log_error(data, gss_minor_status, "gss_display_name() failed: ");
 
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -277,7 +271,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
     Curl_gss_log_error(data, gss_minor_status, "gss_unwrap() failed: ");
 
     gss_release_buffer(&gss_status, &username_token);
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_BAD_CONTENT_ENCODING;
   }
@@ -287,7 +281,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
     infof(data, "GSSAPI handshake failure (invalid security data)\n");
 
     gss_release_buffer(&gss_status, &username_token);
-    Curl_safefree(chlg);
+    free(chlg);
 
     return CURLE_BAD_CONTENT_ENCODING;
   }
@@ -295,7 +289,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   /* Copy the data out and free the challenge as it is not required anymore */
   memcpy(&indata, output_token.value, 4);
   gss_release_buffer(&gss_status, &output_token);
-  Curl_safefree(chlg);
+  free(chlg);
 
   /* Extract the security layer */
   sec_layer = indata & 0x000000FF;
@@ -350,7 +344,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   if(GSS_ERROR(gss_major_status)) {
     Curl_gss_log_error(data, gss_minor_status, "gss_wrap() failed: ");
 
-    Curl_safefree(message);
+    free(message);
 
     return CURLE_OUT_OF_MEMORY;
   }
@@ -363,7 +357,7 @@ CURLcode Curl_sasl_create_gssapi_security_message(struct SessionHandle *data,
   gss_release_buffer(&gss_status, &output_token);
 
   /* Free the message buffer */
-  Curl_safefree(message);
+  free(message);
 
   return result;
 }

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -47,10 +47,6 @@
 #include "share.h"
 #include "strerror.h"
 #include "url.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
 #include "curl_memory.h"
 /* The last #include file should be: */
 #include "memdebug.h"
@@ -123,21 +119,21 @@ CURLcode Curl_addrinfo_callback(struct connectdata *conn,
 CURLcode Curl_async_resolved(struct connectdata *conn,
                              bool *protocol_done)
 {
-  CURLcode code;
+  CURLcode result;
 
   if(conn->async.dns) {
     conn->dns_entry = conn->async.dns;
     conn->async.dns = NULL;
   }
 
-  code = Curl_setup_conn(conn, protocol_done);
+  result = Curl_setup_conn(conn, protocol_done);
 
-  if(code)
+  if(result)
     /* We're not allowed to return failure with memory left allocated
        in the connectdata struct, free those here */
     Curl_disconnect(conn, FALSE); /* close the connection */
 
-  return code;
+  return result;
 }
 
 /*

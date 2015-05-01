@@ -4,15 +4,20 @@
 <title>CURLMOPT_SOCKETFUNCTION man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,15 +52,17 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLMOPT_SOCKETFUNCTION - callback informed about what to wait for <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0"><pre>
-<p class="level0">#include &lt;curl/curl.h&gt;
- <p class="level0">int socket_callback(CURL *easy,      /* easy handle */
- &nbsp;                   curl_socket_t s, /* socket */
- &nbsp;                   int what,        /* see above */
- &nbsp;                   void *userp,     /* private callback pointer */
- &nbsp;                   void *socketp);  /* private socket pointer */
- <p class="level0">CURLMcode curl_multi_setopt(CURLM *handle, CURLMOPT_SOCKETFUNCTION, socket_callback);
- </pre>
+<p class="level0"><pre class="level0">
+&#35;include &lt;curl/curl.h&gt;
+
+int socket_callback(CURL *easy,      /* easy handle */
+&nbsp;                   curl_socket_t s, /* socket */
+&nbsp;                   int what,        /* see above */
+&nbsp;                   void *userp,     /* private callback pointer */
+&nbsp;                   void *socketp);  /* private socket pointer */
+
+CURLMcode curl_multi_setopt(CURLM *handle, CURLMOPT_SOCKETFUNCTION, socket_callback);
+</pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a pointer to your callback function, which should match the prototype shown above. 
 <p class="level0">When the <span Class="emphasis">curl_multi_socket_action(3)</span> function runs, it informs the application about updates in the socket (file descriptor) status by doing none, one, or multiple calls to the <span Class="bold">socket_callback</span>. The callback gets status updates with changes since the previous time the callback was called. If the given callback pointer is NULL, no callback will be called. Set the callback's <span Class="bold">userp</span> argument with <a Class="emphasis" href="./CURLMOPT_SOCKETDATA.html">CURLMOPT_SOCKETDATA</a>.  See <span Class="emphasis">curl_multi_socket_action(3)</span> for more details on how the callback is used and should work. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>

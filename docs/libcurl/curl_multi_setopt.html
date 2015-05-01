@@ -4,15 +4,20 @@
 <title>curl_multi_setopt man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,7 +52,7 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">curl_multi_setopt - set options for a curl multi handle <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0">#include &lt;curl/curl.h&gt; 
+<p class="level0">&#35;include &lt;curl/curl.h&gt; 
 <p class="level0">CURLMcode curl_multi_setopt(CURLM * multi_handle, CURLMoption option, param); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0"><a Class="emphasis" href="./curl_multi_setopt.html">curl_multi_setopt</a> is used to tell a libcurl multi handle how to behave. By using the appropriate options to <a Class="emphasis" href="./curl_multi_setopt.html">curl_multi_setopt</a>, you can change libcurl's behaviour when using that multi handle.  All options are set with the <span Class="emphasis">option</span> followed by the parameter <span Class="emphasis">param</span>. That parameter can be a <span Class="bold">long</span>, a <span Class="bold">function pointer</span>, an <span class="bold">object pointer</span> or a <span Class="bold">curl_off_t</span> type, depending on what the specific option expects. Read this manual carefully as bad input values may cause libcurl to behave badly!  You can only set one option in each function call. 
 <p class="level0"><a name="OPTIONS"></a><h2 class="nroffsh">OPTIONS</h2>
@@ -62,6 +67,8 @@ p.roffit {
 <p class="level1">See <span Class="emphasis">CURLMOPT_TIMERFUNCTION(3)</span> 
 <p class="level0"><a name="CURLMOPTTIMERDATA"></a><span class="nroffip">CURLMOPT_TIMERDATA</span> 
 <p class="level1">See <span Class="emphasis">CURLMOPT_TIMERDATA(3)</span> 
+<p class="level0"><a name="CURLMOPTMAXCONNECTS"></a><span class="nroffip">CURLMOPT_MAXCONNECTS</span> 
+<p class="level1">See <span Class="emphasis">CURLMOPT_MAXCONNECTS(3)</span> 
 <p class="level0"><a name="CURLMOPTMAXHOSTCONNECTIONS"></a><span class="nroffip">CURLMOPT_MAX_HOST_CONNECTIONS</span> 
 <p class="level1">See <span Class="emphasis">CURLMOPT_MAX_HOST_CONNECTIONS(3)</span> 
 <p class="level0"><a name="CURLMOPTMAXPIPELINELENGTH"></a><span class="nroffip">CURLMOPT_MAX_PIPELINE_LENGTH</span> 

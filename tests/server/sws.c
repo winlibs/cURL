@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -442,8 +442,7 @@ static int parse_servercmd(struct httprequest *req)
       else
         break;
     }
-    if(orgcmd)
-      free(orgcmd);
+    free(orgcmd);
   }
 
   return 0; /* OK! */
@@ -914,6 +913,8 @@ static void init_httprequest(struct httprequest *req)
   req->callcount = 0;
   req->connect_port = 0;
   req->done_processing = 0;
+  req->upgrade = 0;
+  req->upgrade_request = 0;
 }
 
 /* returns 1 if the connection should be serviced again immediately, 0 if there
@@ -1126,8 +1127,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     }
 
     if(got_exit_signal) {
-      if(ptr)
-        free(ptr);
+      free(ptr);
       return -1;
     }
 
@@ -1137,8 +1137,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
       error = errno;
       logmsg("fopen() failed with error: %d %s", error, strerror(error));
       logmsg("  [4] Error opening file: %s", filename);
-      if(ptr)
-        free(ptr);
+      free(ptr);
       return 0;
     }
     else {
@@ -1147,18 +1146,15 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
       fclose(stream);
       if(error) {
         logmsg("getpart() failed with error: %d", error);
-        if(ptr)
-          free(ptr);
+        free(ptr);
         return 0;
       }
     }
   }
 
   if(got_exit_signal) {
-    if(ptr)
-      free(ptr);
-    if(cmd)
-      free(cmd);
+    free(ptr);
+    free(cmd);
     return -1;
   }
 
@@ -1181,10 +1177,8 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     error = errno;
     logmsg("fopen() failed with error: %d %s", error, strerror(error));
     logmsg("  [5] Error opening file: %s", responsedump);
-    if(ptr)
-      free(ptr);
-    if(cmd)
-      free(cmd);
+    free(ptr);
+    free(cmd);
     return -1;
   }
 
@@ -1228,28 +1222,22 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
            responsedump, error, strerror(error));
 
   if(got_exit_signal) {
-    if(ptr)
-      free(ptr);
-    if(cmd)
-      free(cmd);
+    free(ptr);
+    free(cmd);
     return -1;
   }
 
   if(sendfailure) {
     logmsg("Sending response failed. Only (%zu bytes) of (%zu bytes) were sent",
            responsesize-count, responsesize);
-    if(ptr)
-      free(ptr);
-    if(cmd)
-      free(cmd);
+    free(ptr);
+    free(cmd);
     return -1;
   }
 
   logmsg("Response sent (%zu bytes) and written to %s",
          responsesize, responsedump);
-
-  if(ptr)
-    free(ptr);
+  free(ptr);
 
   if(cmdsize > 0 ) {
     char command[32];
@@ -1285,9 +1273,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
         ptr = NULL;
     } while(ptr && *ptr);
   }
-  if(cmd)
-    free(cmd);
-
+  free(cmd);
   req->open = use_gopher?FALSE:persistant;
 
   prevtestno = req->testno;
@@ -1334,8 +1320,6 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
     if(0 != setsockopt(serverfd, IPPROTO_TCP, TCP_NODELAY,
                        (void *)&flag, sizeof(flag)))
       logmsg("====> TCP_NODELAY for server conection failed");
-    else
-      logmsg("TCP_NODELAY set for server conection");
   }
 #endif
 
@@ -1429,6 +1413,7 @@ static void http_connect(curl_socket_t *infdp,
   int max_tunnel_idx; /* CTRL or DATA */
   int loop;
   int i;
+  int timeout_count=0;
 
   /* primary tunnel client endpoint already connected */
   clientfd[CTRL] = *infdp;
@@ -1457,7 +1442,7 @@ static void http_connect(curl_socket_t *infdp,
 
     fd_set input;
     fd_set output;
-    struct timeval timeout = {0, 250000L}; /* 250 ms */
+    struct timeval timeout = {1, 0}; /* 1000 ms */
     ssize_t rc;
     curl_socket_t maxfd = (curl_socket_t)-1;
 
@@ -1518,6 +1503,7 @@ static void http_connect(curl_socket_t *infdp,
     if(rc > 0) {
       /* socket action */
       bool tcp_fin_wr;
+      timeout_count=0;
 
       if(got_exit_signal)
         break;
@@ -1543,8 +1529,6 @@ static void http_connect(curl_socket_t *infdp,
             if(0 != setsockopt(datafd, IPPROTO_TCP, TCP_NODELAY,
                                (void *)&flag, sizeof(flag)))
               logmsg("====> TCP_NODELAY for client DATA conection failed");
-            else
-              logmsg("TCP_NODELAY set for client DATA conection");
           }
 #endif
           req2.pipelining = FALSE;
@@ -1761,7 +1745,13 @@ static void http_connect(curl_socket_t *infdp,
         break;
 
     } /* (rc > 0) */
-
+    else {
+      timeout_count++;
+      if(timeout_count > 5) {
+        logmsg("CONNECT proxy timeout after %d idle seconds!", timeout_count);
+        break;
+      }
+    }
   }
 
 http_connect_cleanup:
@@ -1867,8 +1857,6 @@ static curl_socket_t accept_connection(curl_socket_t sock)
     if(0 != setsockopt(msgsock, IPPROTO_TCP, TCP_NODELAY,
                        (void *)&flag, sizeof(flag)))
       logmsg("====> TCP_NODELAY failed");
-    else
-      logmsg("TCP_NODELAY set");
   }
 #endif
 

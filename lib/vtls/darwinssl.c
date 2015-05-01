@@ -102,10 +102,8 @@
 #include "connect.h"
 #include "select.h"
 #include "vtls.h"
-#include "curl_darwinssl.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
+#include "darwinssl.h"
+#include "curl_printf.h"
 
 #include "curl_memory.h"
 /* The last #include file should be: */
@@ -1461,9 +1459,12 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
 #if CURL_BUILD_MAC_10_9 || CURL_BUILD_IOS_7
   /* We want to enable 1/n-1 when using a CBC cipher unless the user
      specifically doesn't want us doing that: */
-  if(SSLSetSessionOption != NULL)
+  if(SSLSetSessionOption != NULL) {
     SSLSetSessionOption(connssl->ssl_ctx, kSSLSessionOptionSendOneByteRecord,
                       !data->set.ssl_enable_beast);
+    SSLSetSessionOption(connssl->ssl_ctx, kSSLSessionOptionFalseStart,
+                      data->set.ssl.falsestart); /* false start support */
+  }
 #endif /* CURL_BUILD_MAC_10_9 || CURL_BUILD_IOS_7 */
 
   /* Check if there's a cached ID we can/should use here! */
@@ -2229,12 +2230,6 @@ void Curl_darwinssl_close(struct connectdata *conn, int sockindex)
   connssl->ssl_sockfd = 0;
 }
 
-void Curl_darwinssl_close_all(struct SessionHandle *data)
-{
-  /* SecureTransport doesn't separate sessions from contexts, so... */
-  (void)data;
-}
-
 int Curl_darwinssl_shutdown(struct connectdata *conn, int sockindex)
 {
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
@@ -2370,6 +2365,14 @@ void Curl_darwinssl_md5sum(unsigned char *tmp, /* input */
 {
   (void)md5len;
   (void)CC_MD5(tmp, (CC_LONG)tmplen, md5sum);
+}
+
+bool Curl_darwinssl_false_start(void) {
+#if CURL_BUILD_MAC_10_9 || CURL_BUILD_IOS_7
+  if(SSLSetSessionOption != NULL)
+    return TRUE;
+#endif
+  return FALSE;
 }
 
 static ssize_t darwinssl_send(struct connectdata *conn,

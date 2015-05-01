@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -69,11 +69,9 @@
 #include "inet_ntop.h"
 #include "curl_threads.h"
 #include "connect.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
+#include "curl_printf.h"
 #include "curl_memory.h"
+
 /* The last #include file should be: */
 #include "memdebug.h"
 
@@ -192,13 +190,12 @@ void destroy_thread_sync_data(struct thread_sync_data * tsd)
     free(tsd->mtx);
   }
 
-  if(tsd->hostname)
-    free(tsd->hostname);
+  free(tsd->hostname);
 
   if(tsd->res)
     Curl_freeaddrinfo(tsd->res);
 
-  memset(tsd,0,sizeof(*tsd));
+  memset(tsd, 0, sizeof(*tsd));
 }
 
 /* Initialize resolver thread synchronization data */
@@ -366,9 +363,7 @@ static void destroy_async_data (struct Curl_async *async)
   }
   async->os_specific = NULL;
 
-  if(async->hostname)
-    free(async->hostname);
-
+  free(async->hostname);
   async->hostname = NULL;
 }
 
@@ -398,7 +393,7 @@ static bool init_resolve_thread (struct connectdata *conn,
   if(!init_thread_sync_data(td, hostname, port, hints))
     goto err_exit;
 
-  Curl_safefree(conn->async.hostname);
+  free(conn->async.hostname);
   conn->async.hostname = strdup(hostname);
   if(!conn->async.hostname)
     goto err_exit;

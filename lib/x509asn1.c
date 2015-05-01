@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -22,7 +22,7 @@
 
 #include "curl_setup.h"
 
-#if defined(USE_GSKIT) || defined(USE_NSS)
+#if defined(USE_GSKIT) || defined(USE_NSS) || defined(USE_GNUTLS)
 
 #include <curl/curl.h>
 #include "urldata.h"
@@ -33,10 +33,7 @@
 #include "inet_pton.h"
 #include "curl_base64.h"
 #include "x509asn1.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
+#include "curl_printf.h"
 #include "curl_memory.h"
 /* The last #include file should be: */
 #include "memdebug.h"
@@ -212,7 +209,6 @@ static const char * octet2str(const char * beg, const char * end)
 }
 
 static const char * bit2str(const char * beg, const char * end)
-
 {
   /* Convert an ASN.1 bit string to a printable string.
      Return the dynamically allocated string, or NULL if an error occurs. */
@@ -301,8 +297,10 @@ utf8asn1str(char * * to, int type, const char * from, const char * end)
       case 4:
         wc = (wc << 8) | *(const unsigned char *) from++;
         wc = (wc << 8) | *(const unsigned char *) from++;
+        /* fallthrough */
       case 2:
         wc = (wc << 8) | *(const unsigned char *) from++;
+        /* fallthrough */
       default: /* case 1: */
         wc = (wc << 8) | *(const unsigned char *) from++;
       }
@@ -540,8 +538,6 @@ static const char * UTime2str(const char * beg, const char * end)
 
 const char * Curl_ASN1tostr(curl_asn1Element * elem, int type)
 {
-  static const char zero = '\0';
-
   /* Convert an ASN.1 element to a printable string.
      Return the dynamically allocated string, or NULL if an error occurs. */
 
@@ -562,7 +558,7 @@ const char * Curl_ASN1tostr(curl_asn1Element * elem, int type)
   case CURL_ASN1_OCTET_STRING:
     return octet2str(elem->beg, elem->end);
   case CURL_ASN1_NULL:
-    return strdup(&zero);
+    return strdup("");
   case CURL_ASN1_OBJECT_IDENTIFIER:
     return OID2str(elem->beg, elem->end, TRUE);
   case CURL_ASN1_UTC_TIME:
@@ -824,7 +820,7 @@ static void do_pubkey(struct SessionHandle * data, int certnum,
     /* Compute key length. */
     for(q = elem.beg; !*q && q < elem.end; q++)
       ;
-    len = (elem.end - q) * 8;
+    len = (unsigned long)((elem.end - q) * 8);
     if(len)
       for(i = *(unsigned char *) q; !(i & 0x80); i <<= 1)
         len--;
@@ -1027,7 +1023,7 @@ CURLcode Curl_extract_certinfo(struct connectdata * conn,
   return CURLE_OK;
 }
 
-#endif /* USE_GSKIT or USE_NSS */
+#endif /* USE_GSKIT or USE_NSS or USE_GNUTLS */
 
 #if defined(USE_GSKIT)
 
@@ -1119,8 +1115,7 @@ CURLcode Curl_verifyhost(struct connectdata * conn,
           if(len > 0)
             if(strlen(dnsname) == (size_t) len)
               i = Curl_cert_hostcheck((const char *) dnsname, conn->host.name);
-          if(dnsname)
-            free(dnsname);
+          free(dnsname);
           if(!i)
             return CURLE_PEER_FAILED_VERIFICATION;
           matched = i;

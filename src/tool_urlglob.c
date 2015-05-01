@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -21,9 +21,9 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#define _MPRINTF_REPLACE /* we want curl-functions instead of native ones */
-#include <curl/mprintf.h>
-
+#define ENABLE_CURLX_PRINTF
+/* use our own printf() functions */
+#include "curlx.h"
 #include "tool_urlglob.h"
 #include "tool_vms.h"
 
@@ -196,7 +196,7 @@ static CURLcode glob_range(URLGlob *glob, char **patternp,
       char *endp;
       unsigned long lstep;
       errno = 0;
-      lstep = strtoul(&pattern[3], &endp, 10);
+      lstep = strtoul(&pattern[4], &endp, 10);
       if(errno || (*endp != ']'))
         step = -1;
       else {
@@ -212,7 +212,7 @@ static CURLcode glob_range(URLGlob *glob, char **patternp,
     *posp += (pattern - *patternp);
 
     if((rc != 2) || (min_c >= max_c) || ((max_c - min_c) > ('z' - 'a')) ||
-       (step < 0) )
+       (step <= 0) )
       /* the pattern is not well-formed */
       return GLOBERROR("bad range", *posp, CURLE_URL_MALFORMAT);
 
@@ -222,7 +222,8 @@ static CURLcode glob_range(URLGlob *glob, char **patternp,
     pat->content.CharRange.max_c = max_c;
 
     if(multiply(amount, (pat->content.CharRange.max_c -
-                         pat->content.CharRange.min_c + 1)))
+                          pat->content.CharRange.min_c) /
+                         pat->content.CharRange.step + 1) )
       return GLOBERROR("range overflow", *posp, CURLE_URL_MALFORMAT);
   }
   else if(ISDIGIT(*pattern)) {
@@ -276,7 +277,8 @@ static CURLcode glob_range(URLGlob *glob, char **patternp,
 
     *posp += (pattern - *patternp);
 
-    if(!endp || (min_n > max_n) || (step_n > (max_n - min_n)))
+    if(!endp || (min_n > max_n) || (step_n > (max_n - min_n)) ||
+       (step_n <= 0) )
       /* the pattern is not well-formed */
       return GLOBERROR("bad range", *posp, CURLE_URL_MALFORMAT);
 
@@ -287,7 +289,8 @@ static CURLcode glob_range(URLGlob *glob, char **patternp,
     pat->content.NumRange.step = step_n;
 
     if(multiply(amount, (pat->content.NumRange.max_n -
-                         pat->content.NumRange.min_n + 1)))
+                         pat->content.NumRange.min_n) /
+                        pat->content.NumRange.step + 1) )
       return GLOBERROR("range overflow", *posp, CURLE_URL_MALFORMAT);
   }
   else
@@ -666,4 +669,3 @@ CURLcode glob_match_url(char **result, char *filename, URLGlob *glob)
   *result = target;
   return CURLE_OK;
 }
-

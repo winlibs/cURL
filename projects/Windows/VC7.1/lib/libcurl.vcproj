@@ -23,7 +23,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32,..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_SSLEAY;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -81,7 +81,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;USE_SSLEAY;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -140,7 +140,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -198,7 +198,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_SSLEAY;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -245,7 +245,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32,..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_SSLEAY;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -349,7 +349,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32,..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_SSLEAY;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -396,7 +396,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -443,7 +443,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_SSLEAY;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -547,7 +547,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -652,7 +652,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_SSLEAY;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;USE_OPENSSL"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -710,7 +710,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_SSLEAY;USE_OPENSSL"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -804,7 +804,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32,..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_SSLEAY;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -851,7 +851,7 @@
 				AdditionalOptions="/EHsc "
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32,..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_SSLEAY;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="NDEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -898,7 +898,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;CURL_STATICLIB"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -945,7 +945,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32,..\..\..\..\..\libssh2\include"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;USE_SSLEAY;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_OPENSSL;USE_LIBSSH2;HAVE_LIBSSH2_H"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -1004,7 +1004,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib,..\..\..\..\..\openssl\inc32"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_SSLEAY;USE_OPENSSL"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_OPENSSL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -1051,7 +1051,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -1166,7 +1166,7 @@
 				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="$(ProgramFiles)\Microsoft Platform SDK\Include,..\..\..\..\include,..\..\..\..\lib"
-				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
+				PreprocessorDefinitions="_DEBUG;BUILDING_LIBCURL;DEBUGBUILD;CURL_STATICLIB;USE_WINDOWS_SSPI;USE_SCHANNEL;USE_WIN32_IDN;WANT_IDN_PROTOTYPES"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				WarningLevel="3"
@@ -1284,6 +1284,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_addrinfo.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_des.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_endian.c">
@@ -1605,6 +1608,9 @@
 				RelativePath="..\..\..\..\lib\curl_base64.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_des.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_endian.h">
 			</File>
 			<File
@@ -1648,6 +1654,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_ntlm_wb.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_printf.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_rtmp.h">
@@ -1886,13 +1895,10 @@
 					RelativePath="..\..\..\..\lib\vtls\axtls.c">
 				</File>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\curl_darwinssl.c">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\curl_schannel.c">
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\cyassl.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\darwinssl.c">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\gskit.c">
@@ -1913,6 +1919,9 @@
 					RelativePath="..\..\..\..\lib\vtls\polarssl_threadlock.c">
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\schannel.c">
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.c">
 				</File>
 			</Filter>
@@ -1923,13 +1932,10 @@
 					RelativePath="..\..\..\..\lib\vtls\axtls.h">
 				</File>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\curl_darwinssl.h">
-				</File>
-				<File
-					RelativePath="..\..\..\..\lib\vtls\curl_schannel.h">
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\cyassl.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\darwinssl.h">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\gskit.h">
@@ -1948,6 +1954,9 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\polarssl_threadlock.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\schannel.h">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.h">

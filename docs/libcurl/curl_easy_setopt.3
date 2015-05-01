@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -145,6 +145,8 @@ Fail on HTTP 4xx errors. \fICURLOPT_FAILONERROR(3)\fP
 .SH NETWORK OPTIONS
 .IP CURLOPT_URL
 URL to work on. See \fICURLOPT_URL(3)\fP
+.IP CURLOPT_PATH_AS_IS
+Disable squashing /../ and /./ sequences in the path. See \fICURLOPT_PATH_AS_IS(3)\fP
 .IP CURLOPT_PROTOCOLS
 Allowed protocols. See \fICURLOPT_PROTOCOLS(3)\fP
 .IP CURLOPT_REDIR_PROTOCOLS
@@ -214,6 +216,8 @@ HTTP server authentication methods. See \fICURLOPT_HTTPAUTH(3)\fP
 TLS authentication user name. See \fICURLOPT_TLSAUTH_USERNAME(3)\fP
 .IP CURLOPT_TLSAUTH_PASSWORD
 TLS authentication password. See \fICURLOPT_TLSAUTH_PASSWORD(3)\fP
+.IP CURLOPT_TLSAUTH_TYPE
+TLS authentication methods. See \fICURLOPT_TLSAUTH_TYPE(3)\fP
 .IP CURLOPT_PROXYAUTH
 HTTP proxy authentication methods. See \fICURLOPT_PROXYAUTH(3)\fP
 .IP CURLOPT_SASL_IR
@@ -411,6 +415,8 @@ Bind name resolves to this interface. See \fICURLOPT_DNS_INTERFACE(3)\fP
 Bind name resolves to this IP4 address. See \fICURLOPT_DNS_LOCAL_IP4(3)\fP
 .IP CURLOPT_DNS_LOCAL_IP6
 Bind name resolves to this IP6 address. See \fICURLOPT_DNS_LOCAL_IP6(3)\fP
+.IP CURLOPT_DNS_SERVERS
+Preferred DNS servers. See \fICURLOPT_DNS_SERVERS(3)\fP
 .IP CURLOPT_ACCEPTTIMEOUT_MS
 Timeout for waiting for the server's connect back to be accepted. See \fICURLOPT_ACCEPTTIMEOUT_MS(3)\fP
 .SH SSL and SECURITY OPTIONS
@@ -432,10 +438,16 @@ Enable use of NPN. See \fICURLOPT_SSL_ENABLE_NPN(3)\fP
 Use identifier with SSL engine. See \fICURLOPT_SSLENGINE(3)\fP
 .IP CURLOPT_SSLENGINE_DEFAULT
 Default SSL engine. See \fICURLOPT_SSLENGINE_DEFAULT(3)\fP
+.IP CURLOPT_SSL_FALSESTART
+Enable TLS False Start. See \fICURLOPT_SSL_FALSESTART(3)\fP
 .IP CURLOPT_SSLVERSION
 SSL version to use. See \fICURLOPT_SSLVERSION(3)\fP
+.IP CURLOPT_SSL_VERIFYHOST
+Verify the host name in the SSL certificate. See \fICURLOPT_SSL_VERIFYHOST(3)\fP
 .IP CURLOPT_SSL_VERIFYPEER
 Verify the SSL certificate. See \fICURLOPT_SSL_VERIFYPEER(3)\fP
+.IP CURLOPT_SSL_VERIFYSTATUS
+Verify the SSL certificate's status. See \fICURLOPT_SSL_VERIFYSTATUS(3)\fP
 .IP CURLOPT_CAINFO
 CA cert bundle. See \fICURLOPT_CAINFO(3)\fP
 .IP CURLOPT_ISSUERCERT
@@ -444,8 +456,6 @@ Issuer certificate. See \fICURLOPT_ISSUERCERT(3)\fP
 Path to CA cert bundle. See \fICURLOPT_CAPATH(3)\fP
 .IP CURLOPT_CRLFILE
 Certificate Revocation List. See \fICURLOPT_CRLFILE(3)\fP
-.IP CURLOPT_SSL_VERIFYHOST
-Verify the host name in the SSL certificate. See \fICURLOPT_SSL_VERIFYHOST(3)\fP
 .IP CURLOPT_CERTINFO
 Extract certificate info. See \fICURLOPT_CERTINFO(3)\fP
 .IP CURLOPT_PINNEDPUBLICKEY

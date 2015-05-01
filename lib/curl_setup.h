@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -189,6 +189,9 @@
 #  endif
 #  ifndef CURL_DISABLE_GOPHER
 #    define CURL_DISABLE_GOPHER
+#  endif
+#  ifndef CURL_DISABLE_SMB
+#    define CURL_DISABLE_SMB
 #  endif
 #endif
 
@@ -601,7 +604,7 @@ int netware_init(void);
 
 #define LIBIDN_REQUIRED_VERSION "0.4.1"
 
-#if defined(USE_GNUTLS) || defined(USE_SSLEAY) || defined(USE_NSS) || \
+#if defined(USE_GNUTLS) || defined(USE_OPENSSL) || defined(USE_NSS) || \
     defined(USE_POLARSSL) || defined(USE_AXTLS) || \
     defined(USE_CYASSL) || defined(USE_SCHANNEL) || \
     defined(USE_DARWINSSL) || defined(USE_GSKIT)
@@ -622,10 +625,15 @@ int netware_init(void);
 
 /* Single point where USE_NTLM definition might be defined */
 #if !defined(CURL_DISABLE_NTLM) && !defined(CURL_DISABLE_CRYPTO_AUTH)
-#if defined(USE_SSLEAY) || defined(USE_WINDOWS_SSPI) || \
+#if defined(USE_OPENSSL) || defined(USE_WINDOWS_SSPI) || \
     defined(USE_GNUTLS) || defined(USE_NSS) || defined(USE_DARWINSSL) || \
     defined(USE_OS400CRYPTO) || defined(USE_WIN32_CRYPTO)
+
+#ifdef HAVE_BORINGSSL /* BoringSSL is not NTLM capable */
+#undef USE_NTLM
+#else
 #define USE_NTLM
+#endif
 #endif
 #endif
 

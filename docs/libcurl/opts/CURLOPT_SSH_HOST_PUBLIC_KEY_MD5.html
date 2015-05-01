@@ -4,15 +4,20 @@
 <title>CURLOPT_SSH_HOST_PUBLIC_KEY_MD5 man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,11 +52,12 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_SSH_HOST_PUBLIC_KEY_MD5 - checksum of SSH server public key <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0"><pre>
-<p class="level0">#include &lt;curl/curl.h&gt;
- <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSH_HOST_PUBLIC_KEY_MD5,
- &nbsp;                         char *md5);
- </pre>
+<p class="level0"><pre class="level0">
+&#35;include &lt;curl/curl.h&gt;
+
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSH_HOST_PUBLIC_KEY_MD5,
+&nbsp;                         char *md5);
+</pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a char * pointing to a string containing 32 hexadecimal digits. The string should be the 128 bit MD5 checksum of the remote host's public key, and libcurl will reject the connection to the host unless the md5sums match. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">NULL <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>

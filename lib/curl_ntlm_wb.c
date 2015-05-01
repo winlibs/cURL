@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -51,12 +51,10 @@
 #include "curl_ntlm_wb.h"
 #include "url.h"
 #include "strerror.h"
+#include "curl_printf.h"
+
+/* The last #include files should be: */
 #include "curl_memory.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
-/* The last #include file should be: */
 #include "memdebug.h"
 
 #if DEBUG_ME
@@ -107,9 +105,9 @@ void Curl_ntlm_wb_cleanup(struct connectdata *conn)
     conn->ntlm_auth_hlpr_pid = 0;
   }
 
-  Curl_safefree(conn->challenge_header);
+  free(conn->challenge_header);
   conn->challenge_header = NULL;
-  Curl_safefree(conn->response_header);
+  free(conn->response_header);
   conn->response_header = NULL;
 }
 
@@ -246,13 +244,13 @@ static CURLcode ntlm_wb_init(struct connectdata *conn, const char *userp)
   sclose(sockfds[1]);
   conn->ntlm_auth_hlpr_socket = sockfds[0];
   conn->ntlm_auth_hlpr_pid = child_pid;
-  Curl_safefree(domain);
-  Curl_safefree(ntlm_auth_alloc);
+  free(domain);
+  free(ntlm_auth_alloc);
   return CURLE_OK;
 
 done:
-  Curl_safefree(domain);
-  Curl_safefree(ntlm_auth_alloc);
+  free(domain);
+  free(ntlm_auth_alloc);
   return CURLE_REMOTE_ACCESS_DENIED;
 }
 
@@ -391,12 +389,12 @@ CURLcode Curl_output_ntlm_wb(struct connectdata *conn,
     if(res)
       return res;
 
-    Curl_safefree(*allocuserpwd);
+    free(*allocuserpwd);
     *allocuserpwd = aprintf("%sAuthorization: %s\r\n",
                             proxy ? "Proxy-" : "",
                             conn->response_header);
     DEBUG_OUT(fprintf(stderr, "**** Header %s\n ", *allocuserpwd));
-    Curl_safefree(conn->response_header);
+    free(conn->response_header);
     conn->response_header = NULL;
     break;
   case NTLMSTATE_TYPE2:
@@ -409,7 +407,7 @@ CURLcode Curl_output_ntlm_wb(struct connectdata *conn,
     if(res)
       return res;
 
-    Curl_safefree(*allocuserpwd);
+    free(*allocuserpwd);
     *allocuserpwd = aprintf("%sAuthorization: %s\r\n",
                             proxy ? "Proxy-" : "",
                             conn->response_header);
@@ -421,10 +419,8 @@ CURLcode Curl_output_ntlm_wb(struct connectdata *conn,
   case NTLMSTATE_TYPE3:
     /* connection is already authenticated,
      * don't send a header in future requests */
-    if(*allocuserpwd) {
-      free(*allocuserpwd);
-      *allocuserpwd=NULL;
-    }
+    free(*allocuserpwd);
+    *allocuserpwd=NULL;
     authp->done = TRUE;
     break;
   }

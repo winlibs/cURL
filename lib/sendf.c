@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -31,14 +31,11 @@
 #include "ssh.h"
 #include "multiif.h"
 #include "non-ascii.h"
-
-#define _MPRINTF_REPLACE /* use the internal *printf() functions */
-#include <curl/mprintf.h>
-
-#include "curl_memory.h"
+#include "curl_printf.h"
 #include "strerror.h"
 
-/* The last #include file should be: */
+/* The last #include files should be: */
+#include "curl_memory.h"
 #include "memdebug.h"
 
 #ifdef CURL_DO_LINEEND_CONV
@@ -55,7 +52,7 @@ static size_t convert_lineends(struct SessionHandle *data,
 
   /* sanity check */
   if((startPtr == NULL) || (size < 1)) {
-    return(size);
+    return size;
   }
 
   if(data->state.prev_block_had_trailing_cr) {
@@ -117,9 +114,9 @@ static size_t convert_lineends(struct SessionHandle *data,
       /* tidy up by null terminating the now shorter data */
       *outPtr = '\0';
 
-    return(outPtr - startPtr);
+    return (outPtr - startPtr);
   }
-  return(size);
+  return size;
 }
 #endif /* CURL_DO_LINEEND_CONV */
 

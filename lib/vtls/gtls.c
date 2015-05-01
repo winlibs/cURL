@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -53,9 +53,8 @@
 #include "select.h"
 #include "rawstr.h"
 #include "warnless.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
+#include "x509asn1.h"
+#include "curl_printf.h"
 #include "curl_memory.h"
 /* The last #include file should be: */
 #include "memdebug.h"
@@ -92,12 +91,21 @@ static bool gtls_inited = FALSE;
 #    define GNUTLS_MAPS_WINSOCK_ERRORS 1
 #  endif
 
-#  ifdef USE_NGHTTP2
-#    undef HAS_ALPN
-#    if (GNUTLS_VERSION_NUMBER >= 0x030200)
-#      define HAS_ALPN
-#    endif
+#  if (GNUTLS_VERSION_NUMBER >= 0x030200)
+#    define HAS_ALPN
 #  endif
+
+#  if (GNUTLS_VERSION_NUMBER >= 0x03020d)
+#    define HAS_OCSP
+#  endif
+
+#  if (GNUTLS_VERSION_NUMBER >= 0x030306)
+#    define HAS_CAPATH
+#  endif
+#endif
+
+#ifdef HAS_OCSP
+# include <gnutls/ocsp.h>
 #endif
 
 /*
@@ -204,7 +212,7 @@ static void showtime(struct SessionHandle *data,
 
   snprintf(data->state.buffer,
            BUFSIZE,
-           "\t %s: %s, %02d %s %4d %02d:%02d:%02d GMT\n",
+           "\t %s: %s, %02d %s %4d %02d:%02d:%02d GMT",
            text,
            Curl_wkday[tm->tm_wday?tm->tm_wday-1:6],
            tm->tm_mday,
@@ -392,10 +400,6 @@ gtls_connect_step1(struct connectdata *conn,
   const char* prioritylist;
   const char *err = NULL;
 #endif
-#ifdef HAS_ALPN
-  int protocols_size = 2;
-  gnutls_datum_t protocols[2];
-#endif
 
   if(conn->ssl[sockindex].state == ssl_connection_complete)
     /* to make us tolerant against being called more than once for the
@@ -462,6 +466,24 @@ gtls_connect_step1(struct connectdata *conn,
       infof(data, "found %d certificates in %s\n",
             rc, data->set.ssl.CAfile);
   }
+
+#ifdef HAS_CAPATH
+  if(data->set.ssl.CApath) {
+    /* set the trusted CA cert directory */
+    rc = gnutls_certificate_set_x509_trust_dir(conn->ssl[sockindex].cred,
+                                                data->set.ssl.CApath,
+                                                GNUTLS_X509_FMT_PEM);
+    if(rc < 0) {
+      infof(data, "error reading ca cert file %s (%s)\n",
+            data->set.ssl.CAfile, gnutls_strerror(rc));
+      if(data->set.ssl.verifypeer)
+        return CURLE_SSL_CACERT_BADFILE;
+    }
+    else
+      infof(data, "found %d certificates in %s\n",
+            rc, data->set.ssl.CApath);
+  }
+#endif
 
   if(data->set.ssl.CRLfile) {
     /* set the CRL list file */
@@ -609,20 +631,25 @@ gtls_connect_step1(struct connectdata *conn,
 #endif
 
 #ifdef HAS_ALPN
-  if(data->set.httpversion == CURL_HTTP_VERSION_2_0) {
-    if(data->set.ssl_enable_alpn) {
-      protocols[0].data = NGHTTP2_PROTO_VERSION_ID;
-      protocols[0].size = NGHTTP2_PROTO_VERSION_ID_LEN;
-      protocols[1].data = ALPN_HTTP_1_1;
-      protocols[1].size = ALPN_HTTP_1_1_LENGTH;
-      gnutls_alpn_set_protocols(session, protocols, protocols_size, 0);
-      infof(data, "ALPN, offering %s, %s\n", NGHTTP2_PROTO_VERSION_ID,
-            ALPN_HTTP_1_1);
-      connssl->asked_for_h2 = TRUE;
+  if(data->set.ssl_enable_alpn) {
+    int cur = 0;
+    gnutls_datum_t protocols[2];
+
+#ifdef USE_NGHTTP2
+    if(data->set.httpversion == CURL_HTTP_VERSION_2_0) {
+      protocols[cur].data = (unsigned char *)NGHTTP2_PROTO_VERSION_ID;
+      protocols[cur].size = NGHTTP2_PROTO_VERSION_ID_LEN;
+      cur++;
+      infof(data, "ALPN, offering %s\n", NGHTTP2_PROTO_VERSION_ID);
     }
-    else {
-      infof(data, "SSL, can't negotiate HTTP/2.0 without ALPN\n");
-    }
+#endif
+
+    protocols[cur].data = (unsigned char *)ALPN_HTTP_1_1;
+    protocols[cur].size = ALPN_HTTP_1_1_LENGTH;
+    cur++;
+    infof(data, "ALPN, offering %s\n", ALPN_HTTP_1_1);
+
+    gnutls_alpn_set_protocols(session, protocols, cur, 0);
   }
 #endif
 
@@ -644,13 +671,21 @@ gtls_connect_step1(struct connectdata *conn,
   if(data->set.ssl.authtype == CURL_TLSAUTH_SRP) {
     rc = gnutls_credentials_set(session, GNUTLS_CRD_SRP,
                                 conn->ssl[sockindex].srp_client_cred);
-    if(rc != GNUTLS_E_SUCCESS)
+    if(rc != GNUTLS_E_SUCCESS) {
       failf(data, "gnutls_credentials_set() failed: %s", gnutls_strerror(rc));
+      return CURLE_SSL_CONNECT_ERROR;
+    }
   }
   else
 #endif
+  {
     rc = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
                                 conn->ssl[sockindex].cred);
+    if(rc != GNUTLS_E_SUCCESS) {
+      failf(data, "gnutls_credentials_set() failed: %s", gnutls_strerror(rc));
+      return CURLE_SSL_CONNECT_ERROR;
+    }
+  }
 
   /* set the connection handle (file descriptor for the socket) */
   gnutls_transport_set_ptr(session,
@@ -662,6 +697,16 @@ gtls_connect_step1(struct connectdata *conn,
 
   /* lowat must be set to zero when using custom push and pull functions. */
   gnutls_transport_set_lowat(session, 0);
+
+#ifdef HAS_OCSP
+  if(data->set.ssl.verifystatus) {
+    rc = gnutls_ocsp_status_request_enable_client(session, NULL, 0, NULL);
+    if(rc != GNUTLS_E_SUCCESS) {
+      failf(data, "gnutls_ocsp_status_request_enable_client() failed: %d", rc);
+      return CURLE_SSL_CONNECT_ERROR;
+    }
+  }
+#endif
 
   /* This might be a reconnect, so we check for a session ID in the cache
      to speed up things */
@@ -742,8 +787,8 @@ gtls_connect_step3(struct connectdata *conn,
 {
   unsigned int cert_list_size;
   const gnutls_datum_t *chainp;
-  unsigned int verify_status;
-  gnutls_x509_crt_t x509_cert,x509_issuer;
+  unsigned int verify_status = 0;
+  gnutls_x509_crt_t x509_cert, x509_issuer;
   gnutls_datum_t issuerp;
   char certbuf[256] = ""; /* big enough? */
   size_t size;
@@ -760,6 +805,16 @@ gtls_connect_step3(struct connectdata *conn,
   gnutls_datum_t proto;
 #endif
   CURLcode result = CURLE_OK;
+
+  gnutls_protocol_t version = gnutls_protocol_get_version(session);
+
+  /* the name of the cipher suite used, e.g. ECDHE_RSA_AES_256_GCM_SHA384. */
+  ptr = gnutls_cipher_suite_get_name(gnutls_kx_get(session),
+                                     gnutls_cipher_get(session),
+                                     gnutls_mac_get(session));
+
+  infof(data, "SSL connection using %s / %s\n",
+        gnutls_protocol_get_name(version), ptr);
 
   /* This function will return the peer's raw certificate (chain) as sent by
      the peer. These certificates are in raw format (DER encoded for
@@ -789,6 +844,23 @@ gtls_connect_step3(struct connectdata *conn,
 #endif
     }
     infof(data, "\t common name: WARNING couldn't obtain\n");
+  }
+
+  if(data->set.ssl.certinfo && chainp) {
+    unsigned int i;
+
+    result = Curl_ssl_init_certinfo(data, cert_list_size);
+    if(result)
+      return result;
+
+    for(i = 0; i < cert_list_size; i++) {
+      const char *beg = (const char *) chainp[i].data;
+      const char *end = beg + chainp[i].size;
+
+      result = Curl_extract_certinfo(conn, i, beg, end);
+      if(result)
+        return result;
+    }
   }
 
   if(data->set.ssl.verifypeer) {
@@ -822,6 +894,23 @@ gtls_connect_step3(struct connectdata *conn,
   else
     infof(data, "\t server certificate verification SKIPPED\n");
 
+#ifdef HAS_OCSP
+  if(data->set.ssl.verifystatus) {
+    if(gnutls_ocsp_status_request_is_checked(session, 0) == 0) {
+      if(verify_status & GNUTLS_CERT_REVOKED)
+        infof(data, "\t server certificate was REVOKED\n");
+      else
+        infof(data, "\t server certificate status verification FAILED\n");
+
+      return CURLE_SSL_INVALIDCERTSTATUS;
+    }
+    else
+      infof(data, "\t server certificate status verification OK\n");
+  }
+  else
+    infof(data, "\t server certificate status verification SKIPPED\n");
+#endif
+
   /* initialize an X.509 certificate structure. */
   gnutls_x509_crt_init(&x509_cert);
 
@@ -834,7 +923,7 @@ gtls_connect_step3(struct connectdata *conn,
     gnutls_x509_crt_init(&x509_issuer);
     issuerp = load_file(data->set.ssl.issuercert);
     gnutls_x509_crt_import(x509_issuer, &issuerp, GNUTLS_X509_FMT_PEM);
-    rc = gnutls_x509_crt_check_issuer(x509_cert,x509_issuer);
+    rc = gnutls_x509_crt_check_issuer(x509_cert, x509_issuer);
     gnutls_x509_crt_deinit(x509_issuer);
     unload_file(issuerp);
     if(rc <= 0) {
@@ -843,7 +932,7 @@ gtls_connect_step3(struct connectdata *conn,
       gnutls_x509_crt_deinit(x509_cert);
       return CURLE_SSL_ISSUER_ERROR;
     }
-    infof(data,"\t server certificate issuer check OK (Issuer Cert: %s)\n",
+    infof(data, "\t server certificate issuer check OK (Issuer Cert: %s)\n",
           data->set.ssl.issuercert?data->set.ssl.issuercert:"none");
   }
 
@@ -983,7 +1072,6 @@ gtls_connect_step3(struct connectdata *conn,
 
   /* Show:
 
-  - ciphers used
   - subject
   - start date
   - expire date
@@ -1023,14 +1111,6 @@ gtls_connect_step3(struct connectdata *conn,
   /* the *_get_name() says "NULL" if GNUTLS_COMP_NULL is returned */
   infof(data, "\t compression: %s\n", ptr);
 
-  /* the name of the cipher used. ie 3DES. */
-  ptr = gnutls_cipher_get_name(gnutls_cipher_get(session));
-  infof(data, "\t cipher: %s\n", ptr);
-
-  /* the MAC algorithms name. ie SHA1 */
-  ptr = gnutls_mac_get_name(gnutls_mac_get(session));
-  infof(data, "\t MAC: %s\n", ptr);
-
 #ifdef HAS_ALPN
   if(data->set.ssl_enable_alpn) {
     rc = gnutls_alpn_get_selected_protocol(session, &proto);
@@ -1038,19 +1118,21 @@ gtls_connect_step3(struct connectdata *conn,
       infof(data, "ALPN, server accepted to use %.*s\n", proto.size,
           proto.data);
 
+#ifdef USE_NGHTTP2
       if(proto.size == NGHTTP2_PROTO_VERSION_ID_LEN &&
-        memcmp(NGHTTP2_PROTO_VERSION_ID, proto.data,
-        NGHTTP2_PROTO_VERSION_ID_LEN) == 0) {
-        conn->negnpn = NPN_HTTP2;
+         !memcmp(NGHTTP2_PROTO_VERSION_ID, proto.data,
+                 NGHTTP2_PROTO_VERSION_ID_LEN)) {
+        conn->negnpn = CURL_HTTP_VERSION_2_0;
       }
-      else if(proto.size == ALPN_HTTP_1_1_LENGTH && memcmp(ALPN_HTTP_1_1,
-          proto.data, ALPN_HTTP_1_1_LENGTH) == 0) {
-        conn->negnpn = NPN_HTTP1_1;
+      else
+#endif
+      if(proto.size == ALPN_HTTP_1_1_LENGTH &&
+         !memcmp(ALPN_HTTP_1_1, proto.data, ALPN_HTTP_1_1_LENGTH)) {
+        conn->negnpn = CURL_HTTP_VERSION_1_1;
       }
     }
-    else if(connssl->asked_for_h2) {
+    else
       infof(data, "ALPN, server did not agree to a protocol\n");
-    }
   }
 #endif
 
@@ -1180,12 +1262,6 @@ static ssize_t gtls_send(struct connectdata *conn,
   }
 
   return rc;
-}
-
-void Curl_gtls_close_all(struct SessionHandle *data)
-{
-  /* FIX: make the OpenSSL code more generic and use parts of it here */
-  (void)data;
 }
 
 static void close_one(struct connectdata *conn,
@@ -1389,6 +1465,15 @@ void Curl_gtls_md5sum(unsigned char *tmp, /* input */
   gcry_md_write(MD5pw, tmp, tmplen);
   memcpy(md5sum, gcry_md_read (MD5pw, 0), md5len);
   gcry_md_close(MD5pw);
+#endif
+}
+
+bool Curl_gtls_cert_status_request(void)
+{
+#ifdef HAS_OCSP
+  return TRUE;
+#else
+  return FALSE;
 #endif
 }
 

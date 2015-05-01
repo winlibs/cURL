@@ -4,15 +4,20 @@
 <title>CURLOPT_WRITEFUNCTION man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,11 +52,13 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_WRITEFUNCTION - set callback for writing received data <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0"><pre>
-<p class="level0">#include &lt;curl/curl.h&gt;
- <p class="level0">size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
- <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_WRITEFUNCTION, write_callback);
- </pre>
+<p class="level0"><pre class="level0">
+&#35;include &lt;curl/curl.h&gt;
+
+size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
+
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_WRITEFUNCTION, write_callback);
+</pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a pointer to your callback function, which should match the prototype shown above. 
 <p class="level0">This callback function gets called by libcurl as soon as there is data received that needs to be saved.  <span Class="emphasis">ptr</span> points to the delivered data, and the size of that data is <span Class="emphasis">size</span> multiplied with <span Class="emphasis">nmemb</span>. 

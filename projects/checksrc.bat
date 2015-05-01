@@ -6,7 +6,7 @@ rem *                             / __| | | | |_) | |
 rem *                            | (__| |_| |  _ <| |___
 rem *                             \___|\___/|_| \_\_____|
 rem *
-rem * Copyright (C) 2014, Steve Holme, <steve_holme@hotmail.com>.
+rem * Copyright (C) 2014 - 2015, Steve Holme, <steve_holme@hotmail.com>.
 rem *
 rem * This software is licensed as described in the file COPYING, which
 rem * you should have received as part of this distribution. The terms
@@ -33,8 +33,11 @@ rem ***************************************************************************
 
 :prerequisites
   rem Check we have Perl installed
-  if not exist "C:\Perl" (
-    if not exist "C:\Perl64" goto noperl
+  echo %PATH% | findstr /I /C:"\Perl" 1>nul
+  if errorlevel 1 (
+    if not exist "%SystemDrive%\Perl" (
+      if not exist "%SystemDrive%\Perl64" goto noperl
+    )
   )
 
 :configure
@@ -43,10 +46,12 @@ rem ***************************************************************************
   if not exist "%SRC_DIR%" goto nosrc
 
 :start
-  for /f "delims=" %%i in ('dir %SRC_DIR%\src\*.c.* /b') do @perl %SRC_DIR%\lib\checksrc.pl -D%SRC_DIR%\src "%%i"
-  for /f "delims=" %%i in ('dir %SRC_DIR%\src\*.h.* /b') do @perl %SRC_DIR%\lib\checksrc.pl -D%SRC_DIR%\src "%%i"
-  for /f "delims=" %%i in ('dir %SRC_DIR%\lib\*.c.* /b') do @perl %SRC_DIR%\lib\checksrc.pl -D%SRC_DIR%\lib "%%i"
-  for /f "delims=" %%i in ('dir %SRC_DIR%\lib\*.h.* /b') do @perl %SRC_DIR%\lib\checksrc.pl -D%SRC_DIR%\lib -Wcurl_config.h.cmake "%%i"
+  for /f "delims=" %%i in ('dir "%SRC_DIR%\src\*.c.*" /b') do @perl "%SRC_DIR%\lib\checksrc.pl" "-D%SRC_DIR%\src" -Wtool_hugehelp.c "%%i"
+  for /f "delims=" %%i in ('dir "%SRC_DIR%\src\*.h.*" /b') do @perl "%SRC_DIR%\lib\checksrc.pl" "-D%SRC_DIR%\src" "%%i"
+  for /f "delims=" %%i in ('dir "%SRC_DIR%\lib\*.c.*" /b') do @perl "%SRC_DIR%\lib\checksrc.pl" "-D%SRC_DIR%\lib" "%%i"
+  for /f "delims=" %%i in ('dir "%SRC_DIR%\lib\*.h.*" /b') do @perl "%SRC_DIR%\lib\checksrc.pl" "-D%SRC_DIR%\lib" -Wcurl_config.h.cmake "%%i"
+  for /f "delims=" %%i in ('dir "%SRC_DIR%\lib\vtls\*.c.*" /b') do @perl "%SRC_DIR%\lib\checksrc.pl" "-D%SRC_DIR%\lib\vtls" "%%i"
+  for /f "delims=" %%i in ('dir "%SRC_DIR%\lib\vtls\*.h.*" /b') do @perl "%SRC_DIR%\lib\checksrc.pl" "-D%SRC_DIR%\lib\vtls" "%%i"
   goto success
 
 :syntax

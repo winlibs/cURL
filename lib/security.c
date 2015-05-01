@@ -7,10 +7,10 @@
  * rewrite to work around the paragraph 2 in the BSD licenses as explained
  * below.
  *
- * Copyright (c) 1998, 1999, 2013 Kungliga Tekniska Högskolan
+ * Copyright (c) 1998, 1999 Kungliga Tekniska Högskolan
  * (Royal Institute of Technology, Stockholm, Sweden).
  *
- * Copyright (C) 2001 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2001 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * All rights reserved.
  *
@@ -121,7 +121,7 @@ static const struct Curl_sec_client_mech * const mechs[] = {
 static int ftp_send_command(struct connectdata *conn, const char *message, ...)
 {
   int ftp_code;
-  ssize_t nread;
+  ssize_t nread=0;
   va_list args;
   char print_buffer[50];
 
@@ -577,10 +577,8 @@ Curl_sec_end(struct connectdata *conn)
 {
   if(conn->mech != NULL && conn->mech->end)
     conn->mech->end(conn->app_data);
-  if(conn->app_data) {
-    free(conn->app_data);
-    conn->app_data = NULL;
-  }
+  free(conn->app_data);
+  conn->app_data = NULL;
   if(conn->in_buffer.data) {
     free(conn->in_buffer.data);
     conn->in_buffer.data = NULL;

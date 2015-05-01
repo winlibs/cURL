@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -22,14 +22,7 @@
 
 #include "curl_setup.h"
 
-#ifdef HAVE_GSSAPI
-
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_SPNEGO)
-
-#ifdef HAVE_OLD_GSSMIT
-#define GSS_C_NT_HOSTBASED_SERVICE gss_nt_service_name
-#define NCOMPAT 1
-#endif
+#if defined(HAVE_GSSAPI) && !defined(CURL_DISABLE_HTTP) && defined(USE_SPNEGO)
 
 #include "urldata.h"
 #include "sendf.h"
@@ -37,52 +30,24 @@
 #include "rawstr.h"
 #include "curl_base64.h"
 #include "http_negotiate.h"
-#include "curl_memory.h"
+#include "curl_sasl.h"
 #include "url.h"
+#include "curl_printf.h"
 
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
-/* The last #include file should be: */
+/* The last #include files should be: */
+#include "curl_memory.h"
 #include "memdebug.h"
 
-static int
-get_gss_name(struct connectdata *conn, bool proxy, gss_name_t *server)
-{
-  OM_uint32 major_status, minor_status;
-  gss_buffer_desc token = GSS_C_EMPTY_BUFFER;
-  char name[2048];
-  const char* service = "HTTP";
-
-  token.length = strlen(service) + 1 + strlen(proxy ? conn->proxy.name :
-                                              conn->host.name) + 1;
-  if(token.length + 1 > sizeof(name))
-    return EMSGSIZE;
-
-  snprintf(name, sizeof(name), "%s@%s", service, proxy ? conn->proxy.name :
-           conn->host.name);
-
-  token.value = (void *) name;
-  major_status = gss_import_name(&minor_status,
-                                 &token,
-                                 GSS_C_NT_HOSTBASED_SERVICE,
-                                 server);
-
-  return GSS_ERROR(major_status) ? -1 : 0;
-}
-
-/* returning zero (0) means success, everything else is treated as "failure"
-   with no care exactly what the failure was */
-int Curl_input_negotiate(struct connectdata *conn, bool proxy,
-                         const char *header)
+CURLcode Curl_input_negotiate(struct connectdata *conn, bool proxy,
+                              const char *header)
 {
   struct SessionHandle *data = conn->data;
   struct negotiatedata *neg_ctx = proxy?&data->state.proxyneg:
     &data->state.negotiate;
   OM_uint32 major_status, minor_status, discard_st;
+  gss_buffer_desc spn_token = GSS_C_EMPTY_BUFFER;
   gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
   gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
-  int ret;
   size_t len;
   size_t rawlen = 0;
   CURLcode result;
@@ -92,12 +57,34 @@ int Curl_input_negotiate(struct connectdata *conn, bool proxy,
      * rejected it (since we're again here). Exit with an error since we
      * can't invent anything better */
     Curl_cleanup_negotiate(data);
-    return -1;
+    return CURLE_LOGIN_DENIED;
   }
 
-  if(neg_ctx->server_name == NULL &&
-      (ret = get_gss_name(conn, proxy, &neg_ctx->server_name)))
-    return ret;
+  if(!neg_ctx->server_name) {
+    /* Generate our SPN */
+    char *spn = Curl_sasl_build_gssapi_spn("HTTP", proxy ? conn->proxy.name :
+                                                           conn->host.name);
+    if(!spn)
+      return CURLE_OUT_OF_MEMORY;
+
+    /* Populate the SPN structure */
+    spn_token.value = spn;
+    spn_token.length = strlen(spn);
+
+    /* Import the SPN */
+    major_status = gss_import_name(&minor_status, &spn_token,
+                                   GSS_C_NT_HOSTBASED_SERVICE,
+                                   &neg_ctx->server_name);
+    if(GSS_ERROR(major_status)) {
+      Curl_gss_log_error(data, minor_status, "gss_import_name() failed: ");
+
+      free(spn);
+
+      return CURLE_OUT_OF_MEMORY;
+    }
+
+    free(spn);
+  }
 
   header += strlen("Negotiate");
   while(*header && ISSPACE(*header))
@@ -107,8 +94,15 @@ int Curl_input_negotiate(struct connectdata *conn, bool proxy,
   if(len > 0) {
     result = Curl_base64_decode(header, (unsigned char **)&input_token.value,
                                 &rawlen);
-    if(result || rawlen == 0)
-      return -1;
+    if(result)
+      return result;
+
+    if(!rawlen) {
+      infof(data, "Negotiate handshake failure (empty challenge message)\n");
+
+      return CURLE_BAD_CONTENT_ENCODING;
+    }
+
     input_token.length = rawlen;
 
     DEBUGASSERT(input_token.value != NULL);
@@ -132,19 +126,19 @@ int Curl_input_negotiate(struct connectdata *conn, bool proxy,
       gss_release_buffer(&discard_st, &output_token);
     Curl_gss_log_error(conn->data, minor_status,
                        "gss_init_sec_context() failed: ");
-    return -1;
+    return CURLE_OUT_OF_MEMORY;
   }
 
   if(!output_token.value || !output_token.length) {
     if(output_token.value)
       gss_release_buffer(&discard_st, &output_token);
-    return -1;
+    return CURLE_OUT_OF_MEMORY;
   }
 
   neg_ctx->output_token = output_token;
-  return 0;
-}
 
+  return CURLE_OK;
+}
 
 CURLcode Curl_output_negotiate(struct connectdata *conn, bool proxy)
 {
@@ -185,7 +179,7 @@ CURLcode Curl_output_negotiate(struct connectdata *conn, bool proxy)
     conn->allocptr.userpwd = userp;
   }
 
-  Curl_safefree(encoded);
+  free(encoded);
 
   return (userp == NULL) ? CURLE_OUT_OF_MEMORY : CURLE_OK;
 }
@@ -211,6 +205,4 @@ void Curl_cleanup_negotiate(struct SessionHandle *data)
   cleanup(&data->state.proxyneg);
 }
 
-#endif /* !CURL_DISABLE_HTTP && USE_SPNEGO */
-
-#endif /* HAVE_GSSAPI */
+#endif /* HAVE_GSSAPI && !CURL_DISABLE_HTTP && USE_SPNEGO */

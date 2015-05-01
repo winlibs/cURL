@@ -4,15 +4,20 @@
 <title>libcurl-multi man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -76,14 +81,14 @@ p.roffit {
 <p class="level0">When you've added your initial set of handles, you call <a Class="emphasis" href="./curl_multi_socket_action.html">curl_multi_socket_action</a> with CURL_SOCKET_TIMEOUT set in the sockfd argument, and you'll get callbacks call that sets you up and you then continue to call <a Class="emphasis" href="./curl_multi_socket_action.html">curl_multi_socket_action</a> accordingly when you get activity on the sockets you've been asked to wait on, or if the timeout timer expires. 
 <p class="level0">You can poll <a Class="emphasis" href="./curl_multi_info_read.html">curl_multi_info_read</a> to see if any transfer has completed, as it then has a message saying so. <a name="BLOCKING"></a><h2 class="nroffsh">BLOCKING</h2>
 <p class="level0">A few areas in the code are still using blocking code, even when used from the multi interface. While we certainly want and intend for these to get fixed in the future, you should be aware of the following current restrictions: 
-<p class="level0"><pre>
-<p class="level0">&nbsp;- Name resolves unless the c-ares or threaded-resolver backends are used
- &nbsp;- NSS SSL connections
- &nbsp;- HTTP proxy CONNECT operations
- &nbsp;- SOCKS proxy handshakes
- &nbsp;- file:// transfers
- &nbsp;- TELNET transfers
- </pre>
+<p class="level0"><pre class="level0">
+&nbsp;- Name resolves unless the c-ares or threaded-resolver backends are used
+&nbsp;- NSS SSL connections
+&nbsp;- HTTP proxy CONNECT operations
+&nbsp;- SOCKS proxy handshakes
+&nbsp;- file:// transfers
+&nbsp;- TELNET transfers
+</pre>
 
 <p class="level0"><a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
 <p class="level0"><a Class="manpage" href="./libcurl-errors.html">libcurl-errors</a>, <a Class="manpage" href="./libcurl-easy.html">libcurl-easy</a>, <a Class="manpage" href="./libcurl.html">libcurl</a>, <p class="roffit">

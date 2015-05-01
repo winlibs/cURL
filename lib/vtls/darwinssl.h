@@ -8,7 +8,7 @@
  *                             \___|\___/|_| \_\_____|
  *
  * Copyright (C) 2012 - 2014, Nick Zitzmann, <nickzman@gmail.com>.
- * Copyright (C) 2012 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -32,9 +32,6 @@ CURLcode Curl_darwinssl_connect_nonblocking(struct connectdata *conn,
                                             int sockindex,
                                             bool *done);
 
-/* this function doesn't actually do anything */
-void Curl_darwinssl_close_all(struct SessionHandle *data);
-
 /* close a SSL connection */
 void Curl_darwinssl_close(struct connectdata *conn, int sockindex);
 
@@ -51,6 +48,10 @@ void Curl_darwinssl_md5sum(unsigned char *tmp, /* input */
                            size_t tmplen,
                            unsigned char *md5sum, /* output */
                            size_t md5len);
+bool Curl_darwinssl_false_start(void);
+
+/* Set the API backend definition to SecureTransport */
+#define CURL_SSL_BACKEND CURLSSLBACKEND_DARWINSSL
 
 /* API setup for SecureTransport */
 #define curlssl_init() (1)
@@ -58,7 +59,7 @@ void Curl_darwinssl_md5sum(unsigned char *tmp, /* input */
 #define curlssl_connect Curl_darwinssl_connect
 #define curlssl_connect_nonblocking Curl_darwinssl_connect_nonblocking
 #define curlssl_session_free(x) Curl_darwinssl_session_free(x)
-#define curlssl_close_all Curl_darwinssl_close_all
+#define curlssl_close_all(x) ((void)x)
 #define curlssl_close Curl_darwinssl_close
 #define curlssl_shutdown(x,y) 0
 #define curlssl_set_engine(x,y) ((void)x, (void)y, CURLE_NOT_BUILT_IN)
@@ -69,7 +70,7 @@ void Curl_darwinssl_md5sum(unsigned char *tmp, /* input */
 #define curlssl_data_pending(x,y) Curl_darwinssl_data_pending(x, y)
 #define curlssl_random(x,y,z) ((void)x, Curl_darwinssl_random(y,z))
 #define curlssl_md5sum(a,b,c,d) Curl_darwinssl_md5sum(a,b,c,d)
-#define CURL_SSL_BACKEND CURLSSLBACKEND_DARWINSSL
+#define curlssl_false_start() Curl_darwinssl_false_start()
 
 #endif /* USE_DARWINSSL */
 #endif /* HEADER_CURL_DARWINSSL_H */

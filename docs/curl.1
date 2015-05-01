@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -552,6 +552,26 @@ This is currently only implemented in the OpenSSL, GnuTLS and GSKit backends.
 
 If this option is used several times, the last one will be used.
 (Added in 7.39.0)
+.IP "--cert-status"
+(SSL) Tells curl to verify the status of the server certificate by using the
+Certificate Status Request (aka. OCSP stapling) TLS extension.
+
+If this option is enabled and the server sends an invalid (e.g. expired)
+response, if the response suggests that the server certificate has been revoked,
+or no response at all is received, the verification fails.
+
+This is currently only implemented in the OpenSSL, GnuTLS and NSS backends.
+(Added in 7.41.0)
+.IP "--false-start"
+
+(SSL) Tells curl to use false start during the TLS handshake. False start is a
+mode where a TLS client will start sending application data before verifying
+the server's Finished message, thus saving a round trip when performing a full
+handshake.
+
+This is currently only implemented in the NSS and Secure Transport (on iOS 7.0
+or later, or OS X 10.9 or later) backends.
+(Added in 7.42.0)
 .IP "-f, --fail"
 (HTTP) Fail silently (no output at all) on server errors. This is mostly done
 to better enable scripts etc to better deal with failed attempts. In normal
@@ -732,6 +752,12 @@ intended for a proxy.
 Example:
 
 \&# curl -H "X-First-Name: Joe" http://192.168.0.1/
+
+\fBWARNING\fP: headers set with this option will be set in all requests - even
+after redirects are followed, like when told with \fB-L, --location\fP. This
+can lead to the header being sent to other hosts than the original host, so
+sensitive headers should be used with caution combined with following
+redirects.
 
 This option can be used multiple times to add/replace/remove multiple headers.
 .IP "--hostpubmd5 <md5>"
@@ -1209,6 +1235,12 @@ available.
 (SSL/SSH) Passphrase for the private key
 
 If this option is used several times, the last one will be used.
+.IP "--path-as-is"
+Tell curl to not handle sequences of /../ or /./ in the given URL
+path. Normally curl will squash or merge them according to standards but with
+this option set you tell it not to do that.
+
+(Added in 7.42.0)
 .IP "--post301"
 (HTTP) Tells curl to respect RFC 2616/10.3.2 and not convert POST requests
 into GET requests when following a 301 redirection. The non-RFC behaviour is
@@ -1676,7 +1708,7 @@ impossible to use a colon in the user name with this option. The password can,
 still.
 
 When using Kerberos V5 with a Windows based server you should include the
-Windows domain name in the user name, in order for the server to succesfully
+Windows domain name in the user name, in order for the server to successfully
 obtain a Kerberos Ticket. If you don't then the initial authentication
 handshake may fail.
 
@@ -1884,7 +1916,7 @@ password.
 If this option is used several times, the last one will be used.
 .IP "-X, --request <command>"
 (HTTP) Specifies a custom request method to use when communicating with the
-HTTP server.  The specified request will be used instead of the method
+HTTP server.  The specified request method will be used instead of the method
 otherwise used (which defaults to GET). Read the HTTP 1.1 specification for
 details and explanations. Common additional HTTP requests include PUT and
 DELETE, but related technologies like WebDAV offers PROPFIND, COPY, MOVE and
@@ -1897,6 +1929,11 @@ This option only changes the actual word used in the HTTP request, it does not
 alter the way curl behaves. So for example if you want to make a proper HEAD
 request, using -X HEAD will not suffice. You need to use the \fI-I, --head\fP
 option.
+
+The method string you set with -X will be used for all requests, which if you
+for example use \fB-L, --location\fP may cause unintended side-effects when
+curl doesn't change request method according to the HTTP 30x response codes -
+and similar.
 
 (FTP)
 Specifies a custom FTP command to use instead of LIST when doing file lists

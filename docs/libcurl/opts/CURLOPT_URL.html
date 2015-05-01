@@ -4,15 +4,20 @@
 <title>CURLOPT_URL man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,7 +52,7 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_URL - provide the URL to use in the request <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0">#include &lt;curl/curl.h&gt; 
+<p class="level0">&#35;include &lt;curl/curl.h&gt; 
 <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_URL, char *URL); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass in a pointer to the <span Class="emphasis">URL</span> to work with. The parameter should be a char * to a zero terminated string which must be URL-encoded in the following format: 
 <p class="level0">scheme://host:port/path 
@@ -135,16 +140,23 @@ p.roffit {
 <p class="level1">For more information about the individual components of a LDAP URL please see <a href="http://www.ietf.org/rfc/rfc4516.txt">RFC 4516</a>. 
 <p class="level0"><a name="RTMP"></a><span class="nroffip">RTMP</span> 
 <p class="level1">There's no official URL spec for RTMP so libcurl uses the URL syntax supported by the underlying librtmp library. It has a syntax where it wants a traditional URL, followed by a space and a series of space-separated name=value pairs. 
-<p class="level1">While space is not typically a "legal" letter, libcurl accepts them. When a user wants to pass in a '#' (hash) character it will be treated as a fragment and get cut off by libcurl if provided literally. You will instead have to escape it by providing it as backslash and its ASCII value in hexadecimal: "\23". <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
-<p class="level0">There is no default URL. If this option isn't set, no transfer can be performed. <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
+<p class="level1">While space is not typically a "legal" letter, libcurl accepts them. When a user wants to pass in a '&#35;' (hash) character it will be treated as a fragment and get cut off by libcurl if provided literally. You will instead have to escape it by providing it as backslash and its ASCII value in hexadecimal: "\23". <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
+<p class="level0">There is no default URL. If this option isn't set, no transfer can be performed. <a name="SECURITY"></a><h2 class="nroffsh">SECURITY CONCERNS</h2>
+<p class="level0">Applications may at times find it convenient to allow users to specify URLs for various purposes and that string would then end up fed to this option. 
+<p class="level0">Getting a URL from an external untrusted party will bring reasons for several security concerns: 
+<p class="level0">If you have an application that runs as or in a server application, getting an unfiltered URL can easily trick your application to access a local resource instead of a remote. Protecting yourself against localhost accesses is very hard when accepting user provided URLs. 
+<p class="level0">Such custom URLs can also access other ports than you planned as port numbers are part of the regular URL format. The combination of a local host and a custom port number can allow external users to play tricks with your local services. 
+<p class="level0">Accepting external URLs may also use other protocols than http:// or other common ones. Restrict what accept with <a Class="emphasis" href="./CURLOPT_PROTOCOLS.html">CURLOPT_PROTOCOLS</a>. 
+<p class="level0">User provided URLs can also be made to point to sites that redirect further on (possibly to other protocols too). Consider your <a Class="emphasis" href="./CURLOPT_FOLLOWLOCATION.html">CURLOPT_FOLLOWLOCATION</a> and <a Class="emphasis" href="./CURLOPT_REDIR_PROTOCOLS.html">CURLOPT_REDIR_PROTOCOLS</a> settings. <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">All <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0"><pre>
-<p class="level0">CURL *curl = curl_easy_init();
- if(curl) {
- &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
- <p class="level0">&nbsp; curl_easy_perform(curl);
- }
- </pre>
+<p class="level0"><pre class="level0">
+CURL *curl = curl_easy_init();
+if(curl) {
+&nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+
+&nbsp; curl_easy_perform(curl);
+}
+</pre>
 
 <p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">POP3 and SMTP were added in 7.31.0 <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>

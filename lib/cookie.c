@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -84,44 +84,33 @@ Example set of cookies:
 
 #if !defined(CURL_DISABLE_HTTP) && !defined(CURL_DISABLE_COOKIES)
 
-#define _MPRINTF_REPLACE
-#include <curl/mprintf.h>
-
+#include "curl_printf.h"
 #include "urldata.h"
 #include "cookie.h"
 #include "strequal.h"
 #include "strtok.h"
 #include "sendf.h"
 #include "slist.h"
-#include "curl_memory.h"
 #include "share.h"
 #include "strtoofft.h"
 #include "rawstr.h"
 #include "curl_memrchr.h"
 #include "inet_pton.h"
 
-/* The last #include file should be: */
+/* The last #include files should be: */
+#include "curl_memory.h"
 #include "memdebug.h"
 
 static void freecookie(struct Cookie *co)
 {
-  if(co->expirestr)
-    free(co->expirestr);
-  if(co->domain)
-    free(co->domain);
-  if(co->path)
-    free(co->path);
-  if(co->spath)
-    free(co->spath);
-  if(co->name)
-    free(co->name);
-  if(co->value)
-    free(co->value);
-  if(co->maxage)
-    free(co->maxage);
-  if(co->version)
-    free(co->version);
-
+  free(co->expirestr);
+  free(co->domain);
+  free(co->path);
+  free(co->spath);
+  free(co->name);
+  free(co->value);
+  free(co->maxage);
+  free(co->version);
   free(co);
 }
 
@@ -236,11 +225,14 @@ static char *sanitize_cookie_path(const char *cookie_path)
     return NULL;
 
   /* some stupid site sends path attribute with '"'. */
+  len = strlen(new_path);
   if(new_path[0] == '\"') {
-    memmove((void *)new_path, (const void *)(new_path + 1), strlen(new_path));
+    memmove((void *)new_path, (const void *)(new_path + 1), len);
+    len--;
   }
-  if(new_path[strlen(new_path) - 1] == '\"') {
-    new_path[strlen(new_path) - 1] = 0x0;
+  if(len && (new_path[len - 1] == '\"')) {
+    new_path[len - 1] = 0x0;
+    len--;
   }
 
   /* RFC6265 5.2.4 The Path Attribute */
@@ -252,8 +244,7 @@ static char *sanitize_cookie_path(const char *cookie_path)
   }
 
   /* convert /hoge/ to /hoge */
-  len = strlen(new_path);
-  if(1 < len && new_path[len - 1] == '/') {
+  if(len && new_path[len - 1] == '/') {
     new_path[len - 1] = 0x0;
   }
 
@@ -298,8 +289,7 @@ void Curl_cookie_loadfiles(struct SessionHandle *data)
  */
 static void strstore(char **str, const char *newstr)
 {
-  if(*str)
-    free(*str);
+  free(*str);
   *str = strdup(newstr);
 }
 
@@ -419,7 +409,7 @@ Curl_cookie_add(struct SessionHandle *data,
     do {
       /* we have a <what>=<this> pair or a stand-alone word here */
       name[0]=what[0]=0; /* init the buffers */
-      if(1 <= sscanf(ptr, "%" MAX_NAME_TXT "[^;\r\n =]=%"
+      if(1 <= sscanf(ptr, "%" MAX_NAME_TXT "[^;\r\n =] =%"
                      MAX_COOKIE_LINE_TXT "[^;\r\n]",
                      name, what)) {
         /* Use strstore() below to properly deal with received cookie
@@ -834,21 +824,13 @@ Curl_cookie_add(struct SessionHandle *data,
 
         /* then free all the old pointers */
         free(clist->name);
-        if(clist->value)
-          free(clist->value);
-        if(clist->domain)
-          free(clist->domain);
-        if(clist->path)
-          free(clist->path);
-        if(clist->spath)
-          free(clist->spath);
-        if(clist->expirestr)
-          free(clist->expirestr);
-
-        if(clist->version)
-          free(clist->version);
-        if(clist->maxage)
-          free(clist->maxage);
+        free(clist->value);
+        free(clist->domain);
+        free(clist->path);
+        free(clist->spath);
+        free(clist->expirestr);
+        free(clist->version);
+        free(clist->maxage);
 
         *clist = *co;  /* then store all the new data */
 
@@ -969,7 +951,7 @@ struct CookieInfo *Curl_cookie_init(struct SessionHandle *data,
   return c;
 
 fail:
-  Curl_safefree(line);
+  free(line);
   if(!inc)
     /* Only clean up if we allocated it here, as the original could still be in
      * use by a share handle */
@@ -1216,8 +1198,7 @@ void Curl_cookie_clearsess(struct CookieInfo *cookies)
 void Curl_cookie_cleanup(struct CookieInfo *c)
 {
   if(c) {
-    if(c->filename)
-      free(c->filename);
+    free(c->filename);
     Curl_cookie_freelist(c->cookies, TRUE);
     free(c); /* free the base struct as well */
   }

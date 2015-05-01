@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -76,6 +76,24 @@ option(BUILD_CURL_TESTS "Set to ON to build cURL tests." ON)
 option(CURL_STATICLIB "Set to ON to build libcurl with static linking." OFF)
 option(ENABLE_ARES "Set to ON to enable c-ares support" OFF)
 option(ENABLE_THREADED_RESOLVER "Set to ON to enable POSIX threaded DNS lookup" OFF)
+
+option(ENABLE_DEBUG "Set to ON to enable curl debug features" OFF)
+option(ENABLE_CURLDEBUG "Set to ON to build with TrackMemory feature enabled" OFF)
+
+if (ENABLE_DEBUG)
+  # DEBUGBUILD will be defined only for Debug builds
+  if(NOT CMAKE_VERSION VERSION_LESS 3.0)
+    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:Debug>:DEBUGBUILD>)
+  else()
+    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG DEBUGBUILD)
+  endif()
+  set(ENABLE_CURLDEBUG ON)
+endif()
+
+if (ENABLE_CURLDEBUG)
+  set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS CURLDEBUG)
+endif()
+
 # initialize CURL_LIBS
 set(CURL_LIBS "")
 
@@ -238,6 +256,7 @@ include (CheckCSourceCompiles)
 
 # On windows preload settings
 if(WIN32)
+  set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_WINSOCKAPI_")
   include(${CMAKE_CURRENT_SOURCE_DIR}/CMake/Platforms/WindowsCache.cmake)
 endif(WIN32)
 
@@ -279,7 +298,6 @@ endif()
 option(CMAKE_USE_OPENSSL "Use OpenSSL code. Experimental" ON)
 mark_as_advanced(CMAKE_USE_OPENSSL)
 
-set(USE_SSLEAY OFF)
 set(USE_OPENSSL OFF)
 set(HAVE_LIBCRYPTO OFF)
 set(HAVE_LIBSSL OFF)
@@ -288,32 +306,31 @@ if(CMAKE_USE_OPENSSL)
   find_package(OpenSSL)
   if(OPENSSL_FOUND)
     list(APPEND CURL_LIBS ${OPENSSL_LIBRARIES})
-    set(USE_SSLEAY ON)
     set(USE_OPENSSL ON)
     set(HAVE_LIBCRYPTO ON)
     set(HAVE_LIBSSL ON)
     include_directories(${OPENSSL_INCLUDE_DIR})
     set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
-    check_include_file_concat("openssl/crypto.h" HAVE_OPENSSL_CRYPTO_H)
-    check_include_file_concat("openssl/engine.h" HAVE_OPENSSL_ENGINE_H)
-    check_include_file_concat("openssl/err.h"    HAVE_OPENSSL_ERR_H)
-    check_include_file_concat("openssl/pem.h"    HAVE_OPENSSL_PEM_H)
-    check_include_file_concat("openssl/pkcs12.h" HAVE_OPENSSL_PKCS12_H)
-    check_include_file_concat("openssl/rsa.h"    HAVE_OPENSSL_RSA_H)
-    check_include_file_concat("openssl/ssl.h"    HAVE_OPENSSL_SSL_H)
-    check_include_file_concat("openssl/x509.h"   HAVE_OPENSSL_X509_H)
-    check_include_file_concat("openssl/rand.h"   HAVE_OPENSSL_RAND_H)
+    check_include_file("openssl/crypto.h" HAVE_OPENSSL_CRYPTO_H)
+    check_include_file("openssl/engine.h" HAVE_OPENSSL_ENGINE_H)
+    check_include_file("openssl/err.h"    HAVE_OPENSSL_ERR_H)
+    check_include_file("openssl/pem.h"    HAVE_OPENSSL_PEM_H)
+    check_include_file("openssl/pkcs12.h" HAVE_OPENSSL_PKCS12_H)
+    check_include_file("openssl/rsa.h"    HAVE_OPENSSL_RSA_H)
+    check_include_file("openssl/ssl.h"    HAVE_OPENSSL_SSL_H)
+    check_include_file("openssl/x509.h"   HAVE_OPENSSL_X509_H)
+    check_include_file("openssl/rand.h"   HAVE_OPENSSL_RAND_H)
   endif()
 endif()
 
 if(NOT CURL_DISABLE_LDAP)
 
   if(WIN32)
-    option(CURL_LDAP_WIN "Use Windows LDAP implementation" ON)
-    if(CURL_LDAP_WIN)
+    option(USE_WIN32_LDAP "Use Windows LDAP implementation" ON)
+    if(USE_WIN32_LDAP)
       check_library_exists("wldap32" cldap_open "" HAVE_WLDAP32)
       if(NOT HAVE_WLDAP32)
-        set(CURL_LDAP_WIN OFF)
+        set(USE_WIN32_LDAP OFF)
       endif()
     endif()
   endif()
@@ -323,12 +340,12 @@ if(NOT CURL_DISABLE_LDAP)
   set(CMAKE_LDAP_LIB "ldap" CACHE STRING "Name or full path to ldap library")
   set(CMAKE_LBER_LIB "lber" CACHE STRING "Name or full path to lber library")
 
-  if(CMAKE_USE_OPENLDAP AND CURL_LDAP_WIN)
-    message(FATAL_ERROR "Cannot use CURL_LDAP_WIN and CMAKE_USE_OPENLDAP at the same time")
+  if(CMAKE_USE_OPENLDAP AND USE_WIN32_LDAP)
+    message(FATAL_ERROR "Cannot use USE_WIN32_LDAP and CMAKE_USE_OPENLDAP at the same time")
   endif()
   
   # Now that we know, we're not using windows LDAP...
-  if(NOT CURL_LDAP_WIN)
+  if(NOT USE_WIN32_LDAP)
     # Check for LDAP
     set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_LIBRARIES})
     check_library_exists_concat(${CMAKE_LDAP_LIB} ldap_init HAVE_LIBLDAP)
@@ -384,7 +401,7 @@ if(NOT CURL_DISABLE_LDAP)
         return 0;
       }"
     )
-    set(CMAKE_REQUIRED_DEFINITIONS "-DLDAP_DEPRECATED=1" "-DWIN32_LEAN_AND_MEAN")
+    set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -DLDAP_DEPRECATED=1")
     list(APPEND CMAKE_REQUIRED_LIBRARIES ${CMAKE_LDAP_LIB})
     if(HAVE_LIBLBER)
       list(APPEND CMAKE_REQUIRED_LIBRARIES ${CMAKE_LBER_LIB})
@@ -537,15 +554,13 @@ endif()
 
 # Check for header files
 if(NOT UNIX)
+  check_include_file_concat("windows.h"      HAVE_WINDOWS_H)
+  check_include_file_concat("winsock.h"      HAVE_WINSOCK_H)
   check_include_file_concat("ws2tcpip.h"     HAVE_WS2TCPIP_H)
   check_include_file_concat("winsock2.h"     HAVE_WINSOCK2_H)
 endif(NOT UNIX)
-check_include_file_concat("stdio.h"          HAVE_STDIO_H)
-if(NOT UNIX)
-  check_include_file_concat("windows.h"      HAVE_WINDOWS_H)
-  check_include_file_concat("winsock.h"      HAVE_WINSOCK_H)
-endif(NOT UNIX)
 
+check_include_file_concat("stdio.h"          HAVE_STDIO_H)
 check_include_file_concat("inttypes.h"       HAVE_INTTYPES_H)
 check_include_file_concat("sys/filio.h"      HAVE_SYS_FILIO_H)
 check_include_file_concat("sys/ioctl.h"      HAVE_SYS_IOCTL_H)
@@ -737,7 +752,6 @@ if(CMAKE_USE_OPENSSL)
     HAVE_CRYPTO_CLEANUP_ALL_EX_DATA)
   if(HAVE_LIBCRYPTO AND HAVE_LIBSSL)
     set(USE_OPENSSL 1)
-    set(USE_SSLEAY 1)
   endif(HAVE_LIBCRYPTO AND HAVE_LIBSSL)
 endif(CMAKE_USE_OPENSSL)
 check_symbol_exists(gmtime_r      "${CURL_INCLUDES}" HAVE_GMTIME_R)

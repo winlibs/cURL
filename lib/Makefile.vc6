@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1999 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1999 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -105,7 +105,7 @@ WINDOWS_SDK_PATH = "$(PROGRAMFILES)\Microsoft SDK"
 
 CCNODBG      = cl.exe /O2 /DNDEBUG
 CCDEBUG      = cl.exe /Od /Gm /Zi /D_DEBUG /GZ
-CFLAGSSSL    = /DUSE_SSLEAY /DUSE_OPENSSL /I "$(OPENSSL_PATH)/inc32" /I "$(OPENSSL_PATH)/inc32/openssl"
+CFLAGSSSL    = /DUSE_OPENSSL /I "$(OPENSSL_PATH)/inc32" /I "$(OPENSSL_PATH)/inc32/openssl"
 CFLAGSWINSSL = /DUSE_SCHANNEL
 CFLAGSSSH2   = /DUSE_LIBSSH2 /DCURL_DISABLE_LDAP /DHAVE_LIBSSH2 /DHAVE_LIBSSH2_H /DLIBSSH2_WIN32 /DLIBSSH2_LIBRARY /I "$(LIBSSH2_PATH)/include"
 CFLAGSZLIB   = /DHAVE_ZLIB_H /DHAVE_ZLIB /DHAVE_LIBZ /I "$(ZLIB_PATH)"
@@ -534,7 +534,7 @@ X_OBJS= \
 	$(DIROBJ)\content_encoding.obj \
 	$(DIROBJ)\cookie.obj \
 	$(DIROBJ)\curl_addrinfo.obj \
-	$(DIROBJ)\curl_darwinssl.obj \
+	$(DIROBJ)\curl_des.obj \
 	$(DIROBJ)\curl_endian.obj \
 	$(DIROBJ)\curl_fnmatch.obj \
 	$(DIROBJ)\curl_gethostname.obj \
@@ -549,10 +549,10 @@ X_OBJS= \
 	$(DIROBJ)\curl_sasl.obj \
 	$(DIROBJ)\curl_sasl_gssapi.obj \
 	$(DIROBJ)\curl_sasl_sspi.obj \
-	$(DIROBJ)\curl_schannel.obj \
 	$(DIROBJ)\curl_sspi.obj \
 	$(DIROBJ)\curl_threads.obj \
 	$(DIROBJ)\cyassl.obj \
+	$(DIROBJ)\darwinssl.obj \
 	$(DIROBJ)\dict.obj \
 	$(DIROBJ)\dotdot.obj \
 	$(DIROBJ)\easy.obj \
@@ -607,6 +607,7 @@ X_OBJS= \
 	$(DIROBJ)\progress.obj \
 	$(DIROBJ)\rawstr.obj \
 	$(DIROBJ)\rtsp.obj \
+	$(DIROBJ)\schannel.obj \
 	$(DIROBJ)\security.obj \
 	$(DIROBJ)\select.obj \
 	$(DIROBJ)\sendf.obj \

@@ -4,15 +4,20 @@
 <title>CURLOPT_DIRLISTONLY man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,7 +52,7 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_DIRLISTONLY - ask for names only in a directory listing <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0">#include &lt;curl/curl.h&gt; 
+<p class="level0">&#35;include &lt;curl/curl.h&gt; 
 <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_DIRLISTONLY, long listonly); <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">For FTP and SFTP based URLs a parameter set to 1 tells the library to list the names of files in a directory, rather than performing a full directory listing that would normally include file sizes, dates etc. 
 <p class="level0">For POP3 a parameter of 1 tells the library to list the email message or messages on the POP3 server. This can be used to change the default behaviour of libcurl, when combined with a URL that contains a message ID, to perform a "scan listing" which can then be used to determine the size of an email. 

@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -82,38 +82,12 @@
 #include "cookie.h"
 #include "formdata.h"
 
-#ifdef USE_SSLEAY
 #ifdef USE_OPENSSL
-#include <openssl/rsa.h>
-#include <openssl/crypto.h>
-#include <openssl/x509.h>
-#include <openssl/pem.h>
 #include <openssl/ssl.h>
-#include <openssl/err.h>
 #ifdef HAVE_OPENSSL_ENGINE_H
 #include <openssl/engine.h>
 #endif
-#ifdef HAVE_OPENSSL_PKCS12_H
-#include <openssl/pkcs12.h>
-#endif
-#else /* SSLeay-style includes */
-#include <rsa.h>
-#include <crypto.h>
-#include <x509.h>
-#include <pem.h>
-#include <ssl.h>
-#include <err.h>
-#ifdef HAVE_OPENSSL_ENGINE_H
-#include <engine.h>
-#endif
-#ifdef HAVE_OPENSSL_PKCS12_H
-#include <pkcs12.h>
-#endif
 #endif /* USE_OPENSSL */
-#ifdef USE_GNUTLS
-#error Configuration error; cannot use GnuTLS *and* OpenSSL.
-#endif
-#endif /* USE_SSLEAY */
 
 #ifdef USE_GNUTLS
 #include <gnutls/gnutls.h>
@@ -146,6 +120,7 @@
 #endif
 
 #ifdef USE_AXTLS
+#include <axTLS/config.h>
 #include <axTLS/ssl.h>
 #undef malloc
 #undef calloc
@@ -288,16 +263,13 @@ struct ssl_connect_data {
      current state of the connection. */
   bool use;
   ssl_connection_state state;
-#ifdef USE_NGHTTP2
-  bool asked_for_h2;
-#endif
-#ifdef USE_SSLEAY
+#ifdef USE_OPENSSL
   /* these ones requires specific SSL-types */
   SSL_CTX* ctx;
   SSL*     handle;
   X509*    server_cert;
   ssl_connect_state connecting_state;
-#endif /* USE_SSLEAY */
+#endif /* USE_OPENSSL */
 #ifdef USE_GNUTLS
   gnutls_session_t session;
   gnutls_certificate_credentials_t cred;
@@ -366,6 +338,7 @@ struct ssl_config_data {
 
   bool verifypeer;       /* set TRUE if this is desired */
   bool verifyhost;       /* set TRUE if CN/SAN must match hostname */
+  bool verifystatus;     /* set TRUE if certificate status must be checked */
   char *CApath;          /* certificate dir (doesn't work on windows) */
   char *CAfile;          /* certificate to verify peer against */
   const char *CRLfile;   /* CRL to check certificate revocation */
@@ -378,6 +351,7 @@ struct ssl_config_data {
   void *fsslctxp;        /* parameter for call back */
   bool sessionid;        /* cache session IDs or not */
   bool certinfo;         /* gather lots of certificate info */
+  bool falsestart;
 
 #ifdef USE_TLS_SRP
   char *username; /* TLS username (for, e.g., SRP) */
@@ -626,12 +600,6 @@ enum upgrade101 {
   UPGR101_REQUESTED,          /* upgrade requested */
   UPGR101_RECEIVED,           /* response received */
   UPGR101_WORKING             /* talking upgraded protocol */
-};
-
-enum negotiatenpn {
-  NPN_INIT,                   /* default state */
-  NPN_HTTP1_1,                /* HTTP/1.1 negotiated */
-  NPN_HTTP2                   /* HTTP2 (draft-xx) negotiated */
 };
 
 /*
@@ -1095,7 +1063,7 @@ struct connectdata {
   } tunnel_state[2]; /* two separate ones to allow FTP */
   struct connectbundle *bundle; /* The bundle we are member of */
 
-  enum negotiatenpn negnpn;
+  int negnpn; /* APLN or NPN TLS negotiated protocol, CURL_HTTP_VERSION* */
 };
 
 /* The end of connectdata. */
@@ -1293,9 +1261,9 @@ struct UrlState {
   void *resolver; /* resolver state, if it is used in the URL state -
                      ares_channel f.e. */
 
-#if defined(USE_SSLEAY) && defined(HAVE_OPENSSL_ENGINE_H)
+#if defined(USE_OPENSSL) && defined(HAVE_OPENSSL_ENGINE_H)
   ENGINE *engine;
-#endif /* USE_SSLEAY */
+#endif /* USE_OPENSSL */
   struct timeval expiretime; /* set this with Curl_expire() only */
   struct Curl_tree timenode; /* for the splay stuff */
   struct curl_llist *timeoutlist; /* list of pending timeouts */
@@ -1649,7 +1617,7 @@ struct UserDefined {
 
   bool ssl_enable_npn;  /* TLS NPN extension? */
   bool ssl_enable_alpn; /* TLS ALPN extension? */
-
+  bool path_as_is;      /* allow dotdots? */
   long expect_100_timeout; /* in milliseconds */
 };
 

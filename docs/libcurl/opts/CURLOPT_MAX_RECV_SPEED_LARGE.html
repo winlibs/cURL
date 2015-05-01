@@ -4,15 +4,20 @@
 <title>CURLOPT_MAX_RECV_SPEED_LARGE man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -47,11 +52,12 @@ p.roffit {
 
 <p class="level0"><a name="NAME"></a><h2 class="nroffsh">NAME</h2>
 <p class="level0">CURLOPT_MAX_RECV_SPEED_LARGE - rate limit data download speed <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
-<p class="level0"><pre>
-<p class="level0">#include &lt;curl/curl.h&gt;
- <p class="level0">CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAX_RECV_SPEED_LARGE,
- &nbsp;                         curl_off_t speed);
- </pre>
+<p class="level0"><pre class="level0">
+&#35;include &lt;curl/curl.h&gt;
+
+CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAX_RECV_SPEED_LARGE,
+&nbsp;                         curl_off_t speed);
+</pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">Pass a curl_off_t as parameter.  If a download exceeds this <span Class="emphasis">speed</span> (counted in bytes per second) on cumulative average during the transfer, the transfer will pause to keep the average rate less than or equal to the parameter value. Defaults to unlimited speed. 
 <p class="level0">This option doesn't affect transfer speeds done with FILE:// URLs. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
