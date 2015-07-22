@@ -22,6 +22,8 @@
  *
  ***************************************************************************/
 
+#include "conncache.h"
+
 struct Curl_message {
   /* the 'CURLMsg' is the part that is visible to the external user */
   struct CURLMsg extmsg;
@@ -60,6 +62,8 @@ typedef enum {
 #define GETSOCK_READABLE (0x00ff)
 #define GETSOCK_WRITABLE (0xff00)
 
+#define CURLPIPE_ANY (CURLPIPE_HTTP1 | CURLPIPE_MULTIPLEX)
+
 /* This is the struct known as CURLM on the outside */
 struct Curl_multi {
   /* First a simple identifier to easier detect if a user mix up
@@ -84,7 +88,7 @@ struct Curl_multi {
   void *socket_userp;
 
   /* Hostname cache */
-  struct curl_hash *hostcache;
+  struct curl_hash hostcache;
 
   /* timetree points to the splay-tree of time nodes to figure out expire
      times of all currently set timers */
@@ -93,13 +97,15 @@ struct Curl_multi {
   /* 'sockhash' is the lookup hash for socket descriptor => easy handles (note
      the pluralis form, there can be more than one easy handle waiting on the
      same actual socket) */
-  struct curl_hash *sockhash;
+  struct curl_hash sockhash;
 
-  /* Whether pipelining is enabled for this multi handle */
-  bool pipelining_enabled;
+  /* pipelining wanted bits (CURLPIPE*) */
+  long pipelining;
+
+  bool recheckstate; /* see Curl_multi_connchanged */
 
   /* Shared connection cache (bundles)*/
-  struct conncache *conn_cache;
+  struct conncache conn_cache;
 
   /* This handle will be used for closing the cached connections in
      curl_multi_cleanup() */
@@ -140,4 +146,3 @@ struct Curl_multi {
 };
 
 #endif /* HEADER_CURL_MULTIHANDLE_H */
-

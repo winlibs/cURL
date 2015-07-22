@@ -63,16 +63,16 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="ftp://example.com">ftp://example.com</a>");
-
+&nbsp;
 &nbsp; /* resume upload at byte index 200 */
 &nbsp; curl_easy_setopt(curl, CURLOPT_RESUME_FROM, 200L);
-
+&nbsp;
 &nbsp; /* ask for upload */
 &nbsp; curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-
+&nbsp;
 &nbsp; /* set total data amount to expect */
 &nbsp; curl_easy_setopt(curl, CURLOPT_INFILESIZE, size_of_file);
-
+&nbsp;
 &nbsp; /* Perform the request */
 &nbsp; curl_easy_perform(curl);
 }

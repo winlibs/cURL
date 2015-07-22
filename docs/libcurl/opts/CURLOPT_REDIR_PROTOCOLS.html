@@ -93,11 +93,11 @@ curl = curl_easy_init();
 if(curl) {
 &nbsp; /* pass in the URL from an external source */
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, argv[1]);
-
+&nbsp;
 &nbsp; /* only allow redirects to HTTP and HTTPS URLs */
 &nbsp; curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS,
 &nbsp;                  CURLPROTO_HTTP | CURLPROTO_HTTPS);
-
+&nbsp;
 &nbsp; /* Perform the request */
 &nbsp; curl_easy_perform(curl);
 }

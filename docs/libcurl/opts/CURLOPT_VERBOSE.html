@@ -63,10 +63,10 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* ask libcurl to show us the verbose output */
 &nbsp; curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
+&nbsp;
 &nbsp; /* Perform the request */
 &nbsp; curl_easy_perform(curl);
 }

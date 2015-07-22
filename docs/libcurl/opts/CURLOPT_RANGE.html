@@ -63,10 +63,10 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* get the first 200 bytes */
 &nbsp; curl_easy_setopt(curl, CURLOPT_RANGE, "0-199");
-
+&nbsp;
 &nbsp; /* Perform the request */
 &nbsp; curl_easy_perform(curl);
 }

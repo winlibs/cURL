@@ -134,9 +134,9 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/lib/Makefile.inc $(srcdir)/src/Makefile.inc \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/configure $(am__configure_deps) mkinstalldirs \
+	$(top_srcdir)/configure $(am__configure_deps) \
 	$(srcdir)/curl-config.in $(srcdir)/libcurl.pc.in COPYING \
-	README TODO compile config.guess config.sub depcomp install-sh \
+	README compile config.guess config.sub depcomp install-sh \
 	missing ltmain.sh
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -161,7 +161,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/lib/curl_config.h \
 	$(top_builddir)/include/curl/curlbuild.h
 CONFIG_CLEAN_FILES = curl-config libcurl.pc
@@ -567,7 +567,7 @@ WINBUILD_DIST = winbuild/BUILD.WINDOWS.txt winbuild/gen_resp_file.bat	\
  winbuild/Makefile.msvc.names
 
 EXTRA_DIST = CHANGES COPYING maketgz Makefile.dist curl-config.in	\
- RELEASE-NOTES buildconf libcurl.pc.in MacOSX-Framework	\
+ RELEASE-NOTES buildconf libcurl.pc.in MacOSX-Framework scripts/zsh.pl	\
  $(CMAKE_DIST) $(VC_DIST) $(WINBUILD_DIST) lib/libcurl.vers.in
 
 CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP) $(VC7_LIBVCPROJ) $(VC7_SRCVCPROJ)	\
@@ -604,7 +604,7 @@ LIB_CFILES = file.c timeval.c base64.c hostip.c progress.c formdata.c   \
   http_negotiate_sspi.c http_proxy.c non-ascii.c asyn-ares.c            \
   asyn-thread.c curl_gssapi.c curl_ntlm.c curl_ntlm_wb.c                \
   curl_ntlm_core.c curl_ntlm_msgs.c curl_sasl.c curl_multibyte.c        \
-  hostcheck.c bundles.c conncache.c pipeline.c dotdot.c x509asn1.c      \
+  hostcheck.c conncache.c pipeline.c dotdot.c x509asn1.c                \
   http2.c curl_sasl_sspi.c smb.c curl_sasl_gssapi.c curl_endian.c       \
   curl_des.c
 
@@ -622,7 +622,7 @@ LIB_HFILES = arpa_telnet.h netrc.h file.h timeval.h hostip.h progress.h \
   rtsp.h curl_threads.h warnless.h curl_hmac.h curl_rtmp.h              \
   curl_gethostname.h gopher.h http_proxy.h non-ascii.h asyn.h           \
   curl_ntlm.h curl_gssapi.h curl_ntlm_wb.h curl_ntlm_core.h             \
-  curl_ntlm_msgs.h curl_sasl.h curl_multibyte.h hostcheck.h bundles.h   \
+  curl_ntlm_msgs.h curl_sasl.h curl_multibyte.h hostcheck.h             \
   conncache.h curl_setup_once.h multihandle.h setup-vms.h pipeline.h    \
   dotdot.h x509asn1.h http2.h sigpipe.h smb.h curl_endian.h curl_des.h  \
   curl_printf.h

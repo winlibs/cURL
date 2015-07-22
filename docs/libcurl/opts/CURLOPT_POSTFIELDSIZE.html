@@ -62,14 +62,14 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; const char *data = "data to send";
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* size of the POST data */
 &nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long) strlen(data));
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

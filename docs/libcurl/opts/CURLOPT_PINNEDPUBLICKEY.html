@@ -63,15 +63,25 @@ CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
 &nbsp; curl_easy_setopt(curl, CURLOPT_PINNEDPUBLICKEY, "/etc/publickey.der");
-
+&nbsp;
 &nbsp; /* Perform the request */
 &nbsp; curl_easy_perform(curl);
 }
 </pre>
 
+<p class="level0"><a name="PUBLIC"></a><h2 class="nroffsh">PUBLIC KEY EXTRACTION</h2>
+<p class="level0">If you do not have the server's public key file you can extract it from the server's certificate. <pre class="level0">
+openssl x509 -in www.test.com.pem -pubkey -noout &gt; www.test.com.pubkey.pem
+</pre>
+
+<p class="level0">The public key is output in PEM format and contains a header, base64 data and a footer: <pre class="level0">
+-----BEGIN PUBLIC KEY-----
+[BASE 64 DATA]
+-----END PUBLIC KEY-----
+</pre>
+
 <p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
-<p class="level0">If built TLS enabled. This is currently only implemented in the OpenSSL, GnuTLS and GSKit backends. 
-<p class="level0">Added in libcurl 7.39.0 <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
+<p class="level0">Added in 7.39.0 for OpenSSL, GnuTLS and GSKit. Added in 7.43.0 for NSS and wolfSSL/CyaSSL. Other SSL backends not supported. <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK if TLS enabled, CURLE_UNKNOWN_OPTION if not, or CURLE_OUT_OF_MEMORY if there was insufficient heap space. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
 <p class="level0"><a Class="manpage" href="./CURLOPT_SSL_VERIFYPEER.html">CURLOPT_SSL_VERIFYPEER</a>, <span Class="manpage"> </span> <a Class="manpage" href="./CURLOPT_SSL_VERIFYHOST.html">CURLOPT_SSL_VERIFYHOST</a>, <span Class="manpage"> </span> <a Class="manpage" href="./CURLOPT_CAINFO.html">CURLOPT_CAINFO</a>, <span Class="manpage"> </span> <a Class="manpage" href="./CURLOPT_CAPATH.html">CURLOPT_CAPATH</a>, <span Class="manpage"> </span> <p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.

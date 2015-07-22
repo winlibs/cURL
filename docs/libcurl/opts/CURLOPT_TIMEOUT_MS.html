@@ -65,10 +65,10 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* complete within 20000 milliseconds */
 &nbsp; curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 20000L);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

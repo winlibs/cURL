@@ -64,19 +64,19 @@ CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; /* we want to use our own read function */
 &nbsp; curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
-
+&nbsp;
 &nbsp; /* enable uploading */
 &nbsp; curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-
+&nbsp;
 &nbsp; /* specify target */
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="ftp://example.com/dir/to/newfile">ftp://example.com/dir/to/newfile</a>");
-
+&nbsp;
 &nbsp; /* now specify which pointer to pass to our callback */
 &nbsp; curl_easy_setopt(curl, CURLOPT_READDATA, hd_src);
-
+&nbsp;
 &nbsp; /* Set the size of the file to upload */
 &nbsp; curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)fsize);
-
+&nbsp;
 &nbsp; /* Now run off and do what you've been told! */
 &nbsp; curl_easy_perform(curl);
 }

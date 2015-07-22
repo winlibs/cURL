@@ -61,10 +61,10 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* tell it where we found the link to this place */
 &nbsp; curl_easy_setopt(curl, CURLOPT_REFERER, "<a href="http://example.com/aboutme.html">http://example.com/aboutme.html</a>");
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

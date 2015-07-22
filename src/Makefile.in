@@ -91,8 +91,7 @@ host_triplet = @host@
 bin_PROGRAMS = curl$(EXEEXT)
 @USE_CPPFLAG_CURL_STATICLIB_TRUE@am__append_1 = -DCURL_STATICLIB
 DIST_COMMON = $(srcdir)/Makefile.inc $(srcdir)/Makefile.in \
-	$(srcdir)/Makefile.am $(top_srcdir)/mkinstalldirs \
-	$(top_srcdir)/depcomp
+	$(srcdir)/Makefile.am $(top_srcdir)/depcomp
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/curl-compilers.m4 \
@@ -114,7 +113,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/curl-compilers.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/lib/curl_config.h \
 	$(top_builddir)/include/curl/curlbuild.h
 CONFIG_CLEAN_FILES =

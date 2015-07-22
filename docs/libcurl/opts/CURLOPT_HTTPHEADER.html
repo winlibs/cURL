@@ -68,19 +68,19 @@ p.roffit {
 <p class="level0">HTTP <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
 <p class="level0"><pre class="level0">
 CURL *curl = curl_easy_init();
-
+&nbsp;
 struct curl_slist *list = NULL;
-
+&nbsp;
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; list = curl_slist_append(list, "Shoesize: 10");
 &nbsp; list = curl_slist_append(list, "Accept:");
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
-
+&nbsp;
 &nbsp; curl_slist_free_all(list); /* free the list again */
 }
 </pre>

@@ -61,16 +61,16 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* enable TCP keep-alive for this transfer */
 &nbsp; curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
-
+&nbsp;
 &nbsp; /* keep-alive idle time to 120 seconds */
 &nbsp; curl_easy_setopt(curl, CURLOPT_TCP_KEEPIDLE, 120L);
-
+&nbsp;
 &nbsp; /* interval time between keep-alive probes: 60 seconds */
-&nbsp; curl_easy_setopt(curl, CURLOPT_TCP_KEEPIDLE, 60L);
-
+&nbsp; curl_easy_setopt(curl, CURLOPT_TCP_KEEPINTVL, 60L);
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

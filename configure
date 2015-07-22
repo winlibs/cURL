@@ -4937,14 +4937,21 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-test x"${MISSING+set}" = xset || MISSING="\${SHELL} \"$am_aux_dir/missing\""
+if test x"${MISSING+set}" != xset; then
+  case $am_aux_dir in
+  *\ * | *\	*)
+    MISSING="\${SHELL} \"$am_aux_dir/missing\"" ;;
+  *)
+    MISSING="\${SHELL} $am_aux_dir/missing" ;;
+  esac
+fi
 # Use eval to expand $SHELL
-if eval "$MISSING --run true"; then
-  am_missing_run="$MISSING --run "
+if eval "$MISSING --is-lightweight"; then
+  am_missing_run="$MISSING "
 else
   am_missing_run=
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \`missing' script is too old or missing" >&5
-$as_echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: 'missing' script is too old or missing" >&5
+$as_echo "$as_me: WARNING: 'missing' script is too old or missing" >&2;}
 fi
 
 if test x"${install_sh}" != xset; then
@@ -21129,8 +21136,6 @@ $as_echo "yes" >&6; }
   if test -z "$GSSAPI_INCS"; then
      if test -n "$host_alias" -a -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
         GSSAPI_INCS=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --cflags gssapi`
-     elif test -f "$GSSAPI_ROOT/bin/krb5-config"; then
-        GSSAPI_INCS=`$GSSAPI_ROOT/bin/krb5-config --cflags gssapi`
      elif test -f "$KRB5CONFIG"; then
         GSSAPI_INCS=`$KRB5CONFIG --cflags gssapi`
      elif test "$GSSAPI_ROOT" != "yes"; then
@@ -22082,6 +22087,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
     esac
     case $tst_api in
       0x110) tst_show="1.1.0" ;;
+      0x102) tst_show="1.0.2" ;;
       0x101) tst_show="1.0.1" ;;
       0x100) tst_show="1.0.0" ;;
       0x099) tst_show="0.9.9" ;;
@@ -22185,6 +22191,42 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
         ;;
     esac
+  fi
+  if test "$tst_api" = "unknown"; then
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#define SSL_CONF_CTX_new innocuous_SSL_CONF_CTX_new
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+#undef SSL_CONF_CTX_new
+#ifdef __cplusplus
+extern "C"
+#endif
+char SSL_CONF_CTX_new ();
+#if defined __stub_SSL_CONF_CTX_new || defined __stub___SSL_CONF_CTX_new
+choke me
+#endif
+
+int main (void)
+{
+return SSL_CONF_CTX_new ();
+ ;
+ return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+      tst_api="0x102"
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
   fi
   if test "$tst_api" = "unknown"; then
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -22548,6 +22590,7 @@ rm -f core conftest.err conftest.$ac_objext \
   fi
   case $tst_api in
     0x110) tst_show="1.1.0" ;;
+    0x102) tst_show="1.0.2" ;;
     0x101) tst_show="1.0.1" ;;
     0x100) tst_show="1.0.0" ;;
     0x099) tst_show="0.9.9" ;;
@@ -24264,7 +24307,7 @@ _ACEOF
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $capath (capath)" >&5
 $as_echo "$capath (capath)" >&6; }
   fi
-  if test "x$ca" == "xno" && test "x$capath" == "xno"; then
+  if test "x$ca" = "xno" && test "x$capath" = "xno"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
   fi
@@ -26006,9 +26049,11 @@ $as_echo "$as_me: -L is $LD_H2" >&6;}
     CPPFLAGS="$CPPFLAGS $CPP_H2"
     LIBS="$LIB_H2 $LIBS"
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nghttp2_session_callbacks_set_send_callback in -lnghttp2" >&5
-$as_echo_n "checking for nghttp2_session_callbacks_set_send_callback in -lnghttp2... " >&6; }
-if ${ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback+:} false; then :
+    # use nghttp2_option_set_no_recv_client_magic to require nghttp2
+    # >= 1.0.0
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nghttp2_option_set_no_recv_client_magic in -lnghttp2" >&5
+$as_echo_n "checking for nghttp2_option_set_no_recv_client_magic in -lnghttp2... " >&6; }
+if ${ac_cv_lib_nghttp2_nghttp2_option_set_no_recv_client_magic+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -26020,26 +26065,26 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char nghttp2_session_callbacks_set_send_callback ();
+char nghttp2_option_set_no_recv_client_magic ();
 int main (void)
 {
-return nghttp2_session_callbacks_set_send_callback ();
+return nghttp2_option_set_no_recv_client_magic ();
  ;
  return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback=yes
+  ac_cv_lib_nghttp2_nghttp2_option_set_no_recv_client_magic=yes
 else
-  ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback=no
+  ac_cv_lib_nghttp2_nghttp2_option_set_no_recv_client_magic=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback" >&5
-$as_echo "$ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback" >&6; }
-if test "x$ac_cv_lib_nghttp2_nghttp2_session_callbacks_set_send_callback" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_nghttp2_nghttp2_option_set_no_recv_client_magic" >&5
+$as_echo "$ac_cv_lib_nghttp2_nghttp2_option_set_no_recv_client_magic" >&6; }
+if test "x$ac_cv_lib_nghttp2_nghttp2_option_set_no_recv_client_magic" = xyes; then :
 
        for ac_header in nghttp2/nghttp2.h
 do :

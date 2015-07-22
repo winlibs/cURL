@@ -83,18 +83,6 @@
 #error "OPENSSL_VERSION_NUMBER not defined"
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x0090581fL
-#define HAVE_SSL_GET1_SESSION 1
-#else
-#undef HAVE_SSL_GET1_SESSION
-#endif
-
-#if OPENSSL_VERSION_NUMBER >= 0x00904100L
-#define HAVE_USERDATA_IN_PWD_CALLBACK 1
-#else
-#undef HAVE_USERDATA_IN_PWD_CALLBACK
-#endif
-
 #if OPENSSL_VERSION_NUMBER >= 0x00907001L && !defined(OPENSSL_IS_BORINGSSL)
 /* ENGINE_load_private_key() takes four arguments */
 #define HAVE_ENGINE_LOAD_FOUR_ARGS
@@ -112,10 +100,6 @@
 #else
 /* OpenSSL does not have PKCS12 support */
 #undef HAVE_PKCS12_SUPPORT
-#endif
-
-#if OPENSSL_VERSION_NUMBER >= 0x00906001L
-#define HAVE_ERR_ERROR_STRING_N 1
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x00909000L
@@ -160,18 +144,8 @@
  */
 #define RAND_LOAD_LENGTH 1024
 
-#ifndef HAVE_USERDATA_IN_PWD_CALLBACK
-static char global_passwd[64];
-#endif
-
-static int passwd_callback(char *buf, int num, int encrypting
-#ifdef HAVE_USERDATA_IN_PWD_CALLBACK
-                           /* This was introduced in 0.9.4, we can set this
-                              using SSL_CTX_set_default_passwd_cb_userdata()
-                              */
-                           , void *global_passwd
-#endif
-                           )
+static int passwd_callback(char *buf, int num, int encrypting,
+                           void *global_passwd)
 {
   DEBUGASSERT(0 == encrypting);
 
@@ -376,23 +350,9 @@ int cert_stuff(struct connectdata *conn,
     int cert_done = 0;
 
     if(data->set.str[STRING_KEY_PASSWD]) {
-#ifndef HAVE_USERDATA_IN_PWD_CALLBACK
-      /*
-       * If password has been given, we store that in the global
-       * area (*shudder*) for a while:
-       */
-      size_t len = strlen(data->set.str[STRING_KEY_PASSWD]);
-      if(len < sizeof(global_passwd))
-        memcpy(global_passwd, data->set.str[STRING_KEY_PASSWD], len+1);
-      else
-        global_passwd[0] = '\0';
-#else
-      /*
-       * We set the password in the callback userdata
-       */
+      /* set the password in the callback userdata */
       SSL_CTX_set_default_passwd_cb_userdata(ctx,
                                              data->set.str[STRING_KEY_PASSWD]);
-#endif
       /* Set passwd callback: */
       SSL_CTX_set_default_passwd_cb(ctx, passwd_callback);
     }
@@ -678,10 +638,6 @@ int cert_stuff(struct connectdata *conn,
       failf(data, "Private key does not match the certificate public key");
       return 0;
     }
-#ifndef HAVE_USERDATA_IN_PWD_CALLBACK
-    /* erase it now */
-    memset(global_passwd, 0, sizeof(global_passwd));
-#endif
   }
   return 1;
 }
@@ -716,30 +672,14 @@ static int x509_name_oneline(X509_NAME *a, char *buf, size_t size)
 #endif
 }
 
-static
-int cert_verify_callback(int ok, X509_STORE_CTX *ctx)
-{
-  X509 *err_cert;
-  char buf[256];
-
-  err_cert=X509_STORE_CTX_get_current_cert(ctx);
-  (void)x509_name_oneline(X509_get_subject_name(err_cert), buf, sizeof(buf));
-  return ok;
-}
-
 /* Return error string for last OpenSSL error
  */
 static char *SSL_strerror(unsigned long error, char *buf, size_t size)
 {
-#ifdef HAVE_ERR_ERROR_STRING_N
   /* OpenSSL 0.9.6 and later has a function named
-     ERRO_error_string_n() that takes the size of the buffer as a
+     ERR_error_string_n() that takes the size of the buffer as a
      third argument */
   ERR_error_string_n(error, buf, size);
-#else
-  (void) size;
-  ERR_error_string(error, buf);
-#endif
   return buf;
 }
 
@@ -751,6 +691,8 @@ static char *SSL_strerror(unsigned long error, char *buf, size_t size)
  */
 int Curl_ossl_init(void)
 {
+  OPENSSL_load_builtin_modules();
+
 #ifdef HAVE_ENGINE_LOAD_BUILTIN_ENGINES
   ENGINE_load_builtin_engines();
 #endif
@@ -1485,8 +1427,10 @@ static const char *ssl_msg_type(int ssl_ver, int msg)
         return "Client hello";
       case SSL3_MT_SERVER_HELLO:
         return "Server hello";
+      case SSL3_MT_NEWSESSION_TICKET:
+        return "Newsession Ticket";
       case SSL3_MT_CERTIFICATE:
-        return "CERT";
+        return "Certificate";
       case SSL3_MT_SERVER_KEY_EXCHANGE:
         return "Server key exchange";
       case SSL3_MT_CLIENT_KEY_EXCHANGE:
@@ -1499,6 +1443,10 @@ static const char *ssl_msg_type(int ssl_ver, int msg)
         return "CERT verify";
       case SSL3_MT_FINISHED:
         return "Finished";
+#ifdef SSL3_MT_CERTIFICATE_STATUS
+      case SSL3_MT_CERTIFICATE_STATUS:
+        return "Certificate Status";
+#endif
     }
   }
   return "Unknown";
@@ -1506,12 +1454,22 @@ static const char *ssl_msg_type(int ssl_ver, int msg)
 
 static const char *tls_rt_type(int type)
 {
-  return (
-    type == SSL3_RT_CHANGE_CIPHER_SPEC ? "TLS change cipher, " :
-    type == SSL3_RT_ALERT              ? "TLS alert, "         :
-    type == SSL3_RT_HANDSHAKE          ? "TLS handshake, "     :
-    type == SSL3_RT_APPLICATION_DATA   ? "TLS app data, "      :
-                                         "TLS Unknown, ");
+  switch(type) {
+#ifdef SSL3_RT_HEADER
+  case SSL3_RT_HEADER:
+    return "TLS header";
+#endif
+  case SSL3_RT_CHANGE_CIPHER_SPEC:
+    return "TLS change cipher";
+  case SSL3_RT_ALERT:
+    return "TLS alert";
+  case SSL3_RT_HANDSHAKE:
+    return "TLS handshake";
+  case SSL3_RT_APPLICATION_DATA:
+    return "TLS app data";
+  default:
+    return "TLS Unknown";
+  }
 }
 
 
@@ -1519,8 +1477,8 @@ static const char *tls_rt_type(int type)
  * Our callback from the SSL/TLS layers.
  */
 static void ssl_tls_trace(int direction, int ssl_ver, int content_type,
-                          const void *buf, size_t len, const SSL *ssl,
-                          struct connectdata *conn)
+                          const void *buf, size_t len, SSL *ssl,
+                          void *userp)
 {
   struct SessionHandle *data;
   const char *msg_name, *tls_rt_name;
@@ -1528,6 +1486,7 @@ static void ssl_tls_trace(int direction, int ssl_ver, int content_type,
   char unknown[32];
   int msg_type, txt_len;
   const char *verstr;
+  struct connectdata *conn = userp;
 
   if(!conn || !conn->data || !conn->data->set.fdebug ||
      (direction != 0 && direction != 1))
@@ -1536,8 +1495,8 @@ static void ssl_tls_trace(int direction, int ssl_ver, int content_type,
   data = conn->data;
 
   switch(ssl_ver) {
-#ifdef SSL2_VERSION_MAJOR /* removed in recent versions */
-  case SSL2_VERSION_MAJOR:
+#ifdef SSL2_VERSION /* removed in recent versions */
+  case SSL2_VERSION:
     verstr = "SSLv2";
     break;
 #endif
@@ -1559,29 +1518,36 @@ static void ssl_tls_trace(int direction, int ssl_ver, int content_type,
     verstr = "TLSv1.2";
     break;
 #endif
+  case 0:
+    break;
   default:
     snprintf(unknown, sizeof(unknown), "(%x)", ssl_ver);
     verstr = unknown;
     break;
   }
 
-  ssl_ver >>= 8; /* check the upper 8 bits only below */
+  if(ssl_ver) {
+    /* the info given when the version is zero is not that useful for us */
 
-  /* SSLv2 doesn't seem to have TLS record-type headers, so OpenSSL
-   * always pass-up content-type as 0. But the interesting message-type
-   * is at 'buf[0]'.
-   */
-  if(ssl_ver == SSL3_VERSION_MAJOR && content_type != 0)
-    tls_rt_name = tls_rt_type(content_type);
-  else
-    tls_rt_name = "";
+    ssl_ver >>= 8; /* check the upper 8 bits only below */
 
-  msg_type = *(char*)buf;
-  msg_name = ssl_msg_type(ssl_ver, msg_type);
+    /* SSLv2 doesn't seem to have TLS record-type headers, so OpenSSL
+     * always pass-up content-type as 0. But the interesting message-type
+     * is at 'buf[0]'.
+     */
+    if(ssl_ver == SSL3_VERSION_MAJOR && content_type)
+      tls_rt_name = tls_rt_type(content_type);
+    else
+      tls_rt_name = "";
 
-  txt_len = snprintf(ssl_buf, sizeof(ssl_buf), "%s, %s%s (%d):\n",
-                     verstr, tls_rt_name, msg_name, msg_type);
-  Curl_debug(data, CURLINFO_TEXT, ssl_buf, (size_t)txt_len, NULL);
+    msg_type = *(char*)buf;
+    msg_name = ssl_msg_type(ssl_ver, msg_type);
+
+    txt_len = snprintf(ssl_buf, sizeof(ssl_buf), "%s (%s), %s, %s (%d):\n",
+                       verstr, direction?"OUT":"IN",
+                       tls_rt_name, msg_name, msg_type);
+    Curl_debug(data, CURLINFO_TEXT, ssl_buf, (size_t)txt_len, NULL);
+  }
 
   Curl_debug(data, (direction == 1) ? CURLINFO_SSL_DATA_OUT :
              CURLINFO_SSL_DATA_IN, (char *)buf, len, NULL);
@@ -1733,7 +1699,12 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
   case CURL_SSLVERSION_TLSv1_1:
   case CURL_SSLVERSION_TLSv1_2:
     /* it will be handled later with the context options */
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && \
+    !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL)
+    req_method = TLS_client_method();
+#else
     req_method = SSLv23_client_method();
+#endif
     use_sni(TRUE);
     break;
   case CURL_SSLVERSION_SSLv2:
@@ -1780,16 +1751,9 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
 
 #ifdef SSL_CTRL_SET_MSG_CALLBACK
   if(data->set.fdebug && data->set.verbose) {
-    /* the SSL trace callback is only used for verbose logging so we only
-       inform about failures of setting it */
-    if(!SSL_CTX_callback_ctrl(connssl->ctx, SSL_CTRL_SET_MSG_CALLBACK,
-                               (void (*)(void))ssl_tls_trace)) {
-      infof(data, "SSL: couldn't set callback!\n");
-    }
-    else if(!SSL_CTX_ctrl(connssl->ctx, SSL_CTRL_SET_MSG_CALLBACK_ARG, 0,
-                          conn)) {
-      infof(data, "SSL: couldn't set callback argument!\n");
-    }
+    /* the SSL trace callback is only used for verbose logging */
+    SSL_CTX_set_msg_callback(connssl->ctx, ssl_tls_trace);
+    SSL_CTX_set_msg_callback_arg(connssl->ctx, conn);
   }
 #endif
 
@@ -2050,13 +2014,27 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
           data->set.str[STRING_SSL_CRLFILE]: "none");
   }
 
+  /* Try building a chain using issuers in the trusted store first to avoid
+  problems with server-sent legacy intermediates.
+  Newer versions of OpenSSL do alternate chain checking by default which
+  gives us the same fix without as much of a performance hit (slight), so we
+  prefer that if available.
+  https://rt.openssl.org/Ticket/Display.html?id=3621&user=guest&pass=guest
+  */
+#if defined(X509_V_FLAG_TRUSTED_FIRST) && !defined(X509_V_FLAG_NO_ALT_CHAINS)
+  if(data->set.ssl.verifypeer) {
+    X509_STORE_set_flags(SSL_CTX_get_cert_store(connssl->ctx),
+                         X509_V_FLAG_TRUSTED_FIRST);
+  }
+#endif
+
   /* SSL always tries to verify the peer, this only says whether it should
    * fail to connect if the verification fails, or if it should continue
    * anyway. In the latter case the result of the verification is checked with
    * SSL_get_verify_result() below. */
   SSL_CTX_set_verify(connssl->ctx,
                      data->set.ssl.verifypeer?SSL_VERIFY_PEER:SSL_VERIFY_NONE,
-                     cert_verify_callback);
+                     NULL);
 
   /* give application a chance to interfere with SSL set up. */
   if(data->set.ssl.fsslctx) {
@@ -2702,7 +2680,7 @@ static CURLcode servercert(struct connectdata *conn,
 
     /* e.g. match issuer name with provided issuer certificate */
     if(data->set.str[STRING_SSL_ISSUERCERT]) {
-      fp = fopen(data->set.str[STRING_SSL_ISSUERCERT], "r");
+      fp = fopen(data->set.str[STRING_SSL_ISSUERCERT], FOPEN_READTEXT);
       if(!fp) {
         if(strict)
           failf(data, "SSL: Unable to open issuer cert (%s)",
@@ -2802,25 +2780,11 @@ static CURLcode ossl_connect_step3(struct connectdata *conn, int sockindex)
 
   DEBUGASSERT(ssl_connect_3 == connssl->connecting_state);
 
-#ifdef HAVE_SSL_GET1_SESSION
   our_ssl_sessionid = SSL_get1_session(connssl->handle);
 
-  /* SSL_get1_session() will increment the reference
-     count and the session will stay in memory until explicitly freed with
-     SSL_SESSION_free(3), regardless of its state.
-     This function was introduced in openssl 0.9.5a. */
-#else
-  our_ssl_sessionid = SSL_get_session(connssl->handle);
-
-  /* if SSL_get1_session() is unavailable, use SSL_get_session().
-     This is an inferior option because the session can be flushed
-     at any time by openssl. It is included only so curl compiles
-     under versions of openssl < 0.9.5a.
-
-     WARNING: How curl behaves if it's session is flushed is
-     untested.
-  */
-#endif
+  /* SSL_get1_session() will increment the reference count and the session
+     will stay in memory until explicitly freed with SSL_SESSION_free(3),
+     regardless of its state. */
 
   incache = !(Curl_ssl_getsessionid(conn, &old_ssl_sessionid, NULL));
   if(incache) {
@@ -2839,7 +2803,6 @@ static CURLcode ossl_connect_step3(struct connectdata *conn, int sockindex)
       return result;
     }
   }
-#ifdef HAVE_SSL_GET1_SESSION
   else {
     /* Session was incache, so refcount already incremented earlier.
      * Avoid further increments with each SSL_get1_session() call.
@@ -2847,7 +2810,6 @@ static CURLcode ossl_connect_step3(struct connectdata *conn, int sockindex)
      */
     SSL_SESSION_free(our_ssl_sessionid);
   }
-#endif
 
   /*
    * We check certificates to authenticate the server; otherwise we risk

@@ -54,15 +54,15 @@ p.roffit {
 <p class="level0">CURLOPT_SEEKFUNCTION - user callback for seeking in input stream <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 /* These are the return codes for the seek callbacks */
 &#35;define CURL_SEEKFUNC_OK       0
 &#35;define CURL_SEEKFUNC_FAIL     1 /* fail the entire transfer */
 &#35;define CURL_SEEKFUNC_CANTSEEK 2 /* tell libcurl seeking can't be done, so
 &nbsp;                                   libcurl might try other means instead */
-
+&nbsp;
 int seek_callback(void *userp, curl_off_t offset, int origin);
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SEEKFUNCTION, seek_callback);
 </pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>

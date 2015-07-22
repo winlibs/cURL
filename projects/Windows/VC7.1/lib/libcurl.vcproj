@@ -1268,9 +1268,6 @@
 				RelativePath="..\..\..\..\lib\base64.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\bundles.c">
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\conncache.c">
 			</File>
 			<File
@@ -1582,9 +1579,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\asyn.h">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\bundles.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\config-win32.h">

@@ -64,11 +64,11 @@ CURL *curl = curl_easy_init();
 struct MyData this;
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* pass pointer that gets passed in to the
 &nbsp;    CURLOPT_READFUNCTION callback */
 &nbsp; curl_easy_setopt(curl, CURLOPT_READDATA, &this);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

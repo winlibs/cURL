@@ -746,10 +746,6 @@ SOURCE=..\..\..\..\lib\base64.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\bundles.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\conncache.c
 # End Source File
 # Begin Source File
@@ -1207,10 +1203,6 @@ SOURCE=..\..\..\..\lib\arpa_telnet.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\asyn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\bundles.h
 # End Source File
 # Begin Source File
 

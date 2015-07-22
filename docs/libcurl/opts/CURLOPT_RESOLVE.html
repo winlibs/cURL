@@ -54,7 +54,7 @@ p.roffit {
 <p class="level0">CURLOPT_RESOLVE - provide custom host name to IP address resolves <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_RESOLVE,
 &nbsp;                         struct curl_slist *hosts);
 </pre>
@@ -69,17 +69,17 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_RESOLVE,
 CURL *curl;
 struct curl_slist *host = NULL;
 host = curl_slist_append(NULL, "example.com:80:127.0.0.1");
-
+&nbsp;
 curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_RESOLVE, host);
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
 &nbsp; res = curl_easy_perform(curl);
-
+&nbsp;
 &nbsp; /* always cleanup */
 &nbsp; curl_easy_cleanup(curl);
 }
-
+&nbsp;
 curl_slist_free_all(host);
 </pre>
 

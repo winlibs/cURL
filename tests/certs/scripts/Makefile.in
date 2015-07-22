@@ -78,8 +78,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = tests/certs/scripts
-DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/mkinstalldirs
+DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/curl-compilers.m4 \
 	$(top_srcdir)/m4/curl-confopts.m4 \
@@ -100,7 +99,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/curl-compilers.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/lib/curl_config.h \
 	$(top_builddir)/include/curl/curlbuild.h
 CONFIG_CLEAN_FILES =

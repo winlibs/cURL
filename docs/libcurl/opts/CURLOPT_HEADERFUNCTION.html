@@ -72,13 +72,13 @@ static size_t header_callback(char *buffer, size_t size,
 &nbsp; /* 'userdata' is set with CURLOPT_WRITEDATA */
 &nbsp; return nitems * size;
 }
-
+&nbsp;
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

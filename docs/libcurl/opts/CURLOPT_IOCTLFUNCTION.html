@@ -54,22 +54,22 @@ p.roffit {
 <p class="level0">CURLOPT_IOCTLFUNCTION - callback for I/O operations <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 typedef enum {
 &nbsp; CURLIOE_OK,            /* I/O operation successful */
 &nbsp; CURLIOE_UNKNOWNCMD,    /* command was unknown to callback */
 &nbsp; CURLIOE_FAILRESTART,   /* failed to restart the read */
 &nbsp; CURLIOE_LAST           /* never use */
 } curlioerr;
-
+&nbsp;
 typedef enum  {
 &nbsp; CURLIOCMD_NOP,         /* no operation */
 &nbsp; CURLIOCMD_RESTARTREAD, /* restart the read stream from start */
 &nbsp; CURLIOCMD_LAST         /* never use */
 } curliocmd;
-
+&nbsp;
 curlioerr ioctl_callback(CURL *handle, int cmd, void *clientp);
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_IOCTLFUNCTION, ioctl_callback);
 </pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>

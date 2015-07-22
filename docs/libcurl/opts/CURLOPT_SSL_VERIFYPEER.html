@@ -66,10 +66,10 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
-
+&nbsp;
 &nbsp; /* Set the default value: strict certificate check please */
 &nbsp; curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

@@ -54,7 +54,7 @@ p.roffit {
 <p class="level0">CURLOPT_IGNORE_CONTENT_LENGTH - ignore Content-Length in HTTP response <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_IGNORE_CONTENT_LENGTH,
 &nbsp;                         long ignore);
 </pre>
@@ -67,10 +67,10 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_IGNORE_CONTENT_LENGTH,
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* we know the server is silly, ignore content-length */
 &nbsp; curl_easy_setopt(curl, CURLOPT_IGNORE_CONTENT_LENGTH, 1L);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

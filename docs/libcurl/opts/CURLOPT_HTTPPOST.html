@@ -54,7 +54,7 @@ p.roffit {
 <p class="level0">CURLOPT_HTTPPOST - specify the multipart formpost content <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_HTTPPOST,
 &nbsp;                         struct curl_httppost *formpost);
 </pre>
@@ -72,14 +72,14 @@ curl_formadd(&formpost,
 &nbsp;            CURLFORM_COPYNAME, "sendfile",
 &nbsp;            CURLFORM_FILE, "postit2.c",
 &nbsp;            CURLFORM_END);
-
+&nbsp;
 /* Fill in the filename field */
 curl_formadd(&formpost,
 &nbsp;            &lastptr,
 &nbsp;            CURLFORM_COPYNAME, "filename",
 &nbsp;            CURLFORM_COPYCONTENTS, "postit2.c",
 &nbsp;            CURLFORM_END);
-
+&nbsp;
 /* Fill in the submit field too, even if this is rarely needed */
 curl_formadd(&formpost,
 &nbsp;            &lastptr,

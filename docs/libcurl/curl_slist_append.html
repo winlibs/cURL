@@ -61,12 +61,12 @@ p.roffit {
 <p class="level0"><pre class="level0">
 &nbsp;CURL handle;
 &nbsp;struct curl_slist *slist=NULL;
-
+&nbsp;
 &nbsp;slist = curl_slist_append(slist, "pragma:");
 &nbsp;curl_easy_setopt(handle, CURLOPT_HTTPHEADER, slist);
-
+&nbsp;
 &nbsp;curl_easy_perform(handle);
-
+&nbsp;
 &nbsp;curl_slist_free_all(slist); /* free the list again */
 </pre>
 

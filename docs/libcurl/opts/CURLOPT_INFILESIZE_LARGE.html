@@ -54,7 +54,7 @@ p.roffit {
 <p class="level0">CURLOPT_INFILESIZE_LARGE - set size of the input file to send off <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_INFILESIZE_LARGE,
 &nbsp;                         curl_off_t filesize);
 </pre>
@@ -70,13 +70,13 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_INFILESIZE_LARGE,
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_off_t uploadsize = FILE_SIZE;
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="ftp://example.com/destination.tar.gz">ftp://example.com/destination.tar.gz</a>");
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, uploadsize);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

@@ -80,8 +80,7 @@ build_triplet = @build@
 host_triplet = @host@
 @DOING_NATIVE_WINDOWS_TRUE@am__append_1 = -DCURL_STATICLIB
 DIST_COMMON = $(srcdir)/Makefile.inc $(srcdir)/Makefile.in \
-	$(srcdir)/Makefile.am $(top_srcdir)/mkinstalldirs \
-	$(top_srcdir)/depcomp
+	$(srcdir)/Makefile.am $(top_srcdir)/depcomp
 noinst_PROGRAMS = getpart$(EXEEXT) resolve$(EXEEXT) rtspd$(EXEEXT) \
 	sockfilt$(EXEEXT) sws$(EXEEXT) tftpd$(EXEEXT) \
 	fake_ntlm$(EXEEXT)
@@ -106,7 +105,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/curl-compilers.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/lib/curl_config.h \
 	$(top_builddir)/include/curl/curlbuild.h
 CONFIG_CLEAN_FILES =

@@ -64,12 +64,12 @@ p.roffit {
 curl = curl_easy_init();
 if(curl) {
 &nbsp; char error[CURL_ERROR_SIZE]
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* provide a buffer to store errors in */
 &nbsp; curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error);
-
+&nbsp;
 &nbsp; /* Perform the request */
 &nbsp; curl_easy_perform(curl);
 }

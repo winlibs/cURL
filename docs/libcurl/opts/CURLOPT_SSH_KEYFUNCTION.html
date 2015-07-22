@@ -54,7 +54,7 @@ p.roffit {
 <p class="level0">CURLOPT_SSH_KEYFUNCTION - callback for known host matching logic <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 enum curl_khstat {
 &nbsp; CURLKHSTAT_FINE_ADD_TO_FILE,
 &nbsp; CURLKHSTAT_FINE,
@@ -64,13 +64,13 @@ enum curl_khstat {
 &nbsp;                       otherwise the connection will be left intact
 &nbsp;                       etc */
 };
-
+&nbsp;
 enum curl_khmatch {
 &nbsp; CURLKHMATCH_OK,       /* match */
 &nbsp; CURLKHMATCH_MISMATCH, /* host found, key mismatch! */
 &nbsp; CURLKHMATCH_MISSING,  /* no matching host/key found */
 };
-
+&nbsp;
 struct curl_khkey {
 &nbsp; const char *key; /* points to a zero-terminated string encoded with
 &nbsp;                     base64 if len is zero, otherwise to the "raw"
@@ -78,13 +78,13 @@ struct curl_khkey {
 &nbsp; size_t len;
 &nbsp; enum curl_khtype keytype;
 };
-
+&nbsp;
 int ssh_keycallback(CURL *easy,
 &nbsp;                   const struct curl_khkey *knownkey,
 &nbsp;                   const struct curl_khkey *foundkey,
 &nbsp;                   enum curl_khmatch,
 &nbsp;                   void *clientp);
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSH_KEYFUNCTION,
 &nbsp;                         ssh_keycallback);
 </pre>

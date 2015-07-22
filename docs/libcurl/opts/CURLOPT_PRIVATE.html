@@ -63,12 +63,12 @@ struct private secrets;
 if(curl) {
 &nbsp; struct private *extracted;
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* store a pointer to our private struct */
 &nbsp; curl_easy_setopt(curl, CURLOPT_PRIVATE, &secrets);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
-
+&nbsp;
 &nbsp; /* we can extract the private pointer again too */
 &nbsp; curl_easy_getinfo(curl, CURLINFO_PRIVATE, &extracted);
 }

@@ -65,6 +65,7 @@ static const char *const helptext[] = {
   "     --crlf          Convert LF to CRLF in upload",
   "     --crlfile FILE  Get a CRL list in PEM format from the given file",
   " -d, --data DATA     HTTP POST data (H)",
+  "     --data-raw DATA  HTTP POST data, '@' allowed (H)",
   "     --data-ascii DATA  HTTP POST ASCII data (H)",
   "     --data-binary DATA  HTTP POST binary data (H)",
   "     --data-urlencode DATA  HTTP POST data url encoded (H)",
@@ -142,7 +143,7 @@ static const char *const helptext[] = {
   " -n, --netrc         Must read .netrc for user name and password",
   "     --netrc-optional  Use either .netrc or URL; overrides -n",
   "     --netrc-file FILE  Specify FILE for netrc",
-  " -:  --next          "
+  " -:, --next          "
   "Allows the following URL to use a separate set of options",
   "     --no-alpn       Disable the ALPN TLS extension (H)",
   " -N, --no-buffer     Disable buffering of the output stream",
@@ -156,7 +157,7 @@ static const char *const helptext[] = {
   "     --pass PASS     Pass phrase for the private key (SSL/SSH)",
   "     --path-as-is    Do not squash .. sequences in URL path",
   "     --pinnedpubkey FILE  Public key (PEM/DER) to verify peer against "
-  "(OpenSSL/GnuTLS/GSKit only)",
+  "(OpenSSL/GnuTLS/NSS/wolfSSL/CyaSSL/GSKit only)",
   "     --post301       "
   "Do not switch to GET after following a 301 redirect (H)",
   "     --post302       "
@@ -173,6 +174,10 @@ static const char *const helptext[] = {
   "     --proxy-negotiate  "
   "Use HTTP Negotiate (SPNEGO) authentication on the proxy (H)",
   "     --proxy-ntlm    Use NTLM authentication on the proxy (H)",
+#if defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI)
+  "     --proxy-service-name NAME  SPNEGO proxy service name",
+  "     --service-name NAME  SPNEGO service name",
+#endif
   " -U, --proxy-user USER[:PASSWORD]  Proxy user and password",
   "     --proxy1.0 HOST[:PORT]  Use HTTP/1.0 proxy on given port",
   " -p, --proxytunnel   Operate through a HTTP proxy tunnel (using CONNECT)",

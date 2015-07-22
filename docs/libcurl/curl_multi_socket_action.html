@@ -54,7 +54,7 @@ p.roffit {
 <p class="level0">curl_multi_socket_action - reads/writes available data given an action <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 CURLMcode curl_multi_socket_action(CURLM * multi_handle,
 &nbsp;                                  curl_socket_t sockfd, int ev_bitmask,
 &nbsp;                                  int *running_handles);
@@ -67,7 +67,7 @@ CURLMcode curl_multi_socket_action(CURLM * multi_handle,
 <p class="level0">Get the timeout time by setting the <span Class="emphasis">CURLMOPT_TIMERFUNCTION</span> option with <a Class="emphasis" href="./curl_multi_setopt.html">curl_multi_setopt</a>. Your application will then get called with information on how long to wait for socket actions at most before doing the timeout action: call the <a Class="bold" href="./curl_multi_socket_action.html">curl_multi_socket_action</a> function with the <span Class="bold">sockfd</span> argument set to CURL_SOCKET_TIMEOUT. You can also use the <a Class="emphasis" href="./curl_multi_timeout.html">curl_multi_timeout</a> function to poll the value at any given time, but for an event-based system using the callback is far better than relying on polling the timeout value. <a name="CALLBACK"></a><h2 class="nroffsh">CALLBACK DETAILS</h2>
 <p class="level0">
 <p class="level0">The socket <span Class="bold">callback</span> function uses a prototype like this <pre class="level0">
-
+&nbsp;
 &nbsp; int curl_socket_callback(CURL *easy,      /* easy handle */
 &nbsp;                          curl_socket_t s, /* socket */
 &nbsp;                          int action,      /* see values below */
@@ -76,7 +76,7 @@ CURLMcode curl_multi_socket_action(CURLM * multi_handle,
 &nbsp;                                             <span Class="bold">NULL</span> if not
 &nbsp;                                             previously assigned with
 &nbsp;                                             <a Class="bold" href="./curl_multi_assign.html">curl_multi_assign</a> */
-
+&nbsp;
 </pre>
 
 <p class="level0">The callback MUST return 0. 

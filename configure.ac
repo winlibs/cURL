@@ -1194,8 +1194,6 @@ if test x"$want_gss" = xyes; then
   if test -z "$GSSAPI_INCS"; then
      if test -n "$host_alias" -a -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
         GSSAPI_INCS=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --cflags gssapi`
-     elif test -f "$GSSAPI_ROOT/bin/krb5-config"; then
-        GSSAPI_INCS=`$GSSAPI_ROOT/bin/krb5-config --cflags gssapi`
      elif test -f "$KRB5CONFIG"; then
         GSSAPI_INCS=`$KRB5CONFIG --cflags gssapi`
      elif test "$GSSAPI_ROOT" != "yes"; then
@@ -2843,7 +2841,9 @@ if test X"$want_h2" != Xno; then
     CPPFLAGS="$CPPFLAGS $CPP_H2"
     LIBS="$LIB_H2 $LIBS"
 
-    AC_CHECK_LIB(nghttp2, nghttp2_session_callbacks_set_send_callback,
+    # use nghttp2_option_set_no_recv_client_magic to require nghttp2
+    # >= 1.0.0
+    AC_CHECK_LIB(nghttp2, nghttp2_option_set_no_recv_client_magic,
       [
        AC_CHECK_HEADERS(nghttp2/nghttp2.h,
           curl_h2_msg="enabled (nghttp2)"

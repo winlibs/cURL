@@ -54,13 +54,13 @@ p.roffit {
 <p class="level0">CURLOPT_OPENSOCKETFUNCTION - set callback for opening sockets <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 typedef enum  {
 &nbsp; CURLSOCKTYPE_IPCXN,  /* socket created for a specific IP connection */
 &nbsp; CURLSOCKTYPE_ACCEPT, /* socket created by accept() call */
 &nbsp; CURLSOCKTYPE_LAST    /* never use */
 } curlsocktype;
-
+&nbsp;
 struct curl_sockaddr {
 &nbsp; int family;
 &nbsp; int socktype;
@@ -68,11 +68,11 @@ struct curl_sockaddr {
 &nbsp; unsigned int addrlen;
 &nbsp; struct sockaddr addr;
 };
-
+&nbsp;
 curl_socket_t opensocket_callback(void *clientp,
 &nbsp;                                 curlsocktype purpose,
 &nbsp;                                 struct curl_sockaddr *address);
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_OPENSOCKETFUNCTION, opensocket_callback);
 </pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>

@@ -54,7 +54,7 @@ p.roffit {
 <p class="level0">CURLOPT_POSTREDIR - how to act on a HTTP POST redirect <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_POSTREDIR,
 &nbsp;                         long bitmask);
 </pre>
@@ -67,14 +67,14 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_POSTREDIR,
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
-
+&nbsp;
 &nbsp; /* a silly POST example */
 &nbsp; curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "data=true");
-
+&nbsp;
 &nbsp; /* example.com is redirected, so we tell libcurl to send POST on 301, 302 and
 &nbsp;    303 HTTP response codes */
 &nbsp; curl_easy_setopt(curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

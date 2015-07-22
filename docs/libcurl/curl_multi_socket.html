@@ -56,7 +56,7 @@ p.roffit {
 &#35;include &lt;curl/curl.h&gt;
 CURLMcode curl_multi_socket(CURLM * multi_handle, curl_socket_t sockfd,
 &nbsp;                           int *running_handles);
-
+&nbsp;
 CURLMcode curl_multi_socket_all(CURLM *multi_handle,
 &nbsp;                               int *running_handles);
 </pre>
@@ -70,13 +70,13 @@ CURLMcode curl_multi_socket_all(CURLM *multi_handle,
 <p class="level0">Force libcurl to (re-)check all its internal sockets and transfers instead of just a single one by calling <a Class="bold" href="./curl_multi_socket_all.html">curl_multi_socket_all</a>. Note that there should not be any reason to use this function! <a name="CALLBACK"></a><h2 class="nroffsh">CALLBACK DETAILS</h2>
 <p class="level0">
 <p class="level0">The socket <span Class="bold">callback</span> function uses a prototype like this <pre class="level0">
-
+&nbsp;
 &nbsp; int curl_socket_callback(CURL *easy,      /* easy handle */
 &nbsp;                          curl_socket_t s, /* socket */
 &nbsp;                          int action,      /* see values below */
 &nbsp;                          void *userp,    /* private callback pointer */
 &nbsp;                          void *socketp); /* private socket pointer */
-
+&nbsp;
 </pre>
 
 <p class="level0">The callback MUST return 0. 

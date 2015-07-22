@@ -914,7 +914,7 @@ struct CookieInfo *Curl_cookie_init(struct SessionHandle *data,
     fp = NULL;
   }
   else
-    fp = file?fopen(file, "r"):NULL;
+    fp = file?fopen(file, FOPEN_READTEXT):NULL;
 
   c->newsession = newsession; /* new session? */
 
@@ -1262,7 +1262,7 @@ static int cookie_output(struct CookieInfo *c, const char *dumphere)
     use_stdout=TRUE;
   }
   else {
-    out = fopen(dumphere, "w");
+    out = fopen(dumphere, FOPEN_WRITETEXT);
     if(!out)
       return 1; /* failure */
   }
@@ -1277,6 +1277,8 @@ static int cookie_output(struct CookieInfo *c, const char *dumphere)
     co = c->cookies;
 
     while(co) {
+      if(!co->domain)
+        continue;
       format_ptr = get_netscape_format(co);
       if(format_ptr == NULL) {
         fprintf(out, "#\n# Fatal libcurl error\n");
@@ -1310,7 +1312,8 @@ struct curl_slist *Curl_cookie_list(struct SessionHandle *data)
   c = data->cookies->cookies;
 
   while(c) {
-    /* fill the list with _all_ the cookies we know */
+    if(!c->domain)
+      continue;
     line = get_netscape_format(c);
     if(!line) {
       curl_slist_free_all(list);

@@ -54,11 +54,11 @@ p.roffit {
 <p class="level0">CURLMOPT_TIMERFUNCTION - set callback to receive timeout values <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 int timer_callback(CURLM *multi,    /* multi handle */
 &nbsp;                  long timeout_ms, /* see above */
 &nbsp;                  void *userp);    /* private callback pointer */
-
+&nbsp;
 CURLMcode curl_multi_setopt(CURLM *handle, CURLMOPT_TIMERFUNCTION, timer_callback);
 </pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
@@ -82,13 +82,13 @@ static gboolean timeout_cb(gpointer user_data) {
 &nbsp;   curl_multi_socket_action(multi, CURL_SOCKET_TIMEOUT, 0, &running);
 &nbsp;   return G_SOURCE_REMOVE;
 }
-
+&nbsp;
 static int timerfunc(CURLM *multi, long timeout_ms, void *userp) {
 &nbsp;   guint *id = userp;
-
+&nbsp;
 &nbsp;   if (id)
 &nbsp;       g_source_remove(*id);
-
+&nbsp;
 &nbsp;   // -1 means we should just delete our timer.
 &nbsp;   if (timeout_ms == -1) {
 &nbsp;       g_free(id);
@@ -101,7 +101,7 @@ static int timerfunc(CURLM *multi, long timeout_ms, void *userp) {
 &nbsp;   curl_multi_setopt(multi, CURLMOPT_TIMERDATA, id);
 &nbsp;   return 0;
 }
-
+&nbsp;
 curl_multi_setopt(multi, CURLMOPT_TIMERFUNCTION, timerfunc);
 </pre>
 

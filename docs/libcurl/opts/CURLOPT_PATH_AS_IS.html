@@ -64,9 +64,9 @@ p.roffit {
 CURL *curl = curl_easy_init();
 if(curl) {
 &nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com/../../etc/password">http://example.com/../../etc/password</a>");
-
+&nbsp;
 &nbsp; curl_easy_setopt(curl, CURLOPT_PATH_AS_IS, 1L);
-
+&nbsp;
 &nbsp; curl_easy_perform(curl);
 }
 </pre>

@@ -206,7 +206,7 @@ p.roffit {
 &nbsp;   char *data="name=daniel&project=curl";
 &nbsp;   curl_easy_setopt(easyhandle, CURLOPT_POSTFIELDS, data);
 &nbsp;   curl_easy_setopt(easyhandle, CURLOPT_URL, "<a href="http://posthere.com/">http://posthere.com/</a>");
-
+&nbsp;
 &nbsp;   curl_easy_perform(easyhandle); /* post away! */
 </pre>
 
@@ -216,18 +216,18 @@ p.roffit {
 <p class="level0"><pre class="level0">
 &nbsp;struct curl_slist *headers=NULL;
 &nbsp;headers = curl_slist_append(headers, "Content-Type: text/xml");
-
+&nbsp;
 &nbsp;/* post binary data */
 &nbsp;curl_easy_setopt(easyhandle, CURLOPT_POSTFIELDS, binaryptr);
-
+&nbsp;
 &nbsp;/* set the size of the postfields data */
 &nbsp;curl_easy_setopt(easyhandle, CURLOPT_POSTFIELDSIZE, 23L);
-
+&nbsp;
 &nbsp;/* pass our list of custom made headers */
 &nbsp;curl_easy_setopt(easyhandle, CURLOPT_HTTPHEADER, headers);
-
+&nbsp;
 &nbsp;curl_easy_perform(easyhandle); /* post away! */
-
+&nbsp;
 &nbsp;curl_slist_free_all(headers); /* free the header list */
 </pre>
 
@@ -246,12 +246,12 @@ p.roffit {
 &nbsp;curl_formadd(&post, &last,
 &nbsp;             CURLFORM_COPYNAME, "logotype-image",
 &nbsp;             CURLFORM_FILECONTENT, "curl.png", CURLFORM_END);
-
+&nbsp;
 &nbsp;/* Set the form info */
 &nbsp;curl_easy_setopt(easyhandle, CURLOPT_HTTPPOST, post);
-
+&nbsp;
 &nbsp;curl_easy_perform(easyhandle); /* post away! */
-
+&nbsp;
 &nbsp;/* free the post data again */
 &nbsp;curl_formfree(post);
 </pre>
@@ -261,15 +261,15 @@ p.roffit {
 <p class="level0"><pre class="level0">
 &nbsp;struct curl_slist *headers=NULL;
 &nbsp;headers = curl_slist_append(headers, "Content-Type: text/xml");
-
+&nbsp;
 &nbsp;curl_formadd(&post, &last,
 &nbsp;             CURLFORM_COPYNAME, "logotype-image",
 &nbsp;             CURLFORM_FILECONTENT, "curl.xml",
 &nbsp;             CURLFORM_CONTENTHEADER, headers,
 &nbsp;             CURLFORM_END);
-
+&nbsp;
 &nbsp;curl_easy_perform(easyhandle); /* post away! */
-
+&nbsp;
 &nbsp;curl_formfree(post); /* free post */
 &nbsp;curl_slist_free_all(headers); /* free custom header list */
 </pre>
@@ -392,15 +392,15 @@ class AClass {
 <p class="level1">HTTP-like protocols pass a series of headers to the server when doing the request, and you're free to pass any amount of extra headers that you think fit. Adding headers is this easy: 
 <p class="level1"><pre class="level1">
 &nbsp;struct curl_slist *headers=NULL; /* init to NULL is important */
-
+&nbsp;
 &nbsp;headers = curl_slist_append(headers, "Hey-server-hey: how are you?");
 &nbsp;headers = curl_slist_append(headers, "X-silly-content: yes");
-
+&nbsp;
 &nbsp;/* pass our list of custom made headers */
 &nbsp;curl_easy_setopt(easyhandle, CURLOPT_HTTPHEADER, headers);
-
+&nbsp;
 &nbsp;curl_easy_perform(easyhandle); /* transfer http */
-
+&nbsp;
 &nbsp;curl_slist_free_all(headers); /* free the header list */
 </pre>
 
@@ -434,12 +434,12 @@ class AClass {
 <p class="level1">A little example that deletes a given file before an operation: 
 <p class="level1"><pre class="level1">
 &nbsp;headers = curl_slist_append(headers, "DELE file-to-remove");
-
+&nbsp;
 &nbsp;/* pass the list of custom commands to the handle */
 &nbsp;curl_easy_setopt(easyhandle, CURLOPT_QUOTE, headers);
-
+&nbsp;
 &nbsp;curl_easy_perform(easyhandle); /* transfer ftp data! */
-
+&nbsp;
 &nbsp;curl_slist_free_all(headers); /* free the header list */
 </pre>
 

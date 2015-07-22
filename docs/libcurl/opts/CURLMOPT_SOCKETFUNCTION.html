@@ -54,13 +54,13 @@ p.roffit {
 <p class="level0">CURLMOPT_SOCKETFUNCTION - callback informed about what to wait for <a name="SYNOPSIS"></a><h2 class="nroffsh">SYNOPSIS</h2>
 <p class="level0"><pre class="level0">
 &#35;include &lt;curl/curl.h&gt;
-
+&nbsp;
 int socket_callback(CURL *easy,      /* easy handle */
 &nbsp;                   curl_socket_t s, /* socket */
 &nbsp;                   int what,        /* see above */
 &nbsp;                   void *userp,     /* private callback pointer */
 &nbsp;                   void *socketp);  /* private socket pointer */
-
+&nbsp;
 CURLMcode curl_multi_setopt(CURLM *handle, CURLMOPT_SOCKETFUNCTION, socket_callback);
 </pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
