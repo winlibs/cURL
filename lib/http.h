@@ -176,6 +176,10 @@ struct HTTP {
   const uint8_t *upload_mem; /* points to a buffer to read from */
   size_t upload_len; /* size of the buffer 'upload_mem' points to */
   curl_off_t upload_left; /* number of bytes left to upload */
+
+  char **push_headers;       /* allocated array */
+  size_t push_headers_used;  /* number of entries filled in */
+  size_t push_headers_alloc; /* number of entries allocated */
 #endif
 };
 
@@ -211,7 +215,6 @@ struct http_conn {
                               nghttp2_session_mem_recv */
 
   /* this is a hash of all individual streams (SessionHandle structs) */
-  struct curl_hash streamsh;
   struct h2settings settings;
 #else
   int unused; /* prevent a compiler warning */

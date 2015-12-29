@@ -1755,6 +1755,9 @@
 					RelativePath="..\..\..\..\lib\vtls\gtls.c">
 				</File>
 				<File
+					RelativePath="..\..\..\..\lib\vtls\mbedtls.c">
+				</File>
+				<File
 					RelativePath="..\..\..\..\lib\vtls\nss.c">
 				</File>
 				<File
@@ -1790,6 +1793,9 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\gtls.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mbedtls.h">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\nssg.h">

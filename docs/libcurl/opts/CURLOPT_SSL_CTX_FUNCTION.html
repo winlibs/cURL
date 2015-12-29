@@ -67,10 +67,10 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_SSL_CTX_FUNCTION,
 <p class="level0">This function will get called on all new connections made to a server, during the SSL negotiation. The SSL_CTX pointer will be a new one every time. 
 <p class="level0">To use this properly, a non-trivial amount of knowledge of your SSL library is necessary. For example, you can use this function to call library-specific callbacks to add additional validation code for certificates, and even to change the actual URI of a HTTPS request (example used in the lib509 test case).  See also the example section for a replacement of the key, certificate and trust file settings. <a name="DEFAULT"></a><h2 class="nroffsh">DEFAULT</h2>
 <p class="level0">NULL <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
-<p class="level0">All TLS based protocols: HTTPS, FTPS, IMAPS, POP3, SMTPS etc. <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
+<p class="level0">All TLS based protocols: HTTPS, FTPS, IMAPS, POP3S, SMTPS etc. <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
 <p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Added in 7.11.0 for OpenSSL. Added in 7.42.0 for wolfSSL/CyaSSL. Other SSL backends not supported. <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./CURLOPT_SSL_CTX_DATA.html">CURLOPT_SSL_CTX_DATA</a>, <a Class="manpage" href="./CURLOPT_SSL_VERIFYPEER.html">CURLOPT_SSL_VERIFYPEER</a>, <span Class="manpage"> </span> <p class="roffit">
+<p class="level0"><a Class="manpage" href="./CURLOPT_SSL_CTX_DATA.html">CURLOPT_SSL_CTX_DATA</a>, <a Class="manpage" href="./CURLOPT_SSL_VERIFYPEER.html">CURLOPT_SSL_VERIFYPEER</a><p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

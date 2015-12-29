@@ -279,6 +279,10 @@
 /* Define to 1 if you have a working gmtime_r function. */
 #undef HAVE_GMTIME_R
 
+/* Define to 1 if you have the `gnutls_certificate_set_x509_key_file2'
+   function. */
+#undef HAVE_GNUTLS_CERTIFICATE_SET_X509_KEY_FILE2
+
 /* if you have the function gnutls_srp_verifier */
 #undef HAVE_GNUTLS_SRP
 
@@ -924,6 +928,9 @@
 /* if GnuTLS uses nettle as crypto backend */
 #undef USE_GNUTLS_NETTLE
 
+/* PSL support enabled */
+#undef USE_LIBPSL
+
 /* if librtmp is in use */
 #undef USE_LIBRTMP
 
@@ -932,6 +939,9 @@
 
 /* If you want to build curl with the built-in manual */
 #undef USE_MANUAL
+
+/* if mbedTLS is enabled */
+#undef USE_MBEDTLS
 
 /* Define to enable metalink support */
 #undef USE_METALINK

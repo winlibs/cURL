@@ -62,8 +62,6 @@
 
 #define GOOD_MULTI_HANDLE(x) \
   ((x) && (((struct Curl_multi *)(x))->type == CURL_MULTI_HANDLE))
-#define GOOD_EASY_HANDLE(x) \
-  ((x) && (((struct SessionHandle *)(x))->magic == CURLEASY_MAGIC_NUMBER))
 
 static void singlesocket(struct Curl_multi *multi,
                          struct SessionHandle *data);
@@ -101,6 +99,9 @@ static const char * const statename[]={
 
 static void multi_freetimeout(void *a, void *b);
 
+/* function pointer called once when switching TO a state */
+typedef void (*init_multistate_func)(struct SessionHandle *data);
+
 /* always use this function to change state, to make debugging easier */
 static void mstate(struct SessionHandle *data, CURLMstate state
 #ifdef DEBUGBUILD
@@ -109,6 +110,12 @@ static void mstate(struct SessionHandle *data, CURLMstate state
 )
 {
   CURLMstate oldstate = data->mstate;
+  static const init_multistate_func finit[CURLM_STATE_LAST] = {
+    NULL,
+    NULL,
+    Curl_init_CONNECT, /* CONNECT */
+    /* the rest is NULL too */
+  };
 
 #if defined(DEBUGBUILD) && defined(CURL_DISABLE_VERBOSE_STRINGS)
   (void) lineno;
@@ -138,6 +145,10 @@ static void mstate(struct SessionHandle *data, CURLMstate state
   if(state == CURLM_STATE_COMPLETED)
     /* changing to COMPLETED means there's one less easy handle 'alive' */
     data->multi->num_alive--;
+
+  /* if this state has an init-function, run it */
+  if(finit[state])
+    finit[state](data);
 }
 
 #ifndef DEBUGBUILD
@@ -401,11 +412,6 @@ CURLMcode curl_multi_add_handle(CURLM *multi_handle,
 
   /* Point to the multi's connection cache */
   data->state.conn_cache = &multi->conn_cache;
-
-  if(data->set.httpreq == HTTPREQ_PUT)
-    data->state.infilesize = data->set.filesize;
-  else
-    data->state.infilesize = data->set.postfieldsize;
 
   /* This adds the new entry at the 'end' of the doubly-linked circular
      list of SessionHandle structs to try and maintain a FIFO queue so
@@ -955,6 +961,28 @@ static bool multi_ischanged(struct Curl_multi *multi, bool clear)
   if(clear)
     multi->recheckstate = FALSE;
   return retval;
+}
+
+CURLMcode Curl_multi_add_perform(struct Curl_multi *multi,
+                                 struct SessionHandle *data,
+                                 struct connectdata *conn)
+{
+  CURLMcode rc;
+
+  rc = curl_multi_add_handle(multi, data);
+  if(!rc) {
+    struct SingleRequest *k = &data->req;
+
+    /* pass in NULL for 'conn' here since we don't want to init the
+       connection, only this transfer */
+    Curl_init_do(data, NULL);
+
+    /* take this handle to the perform state right away */
+    multistate(data, CURLM_STATE_PERFORM);
+    data->easy_conn = conn;
+    k->keepon |= KEEP_RECV; /* setup to receive! */
+  }
+  return rc;
 }
 
 static CURLMcode multi_runsingle(struct Curl_multi *multi,
@@ -2345,6 +2373,12 @@ CURLMcode curl_multi_setopt(CURLM *multi_handle,
     break;
   case CURLMOPT_SOCKETDATA:
     multi->socket_userp = va_arg(param, void *);
+    break;
+  case CURLMOPT_PUSHFUNCTION:
+    multi->push_cb = va_arg(param, curl_push_callback);
+    break;
+  case CURLMOPT_PUSHDATA:
+    multi->push_userp = va_arg(param, void *);
     break;
   case CURLMOPT_PIPELINING:
     multi->pipelining = va_arg(param, long);

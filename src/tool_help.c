@@ -156,8 +156,7 @@ static const char *const helptext[] = {
   " -o, --output FILE   Write to FILE instead of stdout",
   "     --pass PASS     Pass phrase for the private key (SSL/SSH)",
   "     --path-as-is    Do not squash .. sequences in URL path",
-  "     --pinnedpubkey FILE  Public key (PEM/DER) to verify peer against "
-  "(OpenSSL/GnuTLS/NSS/wolfSSL/CyaSSL/GSKit only)",
+  "     --pinnedpubkey FILE/HASHES Public key to verify peer against (SSL)",
   "     --post301       "
   "Do not switch to GET after following a 301 redirect (H)",
   "     --post302       "
@@ -166,7 +165,8 @@ static const char *const helptext[] = {
   "Do not switch to GET after following a 303 redirect (H)",
   " -#, --progress-bar  Display transfer progress as a progress bar",
   "     --proto PROTOCOLS  Enable/disable PROTOCOLS",
-  "     --proto-redir PROTOCOLS  Enable/disable PROTOCOLS on redirect",
+  "     --proto-default PROTOCOL  Use PROTOCOL for any URL missing a scheme",
+  "     --proto-redir PROTOCOLS   Enable/disable PROTOCOLS on redirect",
   " -x, --proxy [PROTOCOL://]HOST[:PORT]  Use proxy on given port",
   "     --proxy-anyauth  Pick \"any\" proxy authentication method (H)",
   "     --proxy-basic   Use Basic authentication on the proxy (H)",
@@ -174,10 +174,8 @@ static const char *const helptext[] = {
   "     --proxy-negotiate  "
   "Use HTTP Negotiate (SPNEGO) authentication on the proxy (H)",
   "     --proxy-ntlm    Use NTLM authentication on the proxy (H)",
-#if defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI)
   "     --proxy-service-name NAME  SPNEGO proxy service name",
   "     --service-name NAME  SPNEGO service name",
-#endif
   " -U, --proxy-user USER[:PASSWORD]  Proxy user and password",
   "     --proxy1.0 HOST[:PORT]  Use HTTP/1.0 proxy on given port",
   " -p, --proxytunnel   Operate through a HTTP proxy tunnel (using CONNECT)",
@@ -206,10 +204,8 @@ static const char *const helptext[] = {
   "     --socks5 HOST[:PORT]  SOCKS5 proxy on given host + port",
   "     --socks5-hostname HOST[:PORT]  "
   "SOCKS5 proxy, pass host name to proxy",
-#if defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI)
   "     --socks5-gssapi-service NAME  SOCKS5 proxy service name for GSS-API",
   "     --socks5-gssapi-nec  Compatibility with NEC SOCKS5 server",
-#endif
   " -Y, --speed-limit RATE  "
   "Stop transfers below RATE for 'speed-time' secs",
   " -y, --speed-time SECONDS  "
@@ -219,12 +215,13 @@ static const char *const helptext[] = {
   " -2, --sslv2         Use SSLv2 (SSL)",
   " -3, --sslv3         Use SSLv3 (SSL)",
   "     --ssl-allow-beast  Allow security flaw to improve interop (SSL)",
+  "     --ssl-no-revoke    Disable cert revocation checks (WinSSL)",
   "     --stderr FILE   Where to redirect stderr (use \"-\" for stdout)",
   "     --tcp-nodelay   Use the TCP_NODELAY option",
   " -t, --telnet-option OPT=VAL  Set telnet option",
   "     --tftp-blksize VALUE  Set TFTP BLKSIZE option (must be >512)",
   " -z, --time-cond TIME  Transfer based on a time condition",
-  " -1, --tlsv1         Use => TLSv1 (SSL)",
+  " -1, --tlsv1         Use >= TLSv1 (SSL)",
   "     --tlsv1.0       Use TLSv1.0 (SSL)",
   "     --tlsv1.1       Use TLSv1.1 (SSL)",
   "     --tlsv1.2       Use TLSv1.2 (SSL)",
@@ -319,6 +316,9 @@ void tool_version_info(void)
     }
 #ifdef USE_METALINK
     printf("Metalink ");
+#endif
+#ifdef USE_LIBPSL
+    printf("PSL ");
 #endif
     puts(""); /* newline */
   }

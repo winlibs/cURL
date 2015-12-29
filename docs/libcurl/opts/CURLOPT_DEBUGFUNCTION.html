@@ -105,7 +105,7 @@ void dump(const char *text,
 &nbsp; size_t c;
 &nbsp; unsigned int width=0x10;
 &nbsp;
-&nbsp; fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)n",
+&nbsp; fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
 &nbsp;         text, (long)size, (long)size);
 &nbsp;
 &nbsp; for(i=0; i&lt;size; i+= width) {
@@ -123,7 +123,7 @@ void dump(const char *text,
 &nbsp;   for(c = 0; (c &lt; width) && (i+c &lt; size); c++)
 &nbsp;     fputc(ptr[i+c]&gt;=0x20) && (ptr[i+c]&lt;0x80)?ptr[i+c]:'.', stream);
 &nbsp;
-&nbsp;   fputc('n', stream); /* newline */
+&nbsp;   fputc('\n', stream); /* newline */
 &nbsp; }
 }
 &nbsp;
@@ -184,7 +184,7 @@ int main(void)
 &nbsp;   res = curl_easy_perform(curl);
 &nbsp;   /* Check for errors */
 &nbsp;   if(res != CURLE_OK)
-&nbsp;     fprintf(stderr, "curl_easy_perform() failed: %sn",
+&nbsp;     fprintf(stderr, "curl_easy_perform() failed: %s\n",
 &nbsp;             curl_easy_strerror(res));
 &nbsp;
 &nbsp;   /* always cleanup */
@@ -197,6 +197,6 @@ int main(void)
 <p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Always <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./CURLOPT_VERBOSE.html">CURLOPT_VERBOSE</a>, <a Class="manpage" href="./CURLOPT_DEBUGDATA.html">CURLOPT_DEBUGDATA</a>, <span Class="manpage"> </span> <p class="roffit">
+<p class="level0"><a Class="manpage" href="./CURLOPT_VERBOSE.html">CURLOPT_VERBOSE</a>, <a Class="manpage" href="./CURLOPT_DEBUGDATA.html">CURLOPT_DEBUGDATA</a><p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

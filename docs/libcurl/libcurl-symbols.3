@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH libcurl-symbols 3 "Jun 17, 2015" "libcurl 7.41.0" "libcurl symbols"
+.TH libcurl-symbols 3 "nov 27, 2015" "libcurl 7.41.0" "libcurl symbols"
 .SH NAME
 libcurl-symbols \- libcurl symbol version information
 .SH "libcurl symbols"
@@ -367,6 +367,8 @@ Introduced in 7.9.8
 Introduced in 7.9.8
 .IP CURLFORM_CONTENTHEADER
 Introduced in 7.9.3
+.IP CURLFORM_CONTENTLEN
+Introduced in 7.46.0
 .IP CURLFORM_CONTENTSLENGTH
 Introduced in 7.9
 .IP CURLFORM_CONTENTTYPE
@@ -441,6 +443,8 @@ Introduced in 7.22.0
 Introduced in 7.37.0
 .IP CURLHEADER_UNIFIED
 Introduced in 7.37.0
+.IP CURLINFO_ACTIVESOCKET
+Introduced in 7.45.0
 .IP CURLINFO_APPCONNECT_TIME
 Introduced in 7.19.0
 .IP CURLINFO_CERTINFO
@@ -538,6 +542,8 @@ Introduced in 7.4.1
 Introduced in 7.4.1
 .IP CURLINFO_SLIST
 Introduced in 7.12.3
+.IP CURLINFO_SOCKET
+Introduced in 7.45.0
 .IP CURLINFO_SPEED_DOWNLOAD
 Introduced in 7.4.1
 .IP CURLINFO_SPEED_UPLOAD
@@ -612,6 +618,10 @@ Introduced in 7.16.0
 Introduced in 7.30.0
 .IP CURLMOPT_PIPELINING_SITE_BL
 Introduced in 7.30.0
+.IP CURLMOPT_PUSHDATA
+Introduced in 7.44.0
+.IP CURLMOPT_PUSHFUNCTION
+Introduced in 7.44.0
 .IP CURLMOPT_SOCKETDATA
 Introduced in 7.15.4
 .IP CURLMOPT_SOCKETFUNCTION
@@ -652,6 +662,8 @@ Introduced in 7.1
 Introduced in 7.1
 .IP CURLOPTTYPE_OFF_T
 Introduced in 7.11.0
+.IP CURLOPTTYPE_STRINGPOINT
+Introduced in 7.46.0
 .IP CURLOPT_ACCEPTTIMEOUT_MS
 Introduced in 7.24.0
 .IP CURLOPT_ACCEPT_ENCODING
@@ -721,6 +733,8 @@ Introduced in 7.1
 Introduced in 7.9.6
 .IP CURLOPT_DEBUGFUNCTION
 Introduced in 7.9.6
+.IP CURLOPT_DEFAULT_PROTOCOL
+Introduced in 7.45.0
 .IP CURLOPT_DIRLISTONLY
 Introduced in 7.17.0
 .IP CURLOPT_DNS_CACHE_TIMEOUT
@@ -1112,6 +1126,12 @@ Introduced in 7.4.2
 Introduced in 7.41.0
 .IP CURLOPT_STDERR
 Introduced in 7.1
+.IP CURLOPT_STREAM_DEPENDS
+Introduced in 7.46.0
+.IP CURLOPT_STREAM_DEPENDS_E
+Introduced in 7.46.0
+.IP CURLOPT_STREAM_WEIGHT
+Introduced in 7.46.0
 .IP CURLOPT_TCP_KEEPALIVE
 Introduced in 7.25.0
 .IP CURLOPT_TCP_KEEPIDLE
@@ -1318,6 +1338,8 @@ Introduced in 7.34.0
 Introduced in 7.34.0
 .IP CURLSSLBACKEND_GSKIT
 Introduced in 7.34.0
+.IP CURLSSLBACKEND_MBEDTLS
+Introduced in 7.46.0
 .IP CURLSSLBACKEND_NONE
 Introduced in 7.34.0
 .IP CURLSSLBACKEND_NSS
@@ -1332,6 +1354,8 @@ Introduced in 7.34.0
 Introduced in 7.34.0
 .IP CURLSSLOPT_ALLOW_BEAST
 Introduced in 7.25.0
+.IP CURLSSLOPT_NO_REVOKE
+Introduced in 7.44.0
 .IP CURLUSESSL_ALL
 Introduced in 7.17.0
 .IP CURLUSESSL_CONTROL
@@ -1406,14 +1430,30 @@ Introduced in 7.8
 Introduced in 7.8
 .IP CURL_GLOBAL_WIN32
 Introduced in 7.8.1
+.IP CURL_HTTPPOST_BUFFER
+Introduced in 7.46.0
+.IP CURL_HTTPPOST_CALLBACK
+Introduced in 7.46.0
+.IP CURL_HTTPPOST_FILENAME
+Introduced in 7.46.0
+.IP CURL_HTTPPOST_LARGE
+Introduced in 7.46.0
+.IP CURL_HTTPPOST_PTRBUFFER
+Introduced in 7.46.0
+.IP CURL_HTTPPOST_PTRCONTENTS
+Introduced in 7.46.0
+.IP CURL_HTTPPOST_PTRNAME
+Introduced in 7.46.0
+.IP CURL_HTTPPOST_READFILE
+Introduced in 7.46.0
 .IP CURL_HTTP_VERSION_1_0
 Introduced in 7.9.1
 .IP CURL_HTTP_VERSION_1_1
 Introduced in 7.9.1
-.IP CURL_HTTP_VERSION_2_0
-Introduced in 7.33.0
 .IP CURL_HTTP_VERSION_2
 Introduced in 7.43.0
+.IP CURL_HTTP_VERSION_2_0
+Introduced in 7.33.0
 .IP CURL_HTTP_VERSION_NONE
 Introduced in 7.9.1
 .IP CURL_IPRESOLVE_V4
@@ -1474,6 +1514,10 @@ Introduced in 7.14.0
 Introduced in 7.1.1
 .IP CURL_PROGRESS_STATS
 Introduced in 7.1.1
+.IP CURL_PUSH_DENY
+Introduced in 7.44.0
+.IP CURL_PUSH_OK
+Introduced in 7.44.0
 .IP CURL_READFUNC_ABORT
 Introduced in 7.12.1
 .IP CURL_READFUNC_PAUSE

@@ -19,8 +19,13 @@
  * KIND, either express or implied.
  *
  ***************************************************************************/
+/* <DESC>
+ * Multiplexed HTTP/2 uploads over a single connection
+ * </DESC>
+ */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 

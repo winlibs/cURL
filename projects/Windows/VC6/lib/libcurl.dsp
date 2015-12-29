@@ -1166,6 +1166,10 @@ SOURCE=..\..\..\..\lib\vtls\gtls.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\vtls\mbedtls.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\vtls\nss.c
 # End Source File
 # Begin Source File
@@ -1611,6 +1615,10 @@ SOURCE=..\..\..\..\lib\vtls\gskit.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\vtls\gtls.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\mbedtls.h
 # End Source File
 # Begin Source File
 

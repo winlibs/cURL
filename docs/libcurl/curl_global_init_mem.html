@@ -62,8 +62,8 @@ p.roffit {
 </pre>
 <a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
 <p class="level0">This function works exactly as <a Class="emphasis" href="./curl_global_init.html">curl_global_init</a> with one addition: it allows the application to set callbacks to replace the otherwise used internal memory functions. 
-<p class="level0">This man page only adds documentation for the callbacks, see the <a Class="emphasis" href="./curl_global_init.html">curl_global_init</a> man page for all the rest. When you use this function, all callback arguments must be set to valid function pointers. 
-<p class="level0">The prototypes for the given callbacks should match these: 
+<p class="level0">If you are using libcurl from multiple threads or libcurl was built with the threaded resolver option then the callback functions must be thread safe. The threaded resolver is a common build option to enable (and in some cases the default) so we strongly urge you to make your callback functions thread safe. 
+<p class="level0">All callback arguments must be set to valid function pointers. The prototypes for the given callbacks must match these: 
 <p class="level0"><a name="void"></a><span class="nroffip">void *malloc_callback(size_t size);</span> 
 <p class="level1">To replace malloc() 
 <p class="level0"><a name="void"></a><span class="nroffip">void free_callback(void *ptr);</span> 
@@ -73,9 +73,10 @@ p.roffit {
 <p class="level0"><a name="char"></a><span class="nroffip">char *strdup_callback(const char *str);</span> 
 <p class="level1">To replace strdup() 
 <p class="level0"><a name="void"></a><span class="nroffip">void *calloc_callback(size_t nmemb, size_t size);</span> 
-<p class="level1">To replace calloc() <a name="CAUTION"></a><h2 class="nroffsh">CAUTION</h2>
+<p class="level1">To replace calloc() 
+<p class="level0">This function is otherwise the same as <a Class="emphasis" href="./curl_global_init.html">curl_global_init</a>, please refer to that man page for documentation. <a name="CAUTION"></a><h2 class="nroffsh">CAUTION</h2>
 <p class="level0">Manipulating these gives considerable powers to the application to severely screw things up for libcurl. Take care! <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./curl_global_init.html">curl_global_init</a>, <span Class="manpage"> </span> <a Class="manpage" href="./curl_global_cleanup.html">curl_global_cleanup</a>, <span Class="manpage"> </span> 
+<p class="level0"><a Class="manpage" href="./curl_global_init.html">curl_global_init</a>, <a Class="manpage" href="./curl_global_cleanup.html">curl_global_cleanup</a>
 <p class="level0"><p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

@@ -103,9 +103,9 @@ p.roffit {
 <p class="level0"><a name="-1"></a><span class="nroffip">-1, --tlsv1</span> 
 <p class="level1">(SSL) Forces curl to use TLS version 1.x when negotiating with a remote TLS server. You can use options <a class="emphasis" href="#--tlsv10">--tlsv1.0</a>, <a class="emphasis" href="#--tlsv11">--tlsv1.1</a>, and <a class="emphasis" href="#--tlsv12">--tlsv1.2</a> to control the TLS version more precisely (if the SSL backend in use supports such a level of control). 
 <p class="level0"><a name="-2"></a><span class="nroffip">-2, --sslv2</span> 
-<p class="level1">(SSL) Forces curl to use SSL version 2 when negotiating with a remote SSL server. Sometimes curl is built without SSLv2 support. SSLv2 is widely considered insecure. 
+<p class="level1">(SSL) Forces curl to use SSL version 2 when negotiating with a remote SSL server. Sometimes curl is built without SSLv2 support. SSLv2 is widely considered insecure (see <a href="http://www.ietf.org/rfc/rfc6176.txt">RFC 6176</a>). 
 <p class="level0"><a name="-3"></a><span class="nroffip">-3, --sslv3</span> 
-<p class="level1">(SSL) Forces curl to use SSL version 3 when negotiating with a remote SSL server. Sometimes curl is built without SSLv3 support. 
+<p class="level1">(SSL) Forces curl to use SSL version 3 when negotiating with a remote SSL server. Sometimes curl is built without SSLv3 support. SSLv3 is widely considered insecure (see <a href="http://www.ietf.org/rfc/rfc7568.txt">RFC 7568</a>). 
 <p class="level0"><a name="-4"></a><span class="nroffip">-4, --ipv4</span> 
 <p class="level1">This option tells curl to resolve names to IPv4 addresses only, and not for example try IPv6. 
 <p class="level0"><a name="-6"></a><span class="nroffip">-6, --ipv6</span> 
@@ -120,8 +120,9 @@ p.roffit {
 <p class="level1">Note that using --anyauth is not recommended if you do uploads from stdin, since it may require data to be sent twice and then the client must be able to rewind. If the need should arise when uploading from stdin, the upload operation will fail. 
 <p class="level0"><a name="-b"></a><span class="nroffip">-b, --cookie &lt;name=data&gt;</span> 
 <p class="level1">(HTTP) Pass the data to the HTTP server as a cookie. It is supposedly the data previously received from the server in a "Set-Cookie:" line.  The data should be in the format "NAME1=VALUE1; NAME2=VALUE2". 
-<p class="level1">If no '=' symbol is used in the line, it is treated as a filename to use to read previously stored cookie lines from, which should be used in this session if they match. Using this method also activates the "cookie parser" which will make curl record incoming cookies too, which may be handy if you're using this in combination with the <a class="emphasis" href="#-L">-L, --location</a> option. The file format of the file to read cookies from should be plain HTTP headers or the Netscape/Mozilla cookie file format. 
+<p class="level1">If no '=' symbol is used in the line, it is treated as a filename to use to read previously stored cookie lines from, which should be used in this session if they match. Using this method also activates the cookie engine which will make curl record incoming cookies too, which may be handy if you're using this in combination with the <a class="emphasis" href="#-L">-L, --location</a> option. The file format of the file to read cookies from should be plain HTTP headers or the Netscape/Mozilla cookie file format. 
 <p class="level1">The file specified with <a class="emphasis" href="#-b">-b, --cookie</a> is only used as input. No cookies will be written to the file. To store cookies, use the <a class="emphasis" href="#-c">-c, --cookie-jar</a> option. 
+<p class="level1">Exercise caution if you are using this option and multiple transfers may occur. If you use the NAME1=VALUE1; format, or in a file use the Set-Cookie format and don't specify a domain, then the cookie is sent for any domain (even after redirects are followed) and cannot be modified by a server-set cookie. If the cookie engine is enabled and a server sets a cookie of the same name then both will be sent on a future transfer to that server, likely not what you intended. To address these issues set a domain in Set-Cookie (doing that will include sub-domains) or use the Netscape format. 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="-B"></a><span class="nroffip">-B, --use-ascii</span> 
 <p class="level1">(FTP/LDAP) Enable ASCII transfer. For FTP, this can also be enforced by using an URL that ends with ";type=A". This option causes data sent to stdout to be in text mode for win32 systems. 
@@ -133,14 +134,15 @@ p.roffit {
 <p class="level1">(HTTP) Specify to which file you want curl to write all cookies after a completed operation. Curl writes all cookies previously read from a specified file as well as all cookies received from remote server(s). If no cookies are known, no data will be written. The file will be written using the Netscape cookie file format. If you set the file name to a single dash, "-", the cookies will be written to stdout. 
 <p class="level1">This command line option will activate the cookie engine that makes curl record and use cookies. Another way to activate it is to use the <span class="emphasis">-b, --cookie</span> option. 
 <p class="level1">If the cookie jar can't be created or written to, the whole curl operation won't fail or even report an error clearly. Using -v will get a warning displayed, but that is the only visible feedback you get about this possibly lethal situation. 
+<p class="level1">Since 7.43.0 cookies that were imported in the Set-Cookie format without a domain name are not exported by this option. 
 <p class="level1">If this option is used several times, the last specified file name will be used. 
 <p class="level0"><a name="-C"></a><span class="nroffip">-C, --continue-at &lt;offset&gt;</span> 
 <p class="level1">Continue/Resume a previous file transfer at the given offset. The given offset is the exact number of bytes that will be skipped, counting from the beginning of the source file before it is transferred to the destination.  If used with uploads, the FTP server command SIZE will not be used by curl. 
 <p class="level1">Use "-C -" to tell curl to automatically find out where/how to resume the transfer. It then uses the given output/input files to figure that out. 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--ciphers"></a><span class="nroffip">--ciphers &lt;list of ciphers&gt;</span> 
-<p class="level1">(SSL) Specifies which ciphers to use in the connection. The list of ciphers must specify valid ciphers. Read up on SSL cipher list details on this URL: <span Class="emphasis">https://www.openssl.org/docs/apps/ciphers.html</span> 
-<p class="level1">NSS ciphers are done differently than OpenSSL and GnuTLS. The full list of NSS ciphers is in the NSSCipherSuite entry at this URL: <span Class="emphasis">https://git.fedorahosted.org/cgit/mod_nss.git/plain/docs/mod_nss.html&#35;Directives</span> 
+<p class="level1">(SSL) Specifies which ciphers to use in the connection. The list of ciphers must specify valid ciphers. Read up on SSL cipher list details on this URL: <span Class="emphasis"><a href="https://www.openssl.org/docs/apps/ciphers.html">https://www.openssl.org/docs/apps/ciphers.html</a></span> 
+<p class="level1">NSS ciphers are done differently than OpenSSL and GnuTLS. The full list of NSS ciphers is in the NSSCipherSuite entry at this URL: <span Class="emphasis"><a href="https://git.fedorahosted.org/cgit/mod_nss.git/plain/docs/mod_nss.html">https://git.fedorahosted.org/cgit/mod_nss.git/plain/docs/mod_nss.html</a>&#35;Directives</span> 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--compressed"></a><span class="nroffip">--compressed</span> 
 <p class="level1">(HTTP) Request a compressed response using one of the algorithms curl supports, and save the uncompressed document.  If this option is used and the server sends an unsupported encoding, curl will report an error. 
@@ -228,7 +230,7 @@ p.roffit {
 <p class="level1">(HTTP) Sends the "Referrer Page" information to the HTTP server. This can also be set with the <a class="emphasis" href="#-H">-H, --header</a> flag of course.  When used with <a class="emphasis" href="#-L">-L, --location</a> you can append ";auto" to the --referer URL to make curl automatically set the previous URL when it follows a Location: header. The ";auto" string can be used alone, even if you don't set an initial --referer. 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="-E"></a><span class="nroffip">-E, --cert &lt;certificate[:password]&gt;</span> 
-<p class="level1">(SSL) Tells curl to use the specified client certificate file when getting a file with HTTPS, FTPS or another SSL-based protocol. The certificate must be in PKCS&#35;12 format if using Secure Transport, or PEM format if using any other engine.  If the optional password isn't specified, it will be queried for on the terminal. Note that this option assumes a "certificate" file that is the private key and the private certificate concatenated! See <span Class="emphasis">--cert</span> and <a class="emphasis" href="#--key">--key</a> to specify them independently. 
+<p class="level1">(SSL) Tells curl to use the specified client certificate file when getting a file with HTTPS, FTPS or another SSL-based protocol. The certificate must be in PKCS&#35;12 format if using Secure Transport, or PEM format if using any other engine.  If the optional password isn't specified, it will be queried for on the terminal. Note that this option assumes a "certificate" file that is the private key and the client certificate concatenated! See <span Class="emphasis">--cert</span> and <a class="emphasis" href="#--key">--key</a> to specify them independently. 
 <p class="level1">If curl is built against the NSS SSL library then this option can tell curl the nickname of the certificate to use within the NSS database defined by the environment variable SSL_DIR (or by default /etc/pki/nssdb). If the NSS PEM PKCS&#35;11 module (libnsspem.so) is available then PEM files may be loaded. If you want to use a file from the current directory, please precede it with "./" prefix, in order to avoid confusion with a nickname.  If the nickname contains ":", it needs to be preceded by "\" so that it is not recognized as password delimiter.  If the nickname contains "\", it needs to be escaped as "\\" so that it is not recognized as an escape character. 
 <p class="level1">(iOS and Mac OS X only) If curl is built against Secure Transport, then the certificate string can either be the name of a certificate/private key in the system or user keychain, or the path to a PKCS&#35;12-encoded certificate and private key. If you want to use a file from the current directory, please precede it with "./" prefix, in order to avoid confusion with a nickname. 
 <p class="level1">If this option is used several times, the last one will be used. 
@@ -250,10 +252,10 @@ p.roffit {
 <p class="level0"><a name="--capath"></a><span class="nroffip">--capath &lt;CA certificate directory&gt;</span> 
 <p class="level1">(SSL) Tells curl to use the specified certificate directory to verify the peer. Multiple paths can be provided by separating them with ":" (e.g. "path1:path2:path3"). The certificates must be in PEM format, and if curl is built against OpenSSL, the directory must have been processed using the c_rehash utility supplied with OpenSSL. Using <a class="emphasis" href="#--capath">--capath</a> can allow OpenSSL-powered curl to make SSL-connections much more efficiently than using <a class="emphasis" href="#--cacert">--cacert</a> if the <a class="emphasis" href="#--cacert">--cacert</a> file contains many CA certificates. 
 <p class="level1">If this option is set, the default capath value will be ignored, and if it is used several times, the last one will be used. 
-<p class="level0"><a name="--pinnedpubkey"></a><span class="nroffip">--pinnedpubkey &lt;pinned public key&gt;</span> 
-<p class="level1">(SSL) Tells curl to use the specified public key file to verify the peer. The file must contain a single public key in PEM or DER format. 
+<p class="level0"><a name="--pinnedpubkey"></a><span class="nroffip">--pinnedpubkey &lt;pinned public key (hashes)&gt;</span> 
+<p class="level1">(SSL) Tells curl to use the specified public key file (or hashes) to verify the peer. This can be a path to a file which contains a single public key in PEM or DER format, or any number of base64 encoded sha256 hashes preceded by &acute;sha256//&acute; and separated by &acute;;&acute; 
 <p class="level1">When negotiating a TLS or SSL connection, the server sends a certificate indicating its identity. A public key is extracted from this certificate and if it does not exactly match the public key provided to this option, curl will abort the connection before sending or receiving any data. 
-<p class="level1">Added in 7.39.0 for OpenSSL, GnuTLS and GSKit. Added in 7.43.0 for NSS and wolfSSL/CyaSSL. Other SSL backends not supported. 
+<p class="level1">Added in 7.39.0 for OpenSSL, GnuTLS and GSKit. Added in 7.43.0 for NSS and wolfSSL/CyaSSL. sha256 support added in 7.44.0 for OpenSSL, GnuTLS, NSS and wolfSSL/CyaSSL. Other SSL backends not supported. 
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--cert-status"></a><span class="nroffip">--cert-status</span> 
 <p class="level1">(SSL) Tells curl to verify the status of the server certificate by using the Certificate Status Request (aka. OCSP stapling) TLS extension. 
@@ -270,7 +272,7 @@ p.roffit {
 <p class="level1">(HTTP) This lets curl emulate a filled-in form in which a user has pressed the submit button. This causes curl to POST data using the Content-Type multipart/form-data according to <a href="http://www.ietf.org/rfc/rfc2388.txt">RFC 2388</a>. This enables uploading of binary files etc. To force the 'content' part to be a file, prefix the file name with an @ sign. To just get the content part from a file, prefix the file name with the symbol &lt;. The difference between @ and &lt; is then that @ makes a file get attached in the post as a file upload, while the &lt; makes a text field and just get the contents for that text field from a file. 
 <p class="level1">Example, to send your password file to the server, where 'password' is the name of the form-field to which /etc/passwd will be the input: 
 <p class="level1"><span Class="bold">curl</span> -F password=@/etc/passwd www.mypasswords.com 
-<p class="level1">To read content from stdin instead of a file, use - as the filename. This goes for both @ and &lt; constructs. 
+<p class="level1">To read content from stdin instead of a file, use - as the filename. This goes for both @ and &lt; constructs. Unfortunately it does not support reading the file from a named pipe or similar, as it needs the full size before the transfer starts. 
 <p class="level1">You can also tell curl what Content-Type to use by using 'type=', in a manner similar to: 
 <p class="level1"><span Class="bold">curl</span> -F "web=@index.html;type=text/html" url.com 
 <p class="level1">or 
@@ -338,7 +340,8 @@ p.roffit {
 <p class="level0"><a name="--hostpubmd5"></a><span class="nroffip">--hostpubmd5 &lt;md5&gt;</span> 
 <p class="level1">(SCP/SFTP) Pass a string containing 32 hexadecimal digits. The string should be the 128 bit MD5 checksum of the remote host's public key, curl will refuse the connection with the host unless the md5sums match. (Added in 7.17.1) 
 <p class="level0"><a name="--ignore-content-length"></a><span class="nroffip">--ignore-content-length</span> 
-<p class="level1">(HTTP) Ignore the Content-Length header. This is particularly useful for servers running Apache 1.x, which will report incorrect Content-Length for files larger than 2 gigabytes. 
+<p class="level1">For HTTP, Ignore the Content-Length header. This is particularly useful for servers running Apache 1.x, which will report incorrect Content-Length for files larger than 2 gigabytes. 
+<p class="level1">For FTP (since 7.46.0), skip the RETR command to figure out the size before downloading a file. 
 <p class="level0"><a name="-i"></a><span class="nroffip">-i, --include</span> 
 <p class="level1">(HTTP) Include the HTTP-header in the output. The HTTP-header includes things like server-name, date of the document, HTTP-version and more... 
 <p class="level0"><a name="-I"></a><span class="nroffip">-I, --head</span> 
@@ -528,11 +531,11 @@ referer = "<a href="http://nowhereatall.com/">http://nowhereatall.com/</a>"
 <p class="level1">Tell curl to not handle sequences of /../ or /./ in the given URL path. Normally curl will squash or merge them according to standards but with this option set you tell it not to do that. 
 <p class="level1">(Added in 7.42.0) 
 <p class="level0"><a name="--post301"></a><span class="nroffip">--post301</span> 
-<p class="level1">(HTTP) Tells curl to respect <a href="http://www.ietf.org/rfc/rfc2616.txt">RFC 2616</a>/10.3.2 and not convert POST requests into GET requests when following a 301 redirection. The non-RFC behaviour is ubiquitous in web browsers, so curl does the conversion by default to maintain consistency. However, a server may require a POST to remain a POST after such a redirection. This option is meaningful only when using <a class="emphasis" href="#-L">-L, --location</a> (Added in 7.17.1) 
+<p class="level1">(HTTP) Tells curl to respect <a href="http://www.ietf.org/rfc/rfc7230.txt">RFC 7230</a>/6.4.2 and not convert POST requests into GET requests when following a 301 redirection. The non-RFC behaviour is ubiquitous in web browsers, so curl does the conversion by default to maintain consistency. However, a server may require a POST to remain a POST after such a redirection. This option is meaningful only when using <a class="emphasis" href="#-L">-L, --location</a> (Added in 7.17.1) 
 <p class="level0"><a name="--post302"></a><span class="nroffip">--post302</span> 
-<p class="level1">(HTTP) Tells curl to respect <a href="http://www.ietf.org/rfc/rfc2616.txt">RFC 2616</a>/10.3.2 and not convert POST requests into GET requests when following a 302 redirection. The non-RFC behaviour is ubiquitous in web browsers, so curl does the conversion by default to maintain consistency. However, a server may require a POST to remain a POST after such a redirection. This option is meaningful only when using <a class="emphasis" href="#-L">-L, --location</a> (Added in 7.19.1) 
+<p class="level1">(HTTP) Tells curl to respect <a href="http://www.ietf.org/rfc/rfc7230.txt">RFC 7230</a>/6.4.3 and not convert POST requests into GET requests when following a 302 redirection. The non-RFC behaviour is ubiquitous in web browsers, so curl does the conversion by default to maintain consistency. However, a server may require a POST to remain a POST after such a redirection. This option is meaningful only when using <a class="emphasis" href="#-L">-L, --location</a> (Added in 7.19.1) 
 <p class="level0"><a name="--post303"></a><span class="nroffip">--post303</span> 
-<p class="level1">(HTTP) Tells curl to respect <a href="http://www.ietf.org/rfc/rfc2616.txt">RFC 2616</a>/10.3.2 and not convert POST requests into GET requests when following a 303 redirection. The non-RFC behaviour is ubiquitous in web browsers, so curl does the conversion by default to maintain consistency. However, a server may require a POST to remain a POST after such a redirection. This option is meaningful only when using <a class="emphasis" href="#-L">-L, --location</a> (Added in 7.26.0) 
+<p class="level1">(HTTP) Tells curl to respect <a href="http://www.ietf.org/rfc/rfc7230.txt">RFC 7230</a>/6.4.4 and not convert POST requests into GET requests when following a 303 redirection. The non-RFC behaviour is ubiquitous in web browsers, so curl does the conversion by default to maintain consistency. However, a server may require a POST to remain a POST after such a redirection. This option is meaningful only when using <a class="emphasis" href="#-L">-L, --location</a> (Added in 7.26.0) 
 <p class="level0"><a name="--proto"></a><span class="nroffip">--proto &lt;protocols&gt;</span> 
 <p class="level1">Tells curl to use the listed protocols for its initial retrieval. Protocols are evaluated left to right, are comma separated, and are each a protocol name or 'all', optionally prefixed by zero or more modifiers. Available modifiers are: 
 <p class="level2">
@@ -551,8 +554,27 @@ referer = "<a href="http://nowhereatall.com/">http://nowhereatall.com/</a>"
 <p class="level1">Unknown protocols produce a warning. This allows scripts to safely rely on being able to disable potentially dangerous protocols, without relying upon support for that protocol being built into curl to avoid an error. 
 <p class="level1">This option can be used multiple times, in which case the effect is the same as concatenating the protocols into one instance of the option. 
 <p class="level1">(Added in 7.20.2) 
+<p class="level0"><a name="--proto-default"></a><span class="nroffip">--proto-default &lt;protocol&gt;</span> 
+<p class="level1">Tells curl to use <span Class="emphasis">protocol</span> for any URL missing a scheme name. 
+<p class="level1">Example: 
+<p class="level1">
+<p class="level2">
+<p class="level1"><a name="--proto-default"></a><span class="nroffip">--proto-default https ftp.mozilla.org</span> 
+<p class="level2"><a href="https://ftp.mozilla.org">https://ftp.mozilla.org</a> 
+<p class="level1">
+<p class="level1">An unknown or unsupported protocol causes error <span Class="emphasis">CURLE_UNSUPPORTED_PROTOCOL</span>. 
+<p class="level1">This option does not change the default proxy protocol (http). 
+<p class="level1">Without this option curl would make a guess based on the host, see <a class="emphasis" href="#--url">--url</a> for details. 
+<p class="level1">(Added in 7.45.0) 
 <p class="level0"><a name="--proto-redir"></a><span class="nroffip">--proto-redir &lt;protocols&gt;</span> 
-<p class="level1">Tells curl to use the listed protocols after a redirect. See --proto for how protocols are represented. 
+<p class="level1">Tells curl to use the listed protocols on redirect. See --proto for how protocols are represented. 
+<p class="level1">Example: 
+<p class="level1">
+<p class="level2">
+<p class="level1"><a name="--proto-redir"></a><span class="nroffip">--proto-redir -all,http,https</span> 
+<p class="level2">Allow only HTTP and HTTPS on redirect. 
+<p class="level1">
+<p class="level1">By default curl will allow all protocols on redirect except several disabled for security reasons: Since 7.19.4 FILE and SCP are disabled, and since 7.40.0 SMB and SMBS are also disabled. Specifying <span Class="emphasis">all</span> or <span Class="emphasis">+all</span> enables all protocols on redirect, including those disabled for security. 
 <p class="level1">(Added in 7.20.2) 
 <p class="level0"><a name="--proxy-anyauth"></a><span class="nroffip">--proxy-anyauth</span> 
 <p class="level1">Tells curl to pick a suitable authentication method when communicating with the given proxy. This might cause an extra request/response round-trip. (Added in 7.13.2) 
@@ -608,9 +630,8 @@ referer = "<a href="http://nowhereatall.com/">http://nowhereatall.com/</a>"
 <p class="level2"><span Class="bold">500-999</span> specifies the second 500 bytes 
 <p class="level2"><span Class="bold">-500</span> specifies the last 500 bytes 
 <p class="level2"><span Class="bold">9500-</span> specifies the bytes from offset 9500 and forward 
-<p class="level2"><span Class="bold">0-0,-1</span> specifies the first and last byte only(*)(H) 
-<p class="level2"><span Class="bold">500-700,600-799</span> specifies 300 bytes from offset 500(H) 
-<p class="level2"><span Class="bold">100-199,500-599</span> specifies two separate 100-byte ranges(*)(H) 
+<p class="level2"><span Class="bold">0-0,-1</span> specifies the first and last byte only(*)(HTTP) 
+<p class="level2"><span Class="bold">100-199,500-599</span> specifies two separate 100-byte ranges(*) (HTTP) 
 <p class="level1">
 <p class="level0"><a name=""></a><span class="nroffip"></span> 
 <p class="level1">(*) = NOTE that this will cause the server to reply with a multipart response! 
@@ -657,6 +678,8 @@ referer = "<a href="http://nowhereatall.com/">http://nowhereatall.com/</a>"
 <p class="level1">This option was formerly known as <span Class="emphasis">--ftp-ssl-reqd</span> (added in 7.15.5). That option name can still be used but will be removed in a future version. 
 <p class="level0"><a name="--ssl-allow-beast"></a><span class="nroffip">--ssl-allow-beast</span> 
 <p class="level1">(SSL) This option tells curl to not work around a security flaw in the SSL3 and TLS1.0 protocols known as BEAST.  If this option isn't used, the SSL layer may use workarounds known to cause interoperability problems with some older SSL implementations. WARNING: this option loosens the SSL security, and by using this flag you ask for exactly that.  (Added in 7.25.0) 
+<p class="level0"><a name="--ssl-no-revoke"></a><span class="nroffip">--ssl-no-revoke</span> 
+<p class="level1">(WinSSL) This option tells curl to disable certificate revocation checks. WARNING: this option loosens the SSL security, and by using this flag you ask for exactly that.  (Added in 7.44.0) 
 <p class="level0"><a name="--socks4"></a><span class="nroffip">--socks4 &lt;host[:port]&gt;</span> 
 <p class="level1">Use the specified SOCKS4 proxy. If the port number is not specified, it is assumed at port 1080. (Added in 7.15.2) 
 <p class="level1">This option overrides any previous use of <a class="emphasis" href="#-x">-x, --proxy</a>, as they are mutually exclusive. 
@@ -747,6 +770,7 @@ referer = "<a href="http://nowhereatall.com/">http://nowhereatall.com/</a>"
 <p class="level1">If this option is used several times, the last one will be used. 
 <p class="level0"><a name="--url"></a><span class="nroffip">--url &lt;URL&gt;</span> 
 <p class="level1">Specify a URL to fetch. This option is mostly handy when you want to specify URL(s) in a config file. 
+<p class="level1">If the given URL is missing a scheme name (such as "http://" or "ftp://" etc) then curl will make a guess based on the host. If the outermost sub-domain name matches DICT, FTP, IMAP, LDAP, POP3 or SMTP then that protocol will be used, otherwise HTTP will be used. Since 7.45.0 guessing can be disabled by setting a default protocol, see <a class="emphasis" href="#--proto-default">--proto-default</a> for details. 
 <p class="level1">This option may be used any number of times. To control where this URL is written, use the <a class="emphasis" href="#-o">-o, --output</a> or the <a class="emphasis" href="#-O">-O, --remote-name</a> options. 
 <p class="level0"><a name="-v"></a><span class="nroffip">-v, --verbose</span> 
 <p class="level1">Be more verbose/talkative during the operation. Useful for debugging and seeing what's going on "under the hood". A line starting with '&gt;' means "header data" sent by curl, '&lt;' means "header data" received by curl that is hidden in normal cases, and a line starting with '*' means additional info provided by curl. 
@@ -1050,6 +1074,6 @@ referer = "<a href="http://nowhereatall.com/">http://nowhereatall.com/</a>"
 <p class="level0">Daniel Stenberg is the main author, but the whole list of contributors is found in the separate THANKS file. <a name="WWW"></a><h2 class="nroffsh">WWW</h2>
 <p class="level0"><a href="http://curl.haxx.se">http://curl.haxx.se</a> <a name="FTP"></a><h2 class="nroffsh">FTP</h2>
 <p class="level0"><a href="ftp://ftp.sunet.se/pub/www/utilities/curl/">ftp://ftp.sunet.se/pub/www/utilities/curl/</a> <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><span Class="manpage">ftp (1)</span> <span Class="manpage">wget (1)</span> <p class="roffit">
+<p class="level0"><span Class="manpage">ftp (1)</span>, <span Class="manpage">wget (1)</span><p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

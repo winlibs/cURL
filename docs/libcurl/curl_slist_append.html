@@ -63,6 +63,10 @@ p.roffit {
 &nbsp;struct curl_slist *slist=NULL;
 &nbsp;
 &nbsp;slist = curl_slist_append(slist, "pragma:");
+&nbsp;
+&nbsp;if (slist == NULL)
+&nbsp;  return -1;
+&nbsp;
 &nbsp;curl_easy_setopt(handle, CURLOPT_HTTPHEADER, slist);
 &nbsp;
 &nbsp;curl_easy_perform(handle);
@@ -71,6 +75,6 @@ p.roffit {
 </pre>
 
 <p class="level0"><a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a Class="manpage" href="./curl_slist_free_all.html">curl_slist_free_all</a>, <span Class="manpage"> </span> <p class="roffit">
+<p class="level0"><a Class="manpage" href="./curl_slist_free_all.html">curl_slist_free_all</a><p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>
