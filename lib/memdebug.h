@@ -12,7 +12,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -103,6 +103,7 @@ CURL_EXTERN int curl_fclose(FILE *file, int line, const char *source);
 #  endif
 #endif
 
+#undef socket
 #define socket(domain,type,protocol)\
  curl_socket(domain, type, protocol, __LINE__, __FILE__)
 #undef accept /* for those with accept as a macro */

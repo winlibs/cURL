@@ -25,7 +25,7 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at http://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.haxx.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -43,11 +43,11 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at http://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.haxx.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -158,7 +158,7 @@ check_PROGRAMS = 10-at-a-time$(EXEEXT) anyauthput$(EXEEXT) \
 	imap-tls$(EXEEXT) imap-multi$(EXEEXT) url2file$(EXEEXT) \
 	sftpget$(EXEEXT) ftpsget$(EXEEXT) postinmemory$(EXEEXT) \
 	http2-download$(EXEEXT) http2-upload$(EXEEXT) \
-	http2-serverpush$(EXEEXT)
+	http2-serverpush$(EXEEXT) getredirect$(EXEEXT)
 subdir = docs/examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/curl-compilers.m4 \
@@ -306,6 +306,13 @@ getinmemory_LDADD = $(LDADD)
 @USE_EXPLICIT_LIB_DEPS_FALSE@getinmemory_DEPENDENCIES =  \
 @USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
 @USE_EXPLICIT_LIB_DEPS_TRUE@getinmemory_DEPENDENCIES =  \
+@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
+getredirect_SOURCES = getredirect.c
+getredirect_OBJECTS = getredirect.$(OBJEXT)
+getredirect_LDADD = $(LDADD)
+@USE_EXPLICIT_LIB_DEPS_FALSE@getredirect_DEPENDENCIES =  \
+@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
+@USE_EXPLICIT_LIB_DEPS_TRUE@getredirect_DEPENDENCIES =  \
 @USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
 http_post_SOURCES = http-post.c
 http_post_OBJECTS = http-post.$(OBJEXT)
@@ -733,8 +740,8 @@ am__v_CCLD_1 =
 SOURCES = 10-at-a-time.c anyauthput.c certinfo.c chkspeed.c \
 	cookie_interface.c debug.c externalsocket.c fileupload.c \
 	fopen.c ftp-wildcard.c ftpget.c ftpgetinfo.c ftpgetresp.c \
-	ftpsget.c ftpupload.c getinfo.c getinmemory.c http-post.c \
-	http2-download.c http2-serverpush.c http2-upload.c \
+	ftpsget.c ftpupload.c getinfo.c getinmemory.c getredirect.c \
+	http-post.c http2-download.c http2-serverpush.c http2-upload.c \
 	httpcustomheader.c httpput.c https.c imap-append.c imap-copy.c \
 	imap-create.c imap-delete.c imap-examine.c imap-fetch.c \
 	imap-list.c imap-lsub.c imap-multi.c imap-noop.c imap-search.c \
@@ -750,8 +757,8 @@ SOURCES = 10-at-a-time.c anyauthput.c certinfo.c chkspeed.c \
 DIST_SOURCES = 10-at-a-time.c anyauthput.c certinfo.c chkspeed.c \
 	cookie_interface.c debug.c externalsocket.c fileupload.c \
 	fopen.c ftp-wildcard.c ftpget.c ftpgetinfo.c ftpgetresp.c \
-	ftpsget.c ftpupload.c getinfo.c getinmemory.c http-post.c \
-	http2-download.c http2-serverpush.c http2-upload.c \
+	ftpsget.c ftpupload.c getinfo.c getinmemory.c getredirect.c \
+	http-post.c http2-download.c http2-serverpush.c http2-upload.c \
 	httpcustomheader.c httpput.c https.c imap-append.c imap-copy.c \
 	imap-create.c imap-delete.c imap-examine.c imap-fetch.c \
 	imap-list.c imap-lsub.c imap-multi.c imap-noop.c imap-search.c \
@@ -1125,6 +1132,10 @@ getinmemory$(EXEEXT): $(getinmemory_OBJECTS) $(getinmemory_DEPENDENCIES) $(EXTRA
 	@rm -f getinmemory$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(getinmemory_OBJECTS) $(getinmemory_LDADD) $(LIBS)
 
+getredirect$(EXEEXT): $(getredirect_OBJECTS) $(getredirect_DEPENDENCIES) $(EXTRA_getredirect_DEPENDENCIES) 
+	@rm -f getredirect$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(getredirect_OBJECTS) $(getredirect_LDADD) $(LIBS)
+
 http-post$(EXEEXT): $(http_post_OBJECTS) $(http_post_DEPENDENCIES) $(EXTRA_http_post_DEPENDENCIES) 
 	@rm -f http-post$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(http_post_OBJECTS) $(http_post_LDADD) $(LIBS)
@@ -1372,6 +1383,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ftpupload.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getinmemory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getredirect.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http-post.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http2-download.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http2-serverpush.Po@am__quote@

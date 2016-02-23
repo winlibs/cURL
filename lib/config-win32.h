@@ -11,7 +11,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -627,7 +627,8 @@ Vista
 /* Define if struct sockaddr_in6 has the sin6_scope_id member. */
 #define HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID 1
 
-#if HAVE_WINSOCK2_H && defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0600)
+#if defined(HAVE_WINSOCK2_H) && defined(_WIN32_WINNT) && \
+    (_WIN32_WINNT >= 0x0600)
 #define HAVE_STRUCT_POLLFD 1
 #endif
 

@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -39,7 +39,7 @@
 
 /* Portable character check (remember EBCDIC). Do not use isalnum() because
    its behavior is altered by the current locale.
-   See http://tools.ietf.org/html/rfc3986#section-2.3
+   See https://tools.ietf.org/html/rfc3986#section-2.3
 */
 static bool Curl_isunreserved(unsigned char in)
 {

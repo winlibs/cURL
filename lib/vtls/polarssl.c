@@ -10,7 +10,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -359,7 +359,7 @@ polarssl_connect_step1(struct connectdata *conn,
     int cur = 0;
 
 #ifdef USE_NGHTTP2
-    if(data->set.httpversion == CURL_HTTP_VERSION_2_0) {
+    if(data->set.httpversion >= CURL_HTTP_VERSION_2) {
       protocols[cur++] = NGHTTP2_PROTO_VERSION_ID;
       infof(data, "ALPN, offering %s\n", NGHTTP2_PROTO_VERSION_ID);
     }
@@ -463,7 +463,7 @@ polarssl_connect_step2(struct connectdata *conn,
 #ifdef USE_NGHTTP2
       if(!strncmp(next_protocol, NGHTTP2_PROTO_VERSION_ID,
                   NGHTTP2_PROTO_VERSION_ID_LEN)) {
-        conn->negnpn = CURL_HTTP_VERSION_2_0;
+        conn->negnpn = CURL_HTTP_VERSION_2;
       }
       else
 #endif

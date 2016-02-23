@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -28,6 +28,7 @@
 #include "curlx.h"
 
 #include "tool_cfgable.h"
+#include "tool_doswin.h"
 #include "tool_msgs.h"
 #include "tool_cb_hdr.h"
 
@@ -181,15 +182,12 @@ static char *parse_filename(const char *ptr, size_t len)
   }
 
   /* scan for the end letter and stop there */
-  q = p;
-  while(*q) {
-    if(q[1] && (q[0] == '\\'))
-      q++;
-    else if(q[0] == stop)
+  for(q = p; *q; ++q) {
+    if(*q == stop) {
+      *q = '\0';
       break;
-    q++;
+    }
   }
-  *q = '\0';
 
   /* make sure the file name doesn't end in \r or \n */
   q = strchr(p, '\r');
@@ -202,6 +200,17 @@ static char *parse_filename(const char *ptr, size_t len)
 
   if(copy != p)
     memmove(copy, p, strlen(p) + 1);
+
+#if defined(MSDOS) || defined(WIN32)
+  {
+    char *sanitized;
+    SANITIZEcode sc = sanitize_file_name(&sanitized, copy, 0);
+    Curl_safefree(copy);
+    if(sc)
+      return NULL;
+    copy = sanitized;
+  }
+#endif /* MSDOS || WIN32 */
 
   /* in case we built debug enabled, we allow an evironment variable
    * named CURL_TESTDIR to prefix the given file name to put it into a

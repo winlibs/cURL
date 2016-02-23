@@ -144,6 +144,9 @@
 /* Define to 1 if you have the <cyassl/error-ssl.h> header file. */
 #undef HAVE_CYASSL_ERROR_SSL_H
 
+/* Define to 1 if you have the `CyaSSL_get_peer_certificate' function. */
+#undef HAVE_CYASSL_GET_PEER_CERTIFICATE
+
 /* Define to 1 if you have the <cyassl/options.h> header file. */
 #undef HAVE_CYASSL_OPTIONS_H
 
@@ -759,6 +762,12 @@
 /* Define to 1 if you have the winsock.h header file. */
 #undef HAVE_WINSOCK_H
 
+/* Define to 1 if you have the `wolfSSLv3_client_method' function. */
+#undef HAVE_WOLFSSLV3_CLIENT_METHOD
+
+/* Define to 1 if you have the `wolfSSL_get_peer_certificate' function. */
+#undef HAVE_WOLFSSL_GET_PEER_CERTIFICATE
+
 /* Define this symbol if your OS supports changing the contents of argv */
 #undef HAVE_WRITABLE_ARGV
 
@@ -916,7 +925,7 @@
 /* if axTLS is enabled */
 #undef USE_AXTLS
 
-/* if CyaSSL is enabled */
+/* if CyaSSL/WolfSSL is enabled */
 #undef USE_CYASSL
 
 /* to enable iOS/Mac OS X native SSL/TLS support */

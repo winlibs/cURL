@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -56,7 +56,7 @@ int select_wrapper(int nfds, fd_set *rd, fd_set *wr, fd_set *exc,
    * select() can not be used to sleep without a single fd_set.
    */
   if(!nfds) {
-    Sleep(1000*tv->tv_sec + tv->tv_usec/1000);
+    Sleep((1000*tv->tv_sec) + (DWORD)(((double)tv->tv_usec)/1000.0));
     return 0;
   }
 #endif

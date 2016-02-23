@@ -6,11 +6,11 @@
  *                             \___|\___/|_| \_\_____|
  *
  * Copyright (C) 2010 - 2011, Hoi-Ho Chan, <hoiho.chan@gmail.com>
- * Copyright (C) 2012 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2012 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -140,6 +140,15 @@ const mbedtls_x509_crt_profile mbedtls_x509_crt_profile_fr =
     0xFFFFFFF, /* Any curve     */
     1024,      /* RSA min key len */
 };
+
+/* See https://tls.mbed.org/discussions/generic/
+   howto-determine-exact-buffer-len-for-mbedtls_pk_write_pubkey_der
+*/
+#define RSA_PUB_DER_MAX_BYTES   (38 + 2 * MBEDTLS_MPI_MAX_SIZE)
+#define ECP_PUB_DER_MAX_BYTES   (30 + 2 * MBEDTLS_ECP_MAX_BYTES)
+
+#define PUB_DER_MAX_BYTES   (RSA_PUB_DER_MAX_BYTES > ECP_PUB_DER_MAX_BYTES ? \
+                             RSA_PUB_DER_MAX_BYTES : ECP_PUB_DER_MAX_BYTES)
 
 static Curl_recv mbedtls_recv;
 static Curl_send mbedtls_send;
@@ -374,15 +383,21 @@ mbedtls_connect_step1(struct connectdata *conn,
   }
 
 #ifdef HAS_ALPN
-  if(data->set.httpversion == CURL_HTTP_VERSION_2_0) {
-    if(data->set.ssl_enable_alpn) {
-      static const char* protocols[] = {
-        NGHTTP2_PROTO_VERSION_ID, ALPN_HTTP_1_1, NULL
-      };
-      mbedtls_ssl_conf_alpn_protocols(&connssl->config, protocols);
-      infof(data, "ALPN, offering %s, %s\n", protocols[0],
-            protocols[1]);
+  if(data->set.ssl_enable_alpn) {
+    const char *protocols[3];
+    const char **p = protocols;
+#ifdef USE_NGHTTP2
+    if(data->set.httpversion >= CURL_HTTP_VERSION_2)
+      *p++ = NGHTTP2_PROTO_VERSION_ID;
+#endif
+    *p++ = ALPN_HTTP_1_1;
+    *p = NULL;
+    if(mbedtls_ssl_conf_alpn_protocols(&connssl->config, protocols)) {
+      failf(data, "Failed setting ALPN protocols");
+      return CURLE_SSL_CONNECT_ERROR;
     }
+    for(p = protocols; *p; ++p)
+      infof(data, "ALPN, offering %s\n", *p);
   }
 #endif
 
@@ -402,7 +417,7 @@ mbedtls_connect_step2(struct connectdata *conn,
   int ret;
   struct SessionHandle *data = conn->data;
   struct ssl_connect_data* connssl = &conn->ssl[sockindex];
-  char buffer[1024];
+  const mbedtls_x509_crt *peercert;
 
 #ifdef HAS_ALPN
   const char* next_protocol;
@@ -457,27 +472,90 @@ mbedtls_connect_step2(struct connectdata *conn,
     return CURLE_PEER_FAILED_VERIFICATION;
   }
 
-  if(mbedtls_ssl_get_peer_cert(&(connssl->ssl))) {
-    /* If the session was resumed, there will be no peer certs */
-    memset(buffer, 0, sizeof(buffer));
+  peercert = mbedtls_ssl_get_peer_cert(&connssl->ssl);
 
-    if(mbedtls_x509_crt_info(buffer, sizeof(buffer), (char *)"* ",
-                     mbedtls_ssl_get_peer_cert(&(connssl->ssl))) != -1)
+  if(peercert && data->set.verbose) {
+    const size_t bufsize = 16384;
+    char *buffer = malloc(bufsize);
+
+    if(!buffer)
+      return CURLE_OUT_OF_MEMORY;
+
+    if(mbedtls_x509_crt_info(buffer, bufsize, "* ", peercert) > 0)
       infof(data, "Dumping cert info:\n%s\n", buffer);
+    else
+      infof(data, "Unable to dump certificate information.\n");
+
+    free(buffer);
+  }
+
+  if(data->set.str[STRING_SSL_PINNEDPUBLICKEY]) {
+    int size;
+    CURLcode result;
+    mbedtls_x509_crt *p;
+    unsigned char pubkey[PUB_DER_MAX_BYTES];
+
+    if(!peercert || !peercert->raw.p || !peercert->raw.len) {
+      failf(data, "Failed due to missing peer certificate");
+      return CURLE_SSL_PINNEDPUBKEYNOTMATCH;
+    }
+
+    p = calloc(1, sizeof(*p));
+
+    if(!p)
+      return CURLE_OUT_OF_MEMORY;
+
+    mbedtls_x509_crt_init(p);
+
+    /* Make a copy of our const peercert because mbedtls_pk_write_pubkey_der
+       needs a non-const key, for now.
+       https://github.com/ARMmbed/mbedtls/issues/396 */
+    if(mbedtls_x509_crt_parse_der(p, peercert->raw.p, peercert->raw.len)) {
+      failf(data, "Failed copying peer certificate");
+      mbedtls_x509_crt_free(p);
+      free(p);
+      return CURLE_SSL_PINNEDPUBKEYNOTMATCH;
+    }
+
+    size = mbedtls_pk_write_pubkey_der(&p->pk, pubkey, PUB_DER_MAX_BYTES);
+
+    if(size <= 0) {
+      failf(data, "Failed copying public key from peer certificate");
+      mbedtls_x509_crt_free(p);
+      free(p);
+      return CURLE_SSL_PINNEDPUBKEYNOTMATCH;
+    }
+
+    /* mbedtls_pk_write_pubkey_der writes data at the end of the buffer. */
+    result = Curl_pin_peer_pubkey(data,
+                                  data->set.str[STRING_SSL_PINNEDPUBLICKEY],
+                                  &pubkey[PUB_DER_MAX_BYTES - size], size);
+    if(result) {
+      mbedtls_x509_crt_free(p);
+      free(p);
+      return result;
+    }
+
+    mbedtls_x509_crt_free(p);
+    free(p);
   }
 
 #ifdef HAS_ALPN
   if(data->set.ssl_enable_alpn) {
     next_protocol = mbedtls_ssl_get_alpn_protocol(&connssl->ssl);
 
-    if(next_protocol != NULL) {
+    if(next_protocol) {
       infof(data, "ALPN, server accepted to use %s\n", next_protocol);
-
-      if(strncmp(next_protocol, NGHTTP2_PROTO_VERSION_ID,
-                  NGHTTP2_PROTO_VERSION_ID_LEN)) {
-        conn->negnpn = CURL_HTTP_VERSION_2_0;
+#ifdef USE_NGHTTP2
+      if(!strncmp(next_protocol, NGHTTP2_PROTO_VERSION_ID,
+                  NGHTTP2_PROTO_VERSION_ID_LEN) &&
+         !next_protocol[NGHTTP2_PROTO_VERSION_ID_LEN]) {
+        conn->negnpn = CURL_HTTP_VERSION_2;
       }
-      else if(strncmp(next_protocol, ALPN_HTTP_1_1, ALPN_HTTP_1_1_LENGTH)) {
+      else
+#endif
+      if(!strncmp(next_protocol, ALPN_HTTP_1_1, ALPN_HTTP_1_1_LENGTH) &&
+         !next_protocol[ALPN_HTTP_1_1_LENGTH]) {
         conn->negnpn = CURL_HTTP_VERSION_1_1;
       }
     }

@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -1061,7 +1061,6 @@ CURLcode Curl_verifyhost(struct connectdata * conn,
   curl_asn1Element elem;
   curl_asn1Element ext;
   curl_asn1Element name;
-  int i;
   const char * p;
   const char * q;
   char * dnsname;
@@ -1110,16 +1109,13 @@ CURLcode Curl_verifyhost(struct connectdata * conn,
         q = Curl_getASN1Element(&name, q, elem.end);
         switch (name.tag) {
         case 2: /* DNS name. */
-          i = 0;
           len = utf8asn1str(&dnsname, CURL_ASN1_IA5_STRING,
                             name.beg, name.end);
-          if(len > 0)
-            if(strlen(dnsname) == (size_t) len)
-              i = Curl_cert_hostcheck((const char *) dnsname, conn->host.name);
+          if(len > 0 && (size_t)len == strlen(dnsname))
+            matched = Curl_cert_hostcheck(dnsname, conn->host.name);
+          else
+            matched = 0;
           free(dnsname);
-          if(!i)
-            return CURLE_PEER_FAILED_VERIFICATION;
-          matched = i;
           break;
 
         case 7: /* IP address. */

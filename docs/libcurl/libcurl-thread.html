@@ -57,8 +57,8 @@ p.roffit {
 <p class="level0"><span Class="bold">Shared objects.</span> You can share certain data between multiple handles by using the share interface but you must provide your own locking and set <a Class="emphasis" href="./curl_share_setopt.html">curl_share_setopt</a> CURLSHOPT_LOCKFUNC and CURLSHOPT_UNLOCKFUNC. <a name="TLS"></a><h2 class="nroffsh">TLS</h2>
 <p class="level0">If you are accessing HTTPS or FTPS URLs in a multi-threaded manner, you are then of course using the underlying SSL library multi-threaded and those libs might have their own requirements on this issue.  You may need to provide one or two functions to allow it to function properly: 
 <p class="level0"><a name="OpenSSL"></a><span class="nroffip">OpenSSL</span> 
-<p class="level1"><a href="http://www.openssl.org/docs/crypto/threads.html">http://www.openssl.org/docs/crypto/threads.html</a>&#35;DESCRIPTION 
-<p class="level1"><a href="http://curl.haxx.se/libcurl/c/opensslthreadlock.html">http://curl.haxx.se/libcurl/c/opensslthreadlock.html</a> 
+<p class="level1"><a href="https://www.openssl.org/docs/crypto/threads.html">https://www.openssl.org/docs/crypto/threads.html</a>&#35;DESCRIPTION 
+<p class="level1"><a href="https://curl.haxx.se/libcurl/c/opensslthreadlock.html">https://curl.haxx.se/libcurl/c/opensslthreadlock.html</a> 
 <p class="level0"><a name="GnuTLS"></a><span class="nroffip">GnuTLS</span> 
 <p class="level1"><a href="http://gnutls.org/manual/html_node/Thread-safety.html">http://gnutls.org/manual/html_node/Thread-safety.html</a> 
 <p class="level0"><a name="NSS"></a><span class="nroffip">NSS</span> 

@@ -9,7 +9,7 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at http://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.haxx.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -43,6 +43,10 @@ curl_includes_arpa_inet="\
 #endif
 #ifdef HAVE_ARPA_INET_H
 #  include <arpa/inet.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #endif
 /* includes end */"
   AC_CHECK_HEADERS(
@@ -2097,6 +2101,12 @@ AC_DEFUN([CURL_CHECK_FUNC_GETADDRINFO], [
         struct addrinfo hints;
         struct addrinfo *ai = 0;
         int error;
+
+        #ifdef HAVE_WINSOCK2_H
+        WSADATA wsa;
+        if (WSAStartup(MAKEWORD(2,2), &wsa))
+                exit(2);
+        #endif
 
         memset(&hints, 0, sizeof(hints));
         hints.ai_flags = AI_NUMERICHOST;

@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -179,6 +179,7 @@ static const struct LongShort aliases[]= {
   {"$O", "proxy-service-name",       TRUE},
   {"$P", "service-name",             TRUE},
   {"$Q", "proto-default",            TRUE},
+  {"$R", "expect100-timeout",        TRUE},
   {"0",   "http1.0",                 FALSE},
   {"01",  "http1.1",                 FALSE},
   {"02",  "http2",                   FALSE},
@@ -996,6 +997,11 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
       case 'Q': /* --proto-default */
         GetStr(&config->proto_default, nextarg);
         err = check_protocol(config->proto_default);
+        if(err)
+          return err;
+        break;
+      case 'R': /* --expect100-timeout */
+        err = str2udouble(&config->expect100timeout, nextarg);
         if(err)
           return err;
         break;

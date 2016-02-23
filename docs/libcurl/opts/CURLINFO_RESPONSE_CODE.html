@@ -57,7 +57,21 @@ p.roffit {
 <p class="level0">Pass a pointer to a long to receive the last received HTTP, FTP or SMTP response code. This option was previously known as CURLINFO_HTTP_CODE in libcurl 7.10.7 and earlier. The stored value will be zero if no server response code has been received. Note that a proxy's CONNECT response should be read with <a Class="emphasis" href="./CURLINFO_HTTP_CONNECTCODE.html">CURLINFO_HTTP_CONNECTCODE</a> and not this. 
 <p class="level0">Support for SMTP responses added in 7.25.0. <a name="PROTOCOLS"></a><h2 class="nroffsh">PROTOCOLS</h2>
 <p class="level0">HTTP, FTP and SMTP <a name="EXAMPLE"></a><h2 class="nroffsh">EXAMPLE</h2>
-<p class="level0">TODO <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0"><pre class="level0">
+CURL *curl = curl_easy_init();
+if(curl) {
+&nbsp; CURLcode res;
+&nbsp; curl_easy_setopt(curl, CURLOPT_URL, "<a href="http://example.com">http://example.com</a>");
+&nbsp; res = curl_easy_perform(curl);
+&nbsp; if(res == CURLE_OK) {
+&nbsp;   long response_code;
+&nbsp;   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+&nbsp; }
+&nbsp; curl_easy_cleanup(curl);
+}
+</pre>
+
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
 <p class="level0">Added in 7.10.8. CURLINFO_HTTP_CODE was added in 7.4.1. <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
 <p class="level0"><span Class="manpage">curl_easy_getinfo (3)</span>, <span Class="manpage">curl_easy_setopt (3)</span>, <a Class="manpage" href="./CURLINFO_HTTP_CONNECTCODE.html">CURLINFO_HTTP_CONNECTCODE</a><p class="roffit">

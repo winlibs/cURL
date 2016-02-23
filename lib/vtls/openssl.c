@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -119,12 +119,25 @@
 #define OPENSSL_NO_SSL2
 #endif
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && /* OpenSSL 1.1.0+ */ \
+  !defined(LIBRESSL_VERSION_NUMBER)
+#define SSLeay_add_ssl_algorithms() SSL_library_init()
+#define SSLEAY_VERSION_NUMBER OPENSSL_VERSION_NUMBER
+#define HAVE_X509_GET0_EXTENSIONS 1 /* added in 1.1.0 -pre1 */
+#endif
+
+#if (OPENSSL_VERSION_NUMBER >= 0x1000200fL) && /* 1.0.2 or later */ \
+  !defined(LIBRESSL_VERSION_NUMBER)
+#define HAVE_X509_GET0_SIGNATURE 1
+#endif
+
 #if defined(OPENSSL_IS_BORINGSSL)
 #define NO_RAND_SEED 1
 /* In BoringSSL OpenSSL_add_all_algorithms does nothing */
 #define OpenSSL_add_all_algorithms()
-/* BoringSSL does not have CONF_modules_load_file */
+/* BoringSSL does not have CONF_modules_load_file, CONF_modules_free */
 #define CONF_modules_load_file(a,b,c)
+#define CONF_modules_free()
 #endif
 
 #if (OPENSSL_VERSION_NUMBER < 0x0090808fL) || defined(OPENSSL_IS_BORINGSSL)
@@ -1570,12 +1583,12 @@ select_next_proto_cb(SSL *ssl,
   (void)ssl;
 
 #ifdef USE_NGHTTP2
-  if(conn->data->set.httpversion == CURL_HTTP_VERSION_2_0 &&
+  if(conn->data->set.httpversion >= CURL_HTTP_VERSION_2 &&
      !select_next_protocol(out, outlen, in, inlen, NGHTTP2_PROTO_VERSION_ID,
                            NGHTTP2_PROTO_VERSION_ID_LEN)) {
     infof(conn->data, "NPN, negotiated HTTP2 (%s)\n",
           NGHTTP2_PROTO_VERSION_ID);
-    conn->negnpn = CURL_HTTP_VERSION_2_0;
+    conn->negnpn = CURL_HTTP_VERSION_2;
     return SSL_TLSEXT_ERR_OK;
   }
 #endif
@@ -1847,7 +1860,7 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
     unsigned char protocols[128];
 
 #ifdef USE_NGHTTP2
-    if(data->set.httpversion == CURL_HTTP_VERSION_2_0) {
+    if(data->set.httpversion >= CURL_HTTP_VERSION_2) {
       protocols[cur++] = NGHTTP2_PROTO_VERSION_ID_LEN;
 
       memcpy(&protocols[cur], NGHTTP2_PROTO_VERSION_ID,
@@ -2091,27 +2104,22 @@ static CURLcode ossl_connect_step2(struct connectdata *conn, int sockindex)
                                     least 256 bytes long. */
       CURLcode result;
       long lerr;
+      int lib;
+      int reason;
 
-      connssl->connecting_state = ssl_connect_2; /* the connection failed,
-                                                    we're not waiting for
-                                                    anything else. */
+      /* the connection failed, we're not waiting for anything else. */
+      connssl->connecting_state = ssl_connect_2;
 
-      errdetail = ERR_get_error(); /* Gets the earliest error code from the
-                                      thread's error queue and removes the
-                                      entry. */
+      /* Get the earliest error code from the thread's error queue and removes
+         the entry. */
+      errdetail = ERR_get_error();
 
-      switch(errdetail) {
-      case 0x1407E086:
-        /* 1407E086:
-           SSL routines:
-           SSL2_SET_CERTIFICATE:
-           certificate verify failed */
-        /* fall-through */
-      case 0x14090086:
-        /* 14090086:
-           SSL routines:
-           SSL3_GET_SERVER_CERTIFICATE:
-           certificate verify failed */
+      /* Extract which lib and reason */
+      lib = ERR_GET_LIB(errdetail);
+      reason = ERR_GET_REASON(errdetail);
+
+      if((lib == ERR_LIB_SSL) &&
+         (reason == SSL_R_CERTIFICATE_VERIFY_FAILED)) {
         result = CURLE_SSL_CACERT;
 
         lerr = SSL_get_verify_result(connssl->handle);
@@ -2123,13 +2131,11 @@ static CURLcode ossl_connect_step2(struct connectdata *conn, int sockindex)
         else
           /* strcpy() is fine here as long as the string fits within
              error_buffer */
-          strcpy(error_buffer,
-                 "SSL certificate problem, check your CA cert");
-        break;
-      default:
+          strcpy(error_buffer, "SSL certificate verification failed");
+      }
+      else {
         result = CURLE_SSL_CONNECT_ERROR;
         SSL_strerror(errdetail, error_buffer, sizeof(error_buffer));
-        break;
       }
 
       /* detail is already set to the SSL error above */
@@ -2173,7 +2179,7 @@ static CURLcode ossl_connect_step2(struct connectdata *conn, int sockindex)
 #ifdef USE_NGHTTP2
         if(len == NGHTTP2_PROTO_VERSION_ID_LEN &&
            !memcmp(NGHTTP2_PROTO_VERSION_ID, neg_protocol, len)) {
-          conn->negnpn = CURL_HTTP_VERSION_2_0;
+          conn->negnpn = CURL_HTTP_VERSION_2;
         }
         else
 #endif
@@ -2210,7 +2216,8 @@ static int asn1_object_dump(ASN1_OBJECT *a, char *buf, size_t len)
 do {                              \
   long info_len = BIO_get_mem_data(mem, &ptr); \
   Curl_ssl_push_certinfo_len(data, _num, _label, ptr, info_len); \
-  BIO_reset(mem); \
+  if(1!=BIO_reset(mem))                                          \
+    break;                                                       \
 } WHILE_FALSE
 
 static void pubkey_show(struct SessionHandle *data,
@@ -2243,11 +2250,11 @@ static int X509V3_ext(struct SessionHandle *data,
   int i;
   size_t j;
 
-  if(sk_X509_EXTENSION_num(exts) <= 0)
+  if((int)sk_X509_EXTENSION_num(exts) <= 0)
     /* no extensions, bail out */
     return 1;
 
-  for(i=0; i<sk_X509_EXTENSION_num(exts); i++) {
+  for(i=0; i < (int)sk_X509_EXTENSION_num(exts); i++) {
     ASN1_OBJECT *obj;
     X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
     BUF_MEM *biomem;
@@ -2316,13 +2323,11 @@ static CURLcode get_cert_chain(struct connectdata *conn,
 
   for(i = 0; i < numcerts; i++) {
     ASN1_INTEGER *num;
-
     X509 *x = sk_X509_value(sk, i);
-
-    X509_CINF *cinf;
     EVP_PKEY *pubkey=NULL;
     int j;
     char *ptr;
+    ASN1_BIT_STRING *psig;
 
     X509_NAME_print_ex(mem, X509_get_subject_name(x), 0, XN_FLAG_ONELINE);
     push_certinfo("Subject", i);
@@ -2340,19 +2345,42 @@ static CURLcode get_cert_chain(struct connectdata *conn,
       BIO_printf(mem, "%02x", num->data[j]);
     push_certinfo("Serial Number", i);
 
-    cinf = x->cert_info;
+#if defined(HAVE_X509_GET0_SIGNATURE) && defined(HAVE_X509_GET0_EXTENSIONS)
+    {
+      X509_ALGOR *palg;
+      ASN1_STRING *a = ASN1_STRING_new();
+      if(a) {
+        X509_get0_signature(&psig, &palg, x);
+        X509_signature_print(mem, palg, a);
+        ASN1_STRING_free(a);
+      }
+      i2a_ASN1_OBJECT(mem, palg->algorithm);
+      push_certinfo("Public Key Algorithm", i);
 
-    i2a_ASN1_OBJECT(mem, cinf->signature->algorithm);
-    push_certinfo("Signature Algorithm", i);
+      X509V3_ext(data, i, X509_get0_extensions(x));
+    }
+#else
+    {
+      /* before OpenSSL 1.0.2 */
+      X509_CINF *cinf = x->cert_info;
+
+      i2a_ASN1_OBJECT(mem, cinf->signature->algorithm);
+      push_certinfo("Signature Algorithm", i);
+
+      i2a_ASN1_OBJECT(mem, cinf->key->algor->algorithm);
+      push_certinfo("Public Key Algorithm", i);
+
+      X509V3_ext(data, i, cinf->extensions);
+
+      psig = x->signature;
+    }
+#endif
 
     ASN1_TIME_print(mem, X509_get_notBefore(x));
     push_certinfo("Start date", i);
 
     ASN1_TIME_print(mem, X509_get_notAfter(x));
     push_certinfo("Expire date", i);
-
-    i2a_ASN1_OBJECT(mem, cinf->key->algor->algorithm);
-    push_certinfo("Public Key Algorithm", i);
 
     pubkey = X509_get_pubkey(x);
     if(!pubkey)
@@ -2394,10 +2422,8 @@ static CURLcode get_cert_chain(struct connectdata *conn,
       EVP_PKEY_free(pubkey);
     }
 
-    X509V3_ext(data, i, cinf->extensions);
-
-    for(j = 0; j < x->signature->length; j++)
-      BIO_printf(mem, "%02x:", x->signature->data[j]);
+    for(j = 0; j < psig->length; j++)
+      BIO_printf(mem, "%02x:", psig->data[j]);
     push_certinfo("Signature", i);
 
     PEM_write_bio_X509(mem, x);
@@ -2513,12 +2539,12 @@ static CURLcode servercert(struct connectdata *conn,
   ASN1_TIME_print(mem, X509_get_notBefore(connssl->server_cert));
   len = BIO_get_mem_data(mem, (char **) &ptr);
   infof(data, "\t start date: %.*s\n", len, ptr);
-  BIO_reset(mem);
+  rc = BIO_reset(mem);
 
   ASN1_TIME_print(mem, X509_get_notAfter(connssl->server_cert));
   len = BIO_get_mem_data(mem, (char **) &ptr);
   infof(data, "\t expire date: %.*s\n", len, ptr);
-  BIO_reset(mem);
+  rc = BIO_reset(mem);
 
   BIO_free(mem);
 

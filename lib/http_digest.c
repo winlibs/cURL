@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -135,7 +135,7 @@ CURLcode Curl_output_digest(struct connectdata *conn,
 
      Apache servers can be set to do the Digest IE-style automatically using
      the BrowserMatch feature:
-     http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#msie
+     https://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#msie
 
      Further details on Digest implementation differences:
      http://www.fngtps.com/2006/09/http-authentication

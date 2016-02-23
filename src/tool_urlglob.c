@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -24,6 +24,8 @@
 #define ENABLE_CURLX_PRINTF
 /* use our own printf() functions */
 #include "curlx.h"
+#include "tool_cfgable.h"
+#include "tool_doswin.h"
 #include "tool_urlglob.h"
 #include "tool_vms.h"
 
@@ -666,6 +668,19 @@ CURLcode glob_match_url(char **result, char *filename, URLGlob *glob)
     stringlen += appendlen;
   }
   target[stringlen]= '\0';
+
+#if defined(MSDOS) || defined(WIN32)
+  {
+    char *sanitized;
+    SANITIZEcode sc = sanitize_file_name(&sanitized, target,
+                                         SANITIZE_ALLOW_PATH);
+    Curl_safefree(target);
+    if(sc)
+      return CURLE_URL_MALFORMAT;
+    target = sanitized;
+  }
+#endif /* MSDOS || WIN32 */
+
   *result = target;
   return CURLE_OK;
 }

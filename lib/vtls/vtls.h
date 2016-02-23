@@ -11,7 +11,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -46,7 +46,7 @@
 #define SHA256_DIGEST_LENGTH 32 /* fixed size */
 #endif
 
-/* see http://tools.ietf.org/html/draft-ietf-tls-applayerprotoneg-04 */
+/* see https://tools.ietf.org/html/draft-ietf-tls-applayerprotoneg-04 */
 #define ALPN_HTTP_1_1_LENGTH 8
 #define ALPN_HTTP_1_1 "http/1.1"
 

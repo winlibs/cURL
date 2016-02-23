@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -98,7 +98,7 @@ CURLcode curl_easy_perform_ev(CURL *easy);
 #endif
 
 #define CURL_CA_CERT_ERRORMSG1                                              \
-  "More details here: http://curl.haxx.se/docs/sslcerts.html\n\n"           \
+  "More details here: https://curl.haxx.se/docs/sslcerts.html\n\n"           \
   "curl performs SSL certificate verification by default, "                 \
   "using a \"bundle\"\n"                                                    \
   " of Certificate Authority (CA) public keys (CA certs). If the default\n" \
@@ -548,15 +548,6 @@ static CURLcode operate_do(struct GlobalConfig *global,
               result = CURLE_WRITE_ERROR;
               goto quit_urls;
             }
-#if defined(MSDOS) || defined(WIN32)
-            /* For DOS and WIN32, we do some major replacing of
-               bad characters in the file name before using it */
-            outfile = sanitize_dos_name(outfile);
-            if(!outfile) {
-              result = CURLE_OUT_OF_MEMORY;
-              goto show_error;
-            }
-#endif /* MSDOS || WIN32 */
           }
           else if(urls) {
             /* fill '#1' ... '#9' terms from URL pattern */
@@ -956,9 +947,11 @@ static CURLcode operate_do(struct GlobalConfig *global,
           /* new in libcurl 7.5 */
           my_setopt(curl, CURLOPT_MAXREDIRS, config->maxredirs);
 
-          /* new in libcurl 7.9.1 */
           if(config->httpversion)
             my_setopt_enum(curl, CURLOPT_HTTP_VERSION, config->httpversion);
+          else if(curlinfo->features & CURL_VERSION_HTTP2) {
+            my_setopt_enum(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
+          }
 
           /* new in libcurl 7.10.6 (default is Basic) */
           if(config->authtype)
@@ -1262,10 +1255,6 @@ static CURLcode operate_do(struct GlobalConfig *global,
         if(!config->nokeepalive) {
           my_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
           if(config->alivetime != 0) {
-#if !defined(TCP_KEEPIDLE) || !defined(TCP_KEEPINTVL)
-            warnf(config->global, "Keep-alive functionality somewhat crippled "
-                "due to missing support in your operating system!\n");
-#endif
             my_setopt(curl, CURLOPT_TCP_KEEPIDLE, config->alivetime);
             my_setopt(curl, CURLOPT_TCP_KEEPINTVL, config->alivetime);
           }
@@ -1359,6 +1348,11 @@ static CURLcode operate_do(struct GlobalConfig *global,
         /* new in 7.45.0 */
         if(config->proto_default)
           my_setopt_str(curl, CURLOPT_DEFAULT_PROTOCOL, config->proto_default);
+
+        /* new in 7.47.0 */
+        if(config->expect100timeout > 0)
+          my_setopt_str(curl, CURLOPT_EXPECT_100_TIMEOUT_MS,
+                        (long)(config->expect100timeout*1000));
 
         /* initialize retry vars for loop below */
         retry_sleep_default = (config->retry_delay) ?

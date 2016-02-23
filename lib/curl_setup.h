@@ -11,7 +11,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -481,9 +481,10 @@
 /*
  * msvc 6.0 requires PSDK in order to have INET6_ADDRSTRLEN
  * defined in ws2tcpip.h as well as to provide IPv6 support.
+ * Does not apply if lwIP is used.
  */
 
-#if defined(_MSC_VER) && !defined(__POCC__)
+#if defined(_MSC_VER) && !defined(__POCC__) && !defined(USE_LWIPSOCK)
 #  if !defined(HAVE_WS2TCPIP_H) || \
      ((_MSC_VER < 1300) && !defined(INET6_ADDRSTRLEN))
 #    undef HAVE_GETADDRINFO_THREADSAFE
@@ -675,7 +676,7 @@ int netware_init(void);
  * Ensure that Winsock and lwIP TCP/IP stacks are not mixed.
  */
 
-#if defined(__LWIP_OPT_H__)
+#if defined(__LWIP_OPT_H__) || defined(LWIP_HDR_OPT_H)
 #  if defined(SOCKET) || \
      defined(USE_WINSOCK) || \
      defined(HAVE_WINSOCK_H) || \
@@ -706,7 +707,7 @@ int netware_init(void);
 #endif
 
 /* In Windows the default file mode is text but an application can override it.
-Therefore we specify it explicitly. https://github.com/bagder/curl/pull/258
+Therefore we specify it explicitly. https://github.com/curl/curl/pull/258
 */
 #if defined(WIN32) || defined(MSDOS)
 #define FOPEN_READTEXT "rt"

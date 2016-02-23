@@ -9,7 +9,7 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at http://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.haxx.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -53,6 +53,9 @@ endif
 
 include Makefile.inc
 
+# CURL_FILES comes from Makefile.inc
+curl_SOURCES = $(CURL_FILES)
+
 # This might hold -Werror
 CFLAGS += @CURL_CFLAG_EXTRAS@
 
@@ -72,8 +75,9 @@ curl_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
 # if unit tests are enabled, build a static library to link them with
 if BUILD_UNITTESTS
 noinst_LTLIBRARIES = libcurltool.la
-libcurltool_la_CPPFLAGS = $(LIBMETALINK_CPPFLAGS) $(AM_CPPFLAGS)
-libcurltool_la_CFLAGS = -DUNITTESTS
+libcurltool_la_CPPFLAGS = $(LIBMETALINK_CPPFLAGS) $(AM_CPPFLAGS) \
+                          -DCURL_STATICLIB -DUNITTESTS
+libcurltool_la_CFLAGS =
 libcurltool_la_LDFLAGS = -static $(LINKFLAGS)
 libcurltool_la_SOURCES = $(curl_SOURCES)
 endif

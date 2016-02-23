@@ -5,11 +5,11 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at http://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.haxx.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -24,14 +24,14 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
 
 dnl We don't know the version number "statically" so we use a dash here
-AC_INIT([curl], [-], [a suitable curl mailing list: http://curl.haxx.se/mail/])
+AC_INIT([curl], [-], [a suitable curl mailing list: https://curl.haxx.se/mail/])
 
 XC_OVR_ZZ50
 XC_OVR_ZZ60
 CURL_OVERRIDE_AUTOCONF
 
 dnl configure script copyright
-AC_COPYRIGHT([Copyright (c) 1998 - 2014 Daniel Stenberg, <daniel@haxx.se>
+AC_COPYRIGHT([Copyright (c) 1998 - 2016 Daniel Stenberg, <daniel@haxx.se>
 This configure script may be copied, distributed and modified under the
 terms of the curl license; see COPYING for more details])
 
@@ -1083,7 +1083,11 @@ AC_HELP_STRING([--disable-ipv6],[Disable IPv6 support]),
 
   AC_TRY_RUN([ /* is AF_INET6 available? */
 #include <sys/types.h>
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
+#endif
 #include <stdlib.h> /* for exit() */
 main()
 {
@@ -1097,8 +1101,8 @@ main()
   ipv6=yes,
   AC_MSG_RESULT(no)
   ipv6=no,
-  AC_MSG_RESULT(no)
-  ipv6=no
+  AC_MSG_RESULT(yes)
+  ipv6=yes
 ))
 
 if test "$ipv6" = "yes"; then
@@ -1110,7 +1114,12 @@ if test "$ipv6" = yes; then
   AC_MSG_CHECKING([if struct sockaddr_in6 has sin6_scope_id member])
   AC_TRY_COMPILE([
 #include <sys/types.h>
-#include <netinet/in.h>] ,
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <netinet/in.h>
+#endif] ,
   struct sockaddr_in6 s; s.sin6_scope_id = 0; , have_sin6_scope_id=yes)
   if test "$have_sin6_scope_id" = yes; then
     AC_MSG_RESULT([yes])
@@ -2166,11 +2175,11 @@ if test "$curl_ssl_msg" = "$init_ssl_msg"; then
 	]])
       ],[
          AC_MSG_RESULT(yes)
-         AC_DEFINE(USE_CYASSL, 1, [if CyaSSL is enabled])
+         AC_DEFINE(USE_CYASSL, 1, [if CyaSSL/WolfSSL is enabled])
          AC_SUBST(USE_CYASSL, [1])
          CYASSL_ENABLED=1
          USE_CYASSL="yes"
-         curl_ssl_msg="enabled (CyaSSL)"
+         curl_ssl_msg="enabled (WolfSSL)"
        ],
        [
          AC_MSG_RESULT(no)
@@ -2182,7 +2191,7 @@ if test "$curl_ssl_msg" = "$init_ssl_msg"; then
     fi
 
     if test "x$USE_CYASSL" = "xyes"; then
-      AC_MSG_NOTICE([detected CyaSSL])
+      AC_MSG_NOTICE([detected $cyassllibname])
 
       dnl cyassl/ctaocrypt/types.h needs SIZEOF_LONG_LONG defined!
       AC_CHECK_SIZEOF(long long)
@@ -2194,6 +2203,16 @@ if test "$curl_ssl_msg" = "$init_ssl_msg"; then
       AC_CHECK_HEADERS(cyassl/error-ssl.h)
 
       LIBS="-l$cyassllibname -lm $LIBS"
+
+      if test "x$cyassllibname" = "xwolfssl"; then
+        dnl Recent WolfSSL versions build without SSLv3 by default
+        dnl WolfSSL needs configure --enable-opensslextra to have *get_peer*
+        AC_CHECK_FUNCS(wolfSSLv3_client_method \
+                       wolfSSL_get_peer_certificate)
+      else
+        dnl Cyassl needs configure --enable-opensslextra to have *get_peer*
+        AC_CHECK_FUNCS(CyaSSL_get_peer_certificate)
+      fi
 
       if test -n "$cyassllib"; then
         dnl when shared libs were found in a path that the run-time
