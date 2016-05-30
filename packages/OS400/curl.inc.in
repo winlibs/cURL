@@ -232,6 +232,10 @@
      d                 c                   3
      d CURL_HTTP_VERSION_2...
      d                 c                   3
+     d CURL_HTTP_VERSION_2TLS...
+     d                 c                   4
+     d CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE...
+     d                 c                   5
       *
      d CURL_NETRC_IGNORED...
      d                 c                   0
@@ -532,6 +536,8 @@
      d                 c                   90
      d  CURLE_SSL_INVALIDCERTSTATUS...
      d                 c                   91
+     d  CURLE_HTTP2_STREAM...
+     d                 c                   92
       *
       /if not defined(CURL_NO_OLDIES)
      d  CURLE_URL_MALFORMAT_USER...
@@ -1240,6 +1246,12 @@
      d                 c                   10240
      d  CURLOPT_STREAM_DEPENDS_E...
      d                 c                   10241
+     d  CURLOPT_TFTP_NO_OPTIONS...
+     d                 c                   00242
+     d  CURLOPT_CONNECT_TO...
+     d                 c                   10243
+     d  CURLOPT_TCP_FASTOPEN...
+     d                 c                   00244
       *
       /if not defined(CURL_NO_OLDIES)
      d  CURLOPT_FILE   c                   10001
@@ -1422,6 +1434,8 @@
      d                 c                   X'0040002B'
      d  CURLINFO_ACTIVESOCKET...                                                CURLINFO_SOCKET + 44
      d                 c                   X'0050002C'
+     d  CURLINFO_TLS_SSL_PTR...                                                 CURLINFO_SLIST + 45
+     d                 c                   X'0040002D'
       *
      d  CURLINFO_HTTP_CODE...                                                   Old ...RESPONSE_CODE
      d                 c                   X'00200002'

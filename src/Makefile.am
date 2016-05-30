@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -91,8 +91,7 @@ NROFF=env LC_ALL=C @NROFF@ @MANOPT@ # figured out by the configure script
 EXTRA_DIST = mkhelp.pl makefile.dj Makefile.vc6 Makefile.b32		\
  Makefile.m32 macos/curl.mcp.xml.sit.hqx macos/MACINSTALL.TXT		\
  macos/src/curl_GUSIConfig.cpp macos/src/macos_main.cpp makefile.amiga	\
- curl.rc Makefile.netware Makefile.inc Makefile.Watcom CMakeLists.txt	\
- checksrc.whitelist
+ curl.rc Makefile.netware Makefile.inc Makefile.Watcom CMakeLists.txt
 
 MANPAGE=$(top_srcdir)/docs/curl.1
 README=$(top_srcdir)/docs/MANUAL
@@ -130,7 +129,8 @@ endif
 # ignore tool_hugehelp.c since it is generated source code and it plays
 # by slightly different rules!
 checksrc:
-	@@PERL@ $(top_srcdir)/lib/checksrc.pl -D$(top_srcdir)/src -Wtool_hugehelp.c $(CURL_CFILES) $(CURL_HFILES)
+	@PERL@ $(top_srcdir)/lib/checksrc.pl -D$(srcdir)        \
+	-W$(srcdir)/tool_hugehelp.c $(srcdir)/*.[ch]
 
 if CURLDEBUG
 # for debug builds, we scan the sources on all regular make invokes

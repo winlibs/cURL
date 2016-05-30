@@ -45,7 +45,7 @@ static void unit_stop(void)
 static char *getflagstr(int flags) {
   char *buf = malloc(256);
   fail_unless(buf, "out of memory");
-  sprintf(buf, "%s,%s,%s,%s",
+  snprintf(buf, 256, "%s,%s,%s,%s",
     ((flags & SANITIZE_ALLOW_COLONS) ? "SANITIZE_ALLOW_COLONS" : ""),
     ((flags & SANITIZE_ALLOW_PATH) ? "SANITIZE_ALLOW_PATH" : ""),
     ((flags & SANITIZE_ALLOW_RESERVED) ? "SANITIZE_ALLOW_RESERVED" : ""),
@@ -56,7 +56,7 @@ static char *getflagstr(int flags) {
 static char *getcurlcodestr(int cc) {
   char *buf = malloc(256);
   fail_unless(buf, "out of memory");
-  sprintf(buf, "%s (%d)",
+  snprintf(buf, 256, "%s (%d)",
     (cc == SANITIZE_ERR_OK ? "SANITIZE_ERR_OK" :
      cc == SANITIZE_ERR_BAD_ARGUMENT ? "SANITIZE_ERR_BAD_ARGUMENT" :
      cc == SANITIZE_ERR_INVALID_PATH ? "SANITIZE_ERR_INVALID_PATH" :
@@ -110,6 +110,14 @@ UNITTEST_START
     { "f:/foo", SANITIZE_ALLOW_PATH,
       "f:/foo", SANITIZE_ERR_OK
     },
+#ifndef MSDOS
+    { "\\\\?\\C:\\foo", SANITIZE_ALLOW_PATH,
+      "\\\\?\\C:\\foo", SANITIZE_ERR_OK
+    },
+    { "\\\\?\\C:\\foo", 0,
+      "____C__foo", SANITIZE_ERR_OK
+    },
+#endif
     { "foo:bar", 0,
       "foo_bar", SANITIZE_ERR_OK
     },
@@ -164,6 +172,17 @@ UNITTEST_START
     { "com1:\\com1", SANITIZE_ALLOW_RESERVED,
       "com1__com1", SANITIZE_ERR_OK
     },
+#ifndef MSDOS
+    { "\\com1", SANITIZE_ALLOW_PATH,
+      "\\_com1", SANITIZE_ERR_OK
+    },
+    { "\\\\com1", SANITIZE_ALLOW_PATH,
+      "\\\\com1", SANITIZE_ERR_OK
+    },
+    { "\\\\?\\C:\\com1", SANITIZE_ALLOW_PATH,
+      "\\\\?\\C:\\com1", SANITIZE_ERR_OK
+    },
+#endif
     { "CoM1", 0,
       "_CoM1", SANITIZE_ERR_OK
     },

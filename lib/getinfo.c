@@ -281,48 +281,51 @@ static CURLcode getinfo_slist(struct SessionHandle *data, CURLINFO info,
     *param_slistp = ptr.to_slist;
     break;
   case CURLINFO_TLS_SESSION:
+  case CURLINFO_TLS_SSL_PTR:
     {
       struct curl_tlssessioninfo **tsip = (struct curl_tlssessioninfo **)
                                           param_slistp;
       struct curl_tlssessioninfo *tsi = &data->tsi;
       struct connectdata *conn = data->easy_conn;
-      unsigned int sockindex = 0;
-      void *internals = NULL;
 
       *tsip = tsi;
       tsi->backend = Curl_ssl_backend();
       tsi->internals = NULL;
 
-      if(!conn)
-        break;
-
-      /* Find the active ("in use") SSL connection, if any */
-      while((sockindex < sizeof(conn->ssl) / sizeof(conn->ssl[0])) &&
-            (!conn->ssl[sockindex].use))
-        sockindex++;
-
-      if(sockindex == sizeof(conn->ssl) / sizeof(conn->ssl[0]))
-        break; /* no SSL session found */
-
-      /* Return the TLS session information from the relevant backend */
-#ifdef USE_OPENSSL
-      internals = conn->ssl[sockindex].ctx;
+      if(conn && tsi->backend != CURLSSLBACKEND_NONE) {
+        unsigned int i;
+        for(i = 0; i < (sizeof(conn->ssl) / sizeof(conn->ssl[0])); ++i) {
+          if(conn->ssl[i].use) {
+#if defined(USE_AXTLS)
+            tsi->internals = (void *)conn->ssl[i].ssl;
+#elif defined(USE_CYASSL)
+            tsi->internals = (void *)conn->ssl[i].handle;
+#elif defined(USE_DARWINSSL)
+            tsi->internals = (void *)conn->ssl[i].ssl_ctx;
+#elif defined(USE_GNUTLS)
+            tsi->internals = (void *)conn->ssl[i].session;
+#elif defined(USE_GSKIT)
+            tsi->internals = (void *)conn->ssl[i].handle;
+#elif defined(USE_MBEDTLS)
+            tsi->internals = (void *)&conn->ssl[i].ssl;
+#elif defined(USE_NSS)
+            tsi->internals = (void *)conn->ssl[i].handle;
+#elif defined(USE_OPENSSL)
+            /* Legacy: CURLINFO_TLS_SESSION must return an SSL_CTX pointer. */
+            tsi->internals = ((info == CURLINFO_TLS_SESSION) ?
+                              (void *)conn->ssl[i].ctx :
+                              (void *)conn->ssl[i].handle);
+#elif defined(USE_POLARSSL)
+            tsi->internals = (void *)&conn->ssl[i].ssl;
+#elif defined(USE_SCHANNEL)
+            tsi->internals = (void *)&conn->ssl[i].ctxt->ctxt_handle;
+#elif defined(USE_SSL)
+#error "SSL backend specific information missing for CURLINFO_TLS_SSL_PTR"
 #endif
-#ifdef USE_GNUTLS
-      internals = conn->ssl[sockindex].session;
-#endif
-#ifdef USE_NSS
-      internals = conn->ssl[sockindex].handle;
-#endif
-#ifdef USE_GSKIT
-      internals = conn->ssl[sockindex].handle;
-#endif
-      if(internals) {
-        tsi->internals = internals;
+            break;
+          }
+        }
       }
-      /* NOTE: For other SSL backends, it is not immediately clear what data
-         to return from 'struct ssl_connect_data'; thus we keep 'internals' to
-         NULL which should be interpreted as "not supported" */
     }
     break;
   default:

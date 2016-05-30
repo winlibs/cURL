@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -275,21 +275,21 @@ static SECStatus set_ciphers(struct SessionHandle *data, PRFileDesc * model,
 }
 
 /*
- * Get the number of ciphers that are enabled. We use this to determine
+ * Return true if at least one cipher-suite is enabled. Used to determine
  * if we need to call NSS_SetDomesticPolicy() to enable the default ciphers.
  */
-static int num_enabled_ciphers(void)
+static bool any_cipher_enabled(void)
 {
-  PRInt32 policy = 0;
-  int count = 0;
   unsigned int i;
 
   for(i=0; i<NUM_OF_CIPHERS; i++) {
+    PRInt32 policy = 0;
     SSL_CipherPolicyGet(cipherlist[i].num, &policy);
     if(policy)
-      count++;
+      return TRUE;
   }
-  return count;
+
+  return FALSE;
 }
 
 /*
@@ -328,8 +328,8 @@ static char* dup_nickname(struct SessionHandle *data, enum dupstring cert_kind)
     /* no such file exists, use the string as nickname */
     return strdup(str);
 
-  /* search the last slash; we require at least one slash in a file name */
-  n = strrchr(str, '/');
+  /* search the first slash; we require at least one slash in a file name */
+  n = strchr(str, '/');
   if(!n) {
     infof(data, "warning: certificate file name \"%s\" handled as nickname; "
           "please use \"./%s\" to force file name\n", str, str);
@@ -696,7 +696,7 @@ static void HandshakeCallback(PRFileDesc *sock, void *arg)
   unsigned int buflen;
   SSLNextProtoState state;
 
-  if(!conn->data->set.ssl_enable_npn && !conn->data->set.ssl_enable_alpn) {
+  if(!conn->bits.tls_enable_npn && !conn->bits.tls_enable_alpn) {
     return;
   }
 
@@ -927,12 +927,6 @@ static SECStatus check_issuer_cert(PRFileDesc *sock,
   CERTCertificate *cert, *cert_issuer, *issuer;
   SECStatus res=SECSuccess;
   void *proto_win = NULL;
-
-  /*
-    PRArenaPool   *tmpArena = NULL;
-    CERTAuthKeyID *authorityKeyID = NULL;
-    SECITEM       *caname = NULL;
-  */
 
   cert = SSL_PeerCertificate(sock);
   cert_issuer = CERT_FindCertIssuer(cert, PR_Now(), certUsageObjectSigner);
@@ -1228,7 +1222,7 @@ static CURLcode nss_init(struct SessionHandle *data)
   if(result)
     return result;
 
-  if(num_enabled_ciphers() == 0)
+  if(!any_cipher_enabled())
     NSS_SetDomesticPolicy();
 
   initialized = 1;
@@ -1750,14 +1744,14 @@ static CURLcode nss_setup_connect(struct connectdata *conn, int sockindex)
 #endif
 
 #ifdef SSL_ENABLE_NPN
-  if(SSL_OptionSet(connssl->handle, SSL_ENABLE_NPN, data->set.ssl_enable_npn
-        ? PR_TRUE : PR_FALSE) != SECSuccess)
+  if(SSL_OptionSet(connssl->handle, SSL_ENABLE_NPN, conn->bits.tls_enable_npn
+                   ? PR_TRUE : PR_FALSE) != SECSuccess)
     goto error;
 #endif
 
 #ifdef SSL_ENABLE_ALPN
-  if(SSL_OptionSet(connssl->handle, SSL_ENABLE_ALPN, data->set.ssl_enable_alpn
-        ? PR_TRUE : PR_FALSE) != SECSuccess)
+  if(SSL_OptionSet(connssl->handle, SSL_ENABLE_ALPN, conn->bits.tls_enable_alpn
+                   ? PR_TRUE : PR_FALSE) != SECSuccess)
     goto error;
 #endif
 
@@ -1774,7 +1768,7 @@ static CURLcode nss_setup_connect(struct connectdata *conn, int sockindex)
 #endif
 
 #if defined(SSL_ENABLE_NPN) || defined(SSL_ENABLE_ALPN)
-  if(data->set.ssl_enable_npn || data->set.ssl_enable_alpn) {
+  if(conn->bits.tls_enable_npn || conn->bits.tls_enable_alpn) {
     int cur = 0;
     unsigned char protocols[128];
 

@@ -339,7 +339,7 @@ dnl **********************************************************************
 
 CURL_CHECK_HEADER_WINDOWS
 CURL_CHECK_NATIVE_WINDOWS
-case X-"$ac_cv_native_windows" in
+case X-"$curl_cv_native_windows" in
   X-yes)
     CURL_CHECK_HEADER_WINSOCK
     CURL_CHECK_HEADER_WINSOCK2
@@ -348,11 +348,11 @@ case X-"$ac_cv_native_windows" in
     CURL_CHECK_HEADER_WINBER
     ;;
   *)
-    ac_cv_header_winsock_h="no"
-    ac_cv_header_winsock2_h="no"
-    ac_cv_header_ws2tcpip_h="no"
-    ac_cv_header_winldap_h="no"
-    ac_cv_header_winber_h="no"
+    curl_cv_header_winsock_h="no"
+    curl_cv_header_winsock2_h="no"
+    curl_cv_header_ws2tcpip_h="no"
+    curl_cv_header_winldap_h="no"
+    curl_cv_header_winber_h="no"
     ;;
 esac
 CURL_CHECK_WIN32_LARGEFILE
@@ -742,8 +742,8 @@ fi
 if test "$HAVE_GETHOSTBYNAME" != "1"
 then
   dnl This is for winsock systems
-  if test "$ac_cv_header_windows_h" = "yes"; then
-    if test "$ac_cv_header_winsock_h" = "yes"; then
+  if test "$curl_cv_header_windows_h" = "yes"; then
+    if test "$curl_cv_header_winsock_h" = "yes"; then
       case $host in
         *-*-mingw32ce*)
           winsock_LIB="-lwinsock"
@@ -753,7 +753,7 @@ then
           ;;
       esac
     fi
-    if test "$ac_cv_header_winsock2_h" = "yes"; then
+    if test "$curl_cv_header_winsock2_h" = "yes"; then
       winsock_LIB="-lws2_32"
     fi
     if test ! -z "$winsock_LIB"; then
@@ -850,17 +850,6 @@ fi
 if test "$HAVE_GETHOSTBYNAME" != "1"; then
   AC_MSG_ERROR([couldn't find libraries for gethostbyname()])
 fi
-
-dnl resolve lib?
-AC_CHECK_FUNC(strcasecmp, , [ AC_CHECK_LIB(resolve, strcasecmp) ])
-
-if test "$ac_cv_lib_resolve_strcasecmp" = "$ac_cv_func_strcasecmp"; then
-  AC_CHECK_LIB(resolve, strcasecmp,
-              [LIBS="-lresolve $LIBS"],
-               ,
-               -lnsl)
-fi
-ac_cv_func_strcasecmp="no"
 
 CURL_CHECK_LIBS_CONNECT
 
@@ -999,7 +988,7 @@ if test x$CURL_DISABLE_LDAP != x1 ; then
   CURL_CHECK_HEADER_LDAP_SSL
 
   if test -z "$LDAPLIBNAME" ; then
-    if test "$ac_cv_native_windows" = "yes"; then
+    if test "$curl_cv_native_windows" = "yes"; then
       dnl Windows uses a single and unique LDAP library name
       LDAPLIBNAME="wldap32"
       LBERLIBNAME="no"
@@ -1349,7 +1338,7 @@ AC_HELP_STRING([--without-winssl], [disable Windows native SSL/TLS]),
 AC_MSG_CHECKING([whether to enable Windows native SSL/TLS (Windows native builds only)])
 if test "$curl_ssl_msg" = "$init_ssl_msg"; then
   if test "x$OPT_WINSSL" != "xno"  &&
-     test "x$ac_cv_native_windows" = "xyes"; then
+     test "x$curl_cv_native_windows" = "xyes"; then
     AC_MSG_RESULT(yes)
     AC_DEFINE(USE_SCHANNEL, 1, [to enable Windows native SSL/TLS support])
     AC_SUBST(USE_SCHANNEL, [1])
@@ -1631,8 +1620,6 @@ if test "$curl_ssl_msg" = "$init_ssl_msg" && test X"$OPT_SSL" != Xno; then
     dnl Older versions of Cyassl (some time before 2.9.4) don't have
     dnl SSL_get_shutdown (but this check won't actually detect it there
     dnl as it's a macro that needs the header files be included)
-    dnl BoringSSL didn't have DES_set_odd_parity for a while but now it is
-    dnl back again.
 
     AC_CHECK_FUNCS( RAND_status \
                     RAND_screen \
@@ -1640,8 +1627,7 @@ if test "$curl_ssl_msg" = "$init_ssl_msg" && test X"$OPT_SSL" != Xno; then
                     ENGINE_cleanup \
                     CRYPTO_cleanup_all_ex_data \
                     SSL_get_shutdown \
-                    SSLv2_client_method \
-                    DES_set_odd_parity )
+                    SSLv2_client_method )
 
     AC_MSG_CHECKING([for BoringSSL])
     AC_COMPILE_IFELSE([
@@ -1656,6 +1642,7 @@ if test "$curl_ssl_msg" = "$init_ssl_msg" && test X"$OPT_SSL" != Xno; then
         AC_MSG_RESULT([yes])
         AC_DEFINE_UNQUOTED(HAVE_BORINGSSL, 1,
                            [Define to 1 if using BoringSSL.])
+        curl_ssl_msg="enabled (BoringSSL)"
     ],[
         AC_MSG_RESULT([no])
     ])
@@ -2208,10 +2195,13 @@ if test "$curl_ssl_msg" = "$init_ssl_msg"; then
         dnl Recent WolfSSL versions build without SSLv3 by default
         dnl WolfSSL needs configure --enable-opensslextra to have *get_peer*
         AC_CHECK_FUNCS(wolfSSLv3_client_method \
-                       wolfSSL_get_peer_certificate)
+                       wolfSSL_CTX_UseSupportedCurve \
+                       wolfSSL_get_peer_certificate \
+                       wolfSSL_UseALPN)
       else
         dnl Cyassl needs configure --enable-opensslextra to have *get_peer*
-        AC_CHECK_FUNCS(CyaSSL_get_peer_certificate)
+        AC_CHECK_FUNCS(CyaSSL_CTX_UseSupportedCurve \
+                       CyaSSL_get_peer_certificate)
       fi
 
       if test -n "$cyassllib"; then
@@ -3172,7 +3162,7 @@ AC_CHECK_SIZEOF(time_t)
 AC_CHECK_SIZEOF(off_t)
 
 soname_bump=no
-if test x"$ac_cv_native_windows" != "xyes" &&
+if test x"$curl_cv_native_windows" != "xyes" &&
    test $ac_cv_sizeof_off_t -ne $curl_sizeof_curl_off_t; then
   AC_MSG_WARN([This libcurl built is probably not ABI compatible with previous])
   AC_MSG_WARN([builds! You MUST read lib/README.curl_off_t to figure it out.])
@@ -3340,7 +3330,7 @@ dnl and get the types of five of its arguments.
 CURL_CHECK_FUNC_GETNAMEINFO
 
 if test "$ipv6" = "yes"; then
-  if test "$ac_cv_func_getaddrinfo" = "yes"; then
+  if test "$curl_cv_func_getaddrinfo" = "yes"; then
     AC_DEFINE(ENABLE_IPV6, 1, [Define if you want to enable IPv6 support])
     IPV6_ENABLED=1
     AC_SUBST(IPV6_ENABLED)
@@ -3407,7 +3397,7 @@ AM_CONDITIONAL(USE_MANUAL, test x"$USE_MANUAL" = x1)
 CURL_CHECK_LIB_ARES
 AM_CONDITIONAL(USE_EMBEDDED_ARES, test x$embedded_ares = xyes)
 
-if test "x$ac_cv_native_windows" != "xyes" &&
+if test "x$curl_cv_native_windows" != "xyes" &&
    test "x$enable_shared" = "xyes"; then
   build_libhostname=yes
 else
@@ -3477,7 +3467,7 @@ AC_HELP_STRING([--enable-sspi],[Enable SSPI])
 AC_HELP_STRING([--disable-sspi],[Disable SSPI]),
 [ case "$enableval" in
   yes)
-       if test "$ac_cv_native_windows" = "yes"; then
+       if test "$curl_cv_native_windows" = "yes"; then
          AC_MSG_RESULT(yes)
          AC_DEFINE(USE_WINDOWS_SSPI, 1, [to enable SSPI support])
          AC_SUBST(USE_WINDOWS_SSPI, [1])
@@ -3893,8 +3883,9 @@ AC_MSG_NOTICE([Configured to build curl/libcurl:
   --libcurl option: ${curl_libcurl_msg}
   Verbose errors:   ${curl_verbose_msg}
   SSPI support:     ${curl_sspi_msg}
-  ca cert bundle:   ${ca}
-  ca cert path:     ${capath}
+  ca cert bundle:   ${ca}${ca_warning}
+  ca cert path:     ${capath}${capath_warning}
+  ca fallback:      ${with_ca_fallback}
   LDAP support:     ${curl_ldap_msg}
   LDAPS support:    ${curl_ldaps_msg}
   RTSP support:     ${curl_rtsp_msg}

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -51,7 +51,7 @@
 #include "telnet.h"
 #include "connect.h"
 #include "progress.h"
-#include "curl_printf.h"
+#include "system_win32.h"
 
 #define  TELOPTS
 #define  TELCMDS
@@ -62,7 +62,8 @@
 #include "rawstr.h"
 #include "warnless.h"
 
-/* The last #include files should be: */
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 
@@ -91,7 +92,7 @@
 
 #ifdef USE_WINSOCK
 typedef FARPROC WSOCK2_FUNC;
-static CURLcode check_wsock2 ( struct SessionHandle *data );
+static CURLcode check_wsock2 (struct SessionHandle *data);
 #endif
 
 static
@@ -198,7 +199,7 @@ const struct Curl_handler Curl_handler_telnet = {
 
 #ifdef USE_WINSOCK
 static CURLcode
-check_wsock2 ( struct SessionHandle *data )
+check_wsock2(struct SessionHandle *data)
 {
   int err;
   WORD wVersionRequested;
@@ -1334,7 +1335,7 @@ static CURLcode telnet_do(struct connectdata *conn, bool *done)
 
   /* OK, so we have WinSock 2.0.  We need to dynamically */
   /* load ws2_32.dll and get the function pointers we need. */
-  wsock2 = LoadLibrary(TEXT("WS2_32.DLL"));
+  wsock2 = Curl_load_library(TEXT("WS2_32.DLL"));
   if(wsock2 == NULL) {
     failf(data, "failed to load WS2_32.DLL (%d)", ERRNO);
     return CURLE_FAILED_INIT;

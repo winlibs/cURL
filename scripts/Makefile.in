@@ -213,6 +213,7 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
@@ -277,7 +278,7 @@ ZLIB_LIBS = @ZLIB_LIBS@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -360,9 +361,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign scripts/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu scripts/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign scripts/Makefile
+	  $(AUTOMAKE) --gnu scripts/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -546,7 +547,7 @@ all-local: $(ZSH_COMPLETION_FUNCTION_FILENAME)
 $(ZSH_COMPLETION_FUNCTION_FILENAME): zsh.pl
 @CROSSCOMPILING_TRUE@	@echo "NOTICE: we can't generate zsh completion when cross-compiling!"
 @CROSSCOMPILING_FALSE@	@if ! test -x "$(PERL)"; then echo "No perl: can't install zsh.pl"; exit 0; fi
-@CROSSCOMPILING_FALSE@	$(PERL) $(srcdir)/zsh.pl $(top_builddir)/src/curl > $@
+@CROSSCOMPILING_FALSE@	$(PERL) $(srcdir)/zsh.pl $(top_builddir)/src/curl$(EXEEXT) > $@
 
 install-data-local:
 @CROSSCOMPILING_TRUE@	@echo "NOTICE: we can't install zsh completion when cross-compiling!"

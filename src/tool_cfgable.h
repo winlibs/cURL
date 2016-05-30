@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -151,6 +151,7 @@ struct OperationConfig {
   struct curl_httppost *last_post;
   struct curl_slist *telnet_options;
   struct curl_slist *resolve;
+  struct curl_slist *connect_to;
   HttpReq httpreq;
 
   /* for bandwidth limiting features: */
@@ -165,16 +166,15 @@ struct OperationConfig {
 
   char *socksproxy;         /* set to server string */
   int socksver;             /* set to CURLPROXY_SOCKS* define */
-  char *socks5_gssapi_service;  /* set service name for gssapi principal
-                                 * default rcmd */
-  char *proxy_service_name; /* set service name for proxy negotiation
-                             * default HTTP */
-  int socks5_gssapi_nec ;   /* The NEC reference server does not protect
-                             * the encryption type exchange */
-  char *service_name;       /* set negotiation service name
-                             * default HTTP */
+  int socks5_gssapi_nec;    /* The NEC reference server does not protect the
+                               encryption type exchange */
+  char *proxy_service_name; /* set authentication service name for HTTP and
+                               SOCKS5 proxies */
+  char *service_name;       /* set authentication service name for DIGEST-MD5,
+                               Kerberos 5 and SPNEGO */
 
   bool tcp_nodelay;
+  bool tcp_fastopen;
   long req_retry;           /* number of retries */
   long retry_delay;         /* delay between retries (in seconds) */
   long retry_maxtime;       /* maximum time to keep retrying */
@@ -183,6 +183,7 @@ struct OperationConfig {
   char *ftp_alternative_to_user;  /* send command if USER/PASS fails */
   int ftp_filemethod;
   long tftp_blksize;        /* TFTP BLKSIZE option */
+  bool tftp_no_options;     /* do not send TFTP options requests */
   bool ignorecl;            /* --ignore-content-length */
   bool disable_sessionid;
 
