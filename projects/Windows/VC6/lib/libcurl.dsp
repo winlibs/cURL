@@ -1014,10 +1014,6 @@ SOURCE=..\..\..\..\lib\progress.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\rawstr.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\rtsp.c
 # End Source File
 # Begin Source File
@@ -1074,11 +1070,11 @@ SOURCE=..\..\..\..\lib\ssh.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\strdup.c
+SOURCE=..\..\..\..\lib\strcase.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\strequal.c
+SOURCE=..\..\..\..\lib\strdup.c
 # End Source File
 # Begin Source File
 
@@ -1514,10 +1510,6 @@ SOURCE=..\..\..\..\lib\progress.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\rawstr.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\rtsp.h
 # End Source File
 # Begin Source File
@@ -1574,11 +1566,11 @@ SOURCE=..\..\..\..\lib\ssh.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\strdup.h
+SOURCE=..\..\..\..\lib\strcase.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\strequal.h
+SOURCE=..\..\..\..\lib\strdup.h
 # End Source File
 # Begin Source File
 

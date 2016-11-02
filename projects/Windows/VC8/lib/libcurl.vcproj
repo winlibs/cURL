@@ -3901,10 +3901,6 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.c"
-			>
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\rtsp.c"
 			>
 			</File>
@@ -3961,11 +3957,11 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strdup.c"
+				RelativePath="..\..\..\..\lib\strcase.c"
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strequal.c"
+				RelativePath="..\..\..\..\lib\strdup.c"
 			>
 			</File>
 			<File
@@ -4305,10 +4301,6 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.h"
-			>
-			</File>
-			<File
 				RelativePath="..\..\..\..\lib\rtsp.h"
 			>
 			</File>
@@ -4365,11 +4357,11 @@
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strdup.h"
+				RelativePath="..\..\..\..\lib\strcase.h"
 			>
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strequal.h"
+				RelativePath="..\..\..\..\lib\strdup.h"
 			>
 			</File>
 			<File
