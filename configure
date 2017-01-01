@@ -17254,7 +17254,7 @@ $as_echo "no" >&6; }
 ***
 *** Whatever settings are present in CFLAGS will be used for this run.
 ***
-*** If you wish to help the cURL project to better support your compiler
+*** If you wish to help the curl project to better support your compiler
 *** you can report this and the required info on the libcurl development
 *** mailing list: https://cool.haxx.se/mailman/listinfo/curl-library/
 ***
@@ -19233,7 +19233,30 @@ $as_echo "set by user" >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $min set" >&5
 $as_echo "$min set" >&6; }
     fi
+
+    old_CFLAGS=$CFLAGS
     CFLAGS="$CFLAGS -Werror=partial-availability"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts -Werror=partial-availability" >&5
+$as_echo_n "checking whether $CC accepts -Werror=partial-availability... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main (void)
+{
+
+ ;
+ return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      CFLAGS=$old_CFLAGS
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   fi
 
 
@@ -22685,9 +22708,7 @@ fi
 
 
 
-    for ac_func in RAND_status \
-                    RAND_screen \
-                    RAND_egd \
+    for ac_func in RAND_egd \
                     ENGINE_cleanup \
                     SSL_get_shutdown \
                     SSLv2_client_method
@@ -40642,6 +40663,11 @@ if test "x$USE_NGHTTP2" = "x1"; then
   SUPPORT_FEATURES="$SUPPORT_FEATURES HTTP2"
 fi
 
+if test "x$OPENSSL_ENABLED" = "x1" -o "x$GNUTLS_ENABLED" = "x1" \
+    -o "x$NSS_ENABLED" = "x1"; then
+  SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPS-proxy"
+fi
+
 
 
 if test "x$CURL_DISABLE_HTTP" != "x1"; then
@@ -40910,7 +40936,7 @@ if test "x$want_curldebug_assumed" = "xyes" &&
   ac_configure_args="$ac_configure_args --enable-curldebug"
 fi
 
-ac_config_files="$ac_config_files Makefile docs/Makefile docs/examples/Makefile docs/libcurl/Makefile docs/libcurl/opts/Makefile include/Makefile include/curl/Makefile src/Makefile lib/Makefile scripts/Makefile lib/libcurl.vers tests/Makefile tests/certs/Makefile tests/certs/scripts/Makefile tests/data/Makefile tests/server/Makefile tests/libtest/Makefile tests/unit/Makefile packages/Makefile packages/Win32/Makefile packages/Win32/cygwin/Makefile packages/Linux/Makefile packages/Linux/RPM/Makefile packages/Linux/RPM/curl.spec packages/Linux/RPM/curl-ssl.spec packages/Solaris/Makefile packages/EPM/curl.list packages/EPM/Makefile packages/vms/Makefile packages/AIX/Makefile packages/AIX/RPM/Makefile packages/AIX/RPM/curl.spec curl-config libcurl.pc"
+ac_config_files="$ac_config_files Makefile docs/Makefile docs/examples/Makefile docs/libcurl/Makefile docs/libcurl/opts/Makefile docs/cmdline-opts/Makefile include/Makefile include/curl/Makefile src/Makefile lib/Makefile scripts/Makefile lib/libcurl.vers tests/Makefile tests/certs/Makefile tests/certs/scripts/Makefile tests/data/Makefile tests/server/Makefile tests/libtest/Makefile tests/unit/Makefile packages/Makefile packages/Win32/Makefile packages/Win32/cygwin/Makefile packages/Linux/Makefile packages/Linux/RPM/Makefile packages/Linux/RPM/curl.spec packages/Linux/RPM/curl-ssl.spec packages/Solaris/Makefile packages/EPM/curl.list packages/EPM/Makefile packages/vms/Makefile packages/AIX/Makefile packages/AIX/RPM/Makefile packages/AIX/RPM/curl.spec curl-config libcurl.pc"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -41995,6 +42021,7 @@ do
     "docs/examples/Makefile") CONFIG_FILES="$CONFIG_FILES docs/examples/Makefile" ;;
     "docs/libcurl/Makefile") CONFIG_FILES="$CONFIG_FILES docs/libcurl/Makefile" ;;
     "docs/libcurl/opts/Makefile") CONFIG_FILES="$CONFIG_FILES docs/libcurl/opts/Makefile" ;;
+    "docs/cmdline-opts/Makefile") CONFIG_FILES="$CONFIG_FILES docs/cmdline-opts/Makefile" ;;
     "include/Makefile") CONFIG_FILES="$CONFIG_FILES include/Makefile" ;;
     "include/curl/Makefile") CONFIG_FILES="$CONFIG_FILES include/curl/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;

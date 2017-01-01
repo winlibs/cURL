@@ -1637,9 +1637,7 @@ if test "$curl_ssl_msg" = "$init_ssl_msg" && test X"$OPT_SSL" != Xno; then
     dnl SSL_get_shutdown (but this check won't actually detect it there
     dnl as it's a macro that needs the header files be included)
 
-    AC_CHECK_FUNCS( RAND_status \
-                    RAND_screen \
-                    RAND_egd \
+    AC_CHECK_FUNCS( RAND_egd \
                     ENGINE_cleanup \
                     SSL_get_shutdown \
                     SSLv2_client_method )
@@ -3712,6 +3710,11 @@ if test "x$USE_NGHTTP2" = "x1"; then
   SUPPORT_FEATURES="$SUPPORT_FEATURES HTTP2"
 fi
 
+if test "x$OPENSSL_ENABLED" = "x1" -o "x$GNUTLS_ENABLED" = "x1" \
+    -o "x$NSS_ENABLED" = "x1"; then
+  SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPS-proxy"
+fi
+
 AC_SUBST(SUPPORT_FEATURES)
 
 dnl For supported protocols in pkg-config file
@@ -3824,6 +3827,7 @@ AC_CONFIG_FILES([Makefile \
            docs/examples/Makefile \
            docs/libcurl/Makefile \
            docs/libcurl/opts/Makefile \
+           docs/cmdline-opts/Makefile \
            include/Makefile \
            include/curl/Makefile \
            src/Makefile \
