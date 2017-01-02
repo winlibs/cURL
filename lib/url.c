@@ -4300,14 +4300,26 @@ static CURLcode parseurlandfillconn(struct Curl_easy *data,
      * the URL protocols specified in RFC 1738
      */
     if(path[0] != '/') {
+#ifdef _WIN32
+	uint8_t is_abs_path = strlen(path) >= 3 && isalpha(path[0]) && ':' == path[1] && ('\\' == path[2] || '/' == path[2]);
+#endif
       /* the URL includes a host name, it must match "localhost" or
          "127.0.0.1" to be valid */
       char *ptr;
-      if(!checkprefix("localhost/", path) &&
+      if(
+#ifdef _WIN32
+	!is_abs_path &&
+#endif
+	 !checkprefix("localhost/", path) &&
          !checkprefix("127.0.0.1/", path)) {
         failf(data, "Valid host name with slash missing in URL");
         return CURLE_URL_MALFORMAT;
       }
+#ifdef _WIN32
+      if (is_abs_path)
+	      ptr = path;
+      else
+#endif
       ptr = &path[9]; /* now points to the slash after the host */
 
       /* there was a host name and slash present
