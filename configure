@@ -3371,9 +3371,6 @@ $as_echo "(assumed no)" >&6; }
 $as_echo "no" >&6; }
       ;;
   esac
-    if test "$dontwant_rt" = "yes" && test "$want_thres" = "yes" ; then
-    as_fn_error $? "options --disable-rt and --enable-thread-resolver are mutually exclusive, at most one can be selected." "$LINENO" 5
-  fi
 
 
 #
@@ -3687,7 +3684,7 @@ if test -f ${srcdir}/include/curl/curlbuild.h; then
   rm -f ${srcdir}/include/curl/curlbuild.h
 fi
 
-CURLVERSION=`$SED -ne 's/^#define LIBCURL_VERSION "\(.*\)"/\1/p' ${srcdir}/include/curl/curlver.h`
+CURLVERSION=`$SED -ne 's/^#define LIBCURL_VERSION "\(.*\)".*/\1/p' ${srcdir}/include/curl/curlver.h`
 
   xc_prog_cc_prev_IFS=$IFS
   xc_prog_cc_prev_LIBS=$LIBS
@@ -5626,7 +5623,7 @@ $as_echo "$CURLVERSION" >&6; }
 
 
 
-VERSIONNUM=`$SED -ne 's/^#define LIBCURL_VERSION_NUM 0x\(.*\)/\1/p' ${srcdir}/include/curl/curlver.h`
+VERSIONNUM=`$SED -ne 's/^#define LIBCURL_VERSION_NUM 0x\([0-9A-Fa-f]*\).*/\1/p' ${srcdir}/include/curl/curlver.h`
 
 
 PKGADD_PKG="HAXXcurl"
@@ -11216,7 +11213,7 @@ esac
 # of non-PIC compiled objects will fail with following linker error
 # "relocation R_X86_64_32 can not be used when making a shared object"
 # is to build PIC objects even for static libraries. This behavior may
-# be overriden using 'configure --disable-shared --without-pic'.
+# be overridden using 'configure --disable-shared --without-pic'.
 #
 
 if test "x$xc_lt_want_with_pic" = 'xdefault'; then
@@ -15924,7 +15921,7 @@ esac
 $as_echo "$xc_lt_shlib_use_mimpure_text" >&6; }
 
 #
-# Find out wether libtool libraries would be built wit PIC
+# Find out whether libtool libraries would be built wit PIC
 #
 
 case "x$pic_mode" in # ((((
@@ -17344,7 +17341,9 @@ squeeze() {
         #
       GNU_C)
         #
-                tmp_CFLAGS="$tmp_CFLAGS"
+                        if test "$compiler_num" -ge "295"; then
+          tmp_CFLAGS="$tmp_CFLAGS -Werror-implicit-function-declaration"
+        fi
         ;;
         #
       HP_UX_C)
@@ -20728,6 +20727,7 @@ else
     OPT_ZLIB=""
   fi
 
+  if test -z "$OPT_ZLIB" ; then
 
     if test -n "$PKG_CONFIG"; then
       PKGCONFIG="$PKG_CONFIG"
@@ -20855,15 +20855,13 @@ $as_echo "found" >&6; }
     fi
 
 
-  if test "$PKGCONFIG" != "no" ; then
-    LIBS="`$PKGCONFIG --libs-only-l zlib` $LIBS"
-    LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"
-    CPPFLAGS="`$PKGCONFIG --cflags-only-I zlib` $CPPFLAGS"
-    OPT_ZLIB=""
-    HAVE_LIBZ="1"
-  fi
-
-  if test -z "$OPT_ZLIB" ; then
+    if test "$PKGCONFIG" != "no" ; then
+      LIBS="`$PKGCONFIG --libs-only-l zlib` $LIBS"
+      LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"
+      CPPFLAGS="`$PKGCONFIG --cflags-only-I zlib` $CPPFLAGS"
+      OPT_ZLIB=""
+      HAVE_LIBZ="1"
+    fi
 
     if test -z "$HAVE_LIBZ"; then
 
@@ -40221,8 +40219,25 @@ $as_echo "auto" >&6; }
 
 fi
 
-if test "$want_thres" = "yes" && test "$dontwant_rt" = "no" && \
-   test "$want_pthreads" != "no"; then
+
+if test "$want_pthreads" != "no"; then
+  if test "$want_pthreads" = "yes" && test "$dontwant_rt" = "yes"; then
+    as_fn_error $? "options --enable-pthreads and --disable-rt are mutually exclusive" "$LINENO" 5
+  fi
+  if test "$dontwant_rt" != "no"; then
+        if test "$want_pthreads" = "yes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --enable-pthreads Ignored since librt is disabled." >&5
+$as_echo "$as_me: WARNING: --enable-pthreads Ignored since librt is disabled." >&2;}
+    fi
+    want_pthreads=no
+  fi
+fi
+
+if test "$want_pthreads" != "no" && test "$want_thres" != "yes"; then
+  want_pthreads=no
+fi
+
+if test "$want_pthreads" != "no"; then
   ac_fn_c_check_header_mongrel "$LINENO" "pthread.h" "ac_cv_header_pthread_h" "$ac_includes_default"
 if test "x$ac_cv_header_pthread_h" = xyes; then :
 
@@ -40292,23 +40307,21 @@ fi
 
 
 fi
-if test "x$USE_THREADS_POSIX" != "x1"; then
+
+if test "$want_thres" = "yes" && test "x$USE_THREADS_POSIX" != "x1"; then
   if test "$want_pthreads" = "yes"; then
     as_fn_error $? "--enable-pthreads but pthreads was not found" "$LINENO" 5
   fi
-  if test "$want_thres" = "yes"; then
-        if test "$curl_cv_native_windows" = "yes"; then
-      USE_THREADS_WIN32=1
+    if test "$curl_cv_native_windows" = "yes"; then
+    USE_THREADS_WIN32=1
 
 $as_echo "#define USE_THREADS_WIN32 1" >>confdefs.h
 
-      curl_res_msg="Win32 threaded"
-    else
-      as_fn_error $? "Threaded resolver enabled but no thread library found" "$LINENO" 5
-    fi
+    curl_res_msg="Win32 threaded"
+  else
+    as_fn_error $? "Threaded resolver enabled but no thread library found" "$LINENO" 5
   fi
 fi
-
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable verbose strings" >&5
 $as_echo_n "checking whether to enable verbose strings... " >&6; }

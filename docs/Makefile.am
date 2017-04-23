@@ -26,32 +26,35 @@ man_MANS = curl.1 curl-config.1
 noinst_man_MANS = mk-ca-bundle.1
 GENHTMLPAGES = curl.html curl-config.html mk-ca-bundle.html
 PDFPAGES = curl.pdf curl-config.pdf mk-ca-bundle.pdf
+MANDISTPAGES = curl.1.dist curl-config.1.dist
 
 HTMLPAGES = $(GENHTMLPAGES) index.html
 
-SUBDIRS = examples libcurl cmdline-opts
+SUBDIRS = libcurl cmdline-opts
+DIST_SUBDIRS = $(SUBDIRS) examples
 
-CLEANFILES = $(GENHTMLPAGES) $(PDFPAGES) curl.1
+CLEANFILES = $(GENHTMLPAGES) $(PDFPAGES) $(MANDISTPAGES) curl.1
 
-EXTRA_DIST = MANUAL BUGS CONTRIBUTE.md FAQ FEATURES INTERNALS.md SSLCERTS.md  \
- README.win32 RESOURCES TODO TheArtOfHttpScripting THANKS VERSIONS KNOWN_BUGS \
- BINDINGS.md $(man_MANS) HISTORY.md INSTALL INSTALL.md LICENSE-MIXING.md         \
- README.netware MAIL-ETIQUETTE HTTP-COOKIES.md SECURITY.md RELEASE-PROCEDURE  \
- SSL-PROBLEMS.md HTTP2.md ROADMAP.md CODE_OF_CONDUCT.md CODE_STYLE.md         \
- CHECKSRC.md
+EXTRA_DIST = MANUAL BUGS CONTRIBUTE.md FAQ FEATURES INTERNALS.md SSLCERTS.md    \
+ README.win32 RESOURCES TODO TheArtOfHttpScripting THANKS VERSIONS KNOWN_BUGS   \
+ BINDINGS.md $(man_MANS) HISTORY.md INSTALL INSTALL.md LICENSE-MIXING.md        \
+ README.netware MAIL-ETIQUETTE HTTP-COOKIES.md SECURITY.md RELEASE-PROCEDURE    \
+ SSL-PROBLEMS.md HTTP2.md ROADMAP.md CODE_OF_CONDUCT.md CODE_STYLE.md           \
+ CHECKSRC.md CMakeLists.txt README.md CIPHERS.md INSTALL.cmake README.cmake     \
+ $(noinst_man_MANS)
 
 MAN2HTML= roffit $< >$@
 
 SUFFIXES = .1 .html .pdf
 
 curl.1:
-	cd cmdline-opts && make
+	cd cmdline-opts && $(MAKE)
 
 html: $(HTMLPAGES)
-	cd libcurl && make html
+	cd libcurl && $(MAKE) html
 
 pdf: $(PDFPAGES)
-	cd libcurl && make pdf
+	cd libcurl && $(MAKE) pdf
 
 .1.html:
 	$(MAN2HTML)

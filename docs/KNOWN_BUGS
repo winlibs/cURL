@@ -27,6 +27,7 @@ problems may have been fixed or changed somewhat since this was written!
  2.1 CURLINFO_SSL_VERIFYRESULT has limited support
  2.2 DER in keychain
  2.3 GnuTLS backend skips really long certificate fields
+ 2.4 DarwinSSL won't import PKCS#12 client certificates without a password
 
  3. Email protocols
  3.1 IMAP SEARCH ALL truncated response
@@ -42,7 +43,6 @@ problems may have been fixed or changed somewhat since this was written!
  5. Build and portability issues
  5.1 Windows Borland compiler
  5.2 curl-config --libs contains private details
- 5.3 libidn and old iconv
  5.4 AIX shared build with c-ares fails
  5.5 can't handle Unicode arguments in Windows
  5.6 cmake support gaps
@@ -159,7 +159,7 @@ problems may have been fixed or changed somewhat since this was written!
 
 1.10 Strips trailing dot from host name
 
- When given a URL wit a trailing dot for the host name part:
+ When given a URL with a trailing dot for the host name part:
  "https://example.com./", libcurl will strip off the dot and use the name
  without a dot internally and send it dot-less in HTTP Host: headers and in
  the TLS SNI field.
@@ -184,7 +184,7 @@ problems may have been fixed or changed somewhat since this was written!
  It can also be noted that while adding a trailing dot to the host name in
  most (all?) cases will make the name resolve to the same set of IP addresses,
  many HTTP servers will not happily accept the trailing dot there unless that
- has been specificly configured to be a fine virtual host.
+ has been specifically configured to be a fine virtual host.
 
  If URLs with trailing dots for host names become more popular or even just
  used more than for just plain fun experiments, I'm sure we will have reason
@@ -221,6 +221,12 @@ problems may have been fixed or changed somewhat since this was written!
  libcurl calls gnutls_x509_crt_get_dn() with a fixed buffer size and if the
  field is too long in the cert, it'll just return an error and the field will
  be displayed blank.
+
+2.4 DarwinSSL won't import PKCS#12 client certificates without a password
+
+ libcurl calls SecPKCS12Import with the PKCS#12 client certificate, but that
+ function rejects certificates that do not have a password.
+ https://github.com/curl/curl/issues/1308
 
 
 3. Email protocols
@@ -295,14 +301,6 @@ problems may have been fixed or changed somewhat since this was written!
  "curl-config --libs" will include details set in LDFLAGS when configure is
  run that might be needed only for building libcurl. Further, curl-config
  --cflags suffers from the same effects with CFLAGS/CPPFLAGS.
-
-5.3 libidn and old iconv
-
- Test case 165 might fail on a system which has libidn present, but with an
- old iconv version (2.1.3 is a known bad version), since it doesn't recognize
- the charset when named ISO8859-1. Changing the name to ISO-8859-1 makes the
- test pass, but instead makes it fail on Solaris hosts that use its native
- iconv.
 
 5.4 AIX shared build with c-ares fails
 

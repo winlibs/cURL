@@ -126,7 +126,7 @@ if test -f ${srcdir}/include/curl/curlbuild.h; then
 fi
 
 dnl figure out the libcurl version
-CURLVERSION=`$SED -ne 's/^#define LIBCURL_VERSION "\(.*\)"/\1/p' ${srcdir}/include/curl/curlver.h`
+CURLVERSION=`$SED -ne 's/^#define LIBCURL_VERSION "\(.*\)".*/\1/p' ${srcdir}/include/curl/curlver.h`
 XC_CHECK_PROG_CC
 XC_AUTOMAKE
 AC_MSG_CHECKING([curl version])
@@ -136,7 +136,7 @@ AC_SUBST(CURLVERSION)
 
 dnl
 dnl we extract the numerical version for curl-config only
-VERSIONNUM=`$SED -ne 's/^#define LIBCURL_VERSION_NUM 0x\(.*\)/\1/p' ${srcdir}/include/curl/curlver.h`
+VERSIONNUM=`$SED -ne 's/^#define LIBCURL_VERSION_NUM 0x\([0-9A-Fa-f]*\).*/\1/p' ${srcdir}/include/curl/curlver.h`
 AC_SUBST(VERSIONNUM)
 
 dnl Solaris pkgadd support definitions
@@ -893,17 +893,16 @@ else
     OPT_ZLIB=""
   fi
 
-  CURL_CHECK_PKGCONFIG(zlib)
-
-  if test "$PKGCONFIG" != "no" ; then
-    LIBS="`$PKGCONFIG --libs-only-l zlib` $LIBS"
-    LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"
-    CPPFLAGS="`$PKGCONFIG --cflags-only-I zlib` $CPPFLAGS"
-    OPT_ZLIB=""
-    HAVE_LIBZ="1"
-  fi
-
   if test -z "$OPT_ZLIB" ; then
+    CURL_CHECK_PKGCONFIG(zlib)
+
+    if test "$PKGCONFIG" != "no" ; then
+      LIBS="`$PKGCONFIG --libs-only-l zlib` $LIBS"
+      LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"
+      CPPFLAGS="`$PKGCONFIG --cflags-only-I zlib` $CPPFLAGS"
+      OPT_ZLIB=""
+      HAVE_LIBZ="1"
+    fi
 
     if test -z "$HAVE_LIBZ"; then
 
@@ -3427,8 +3426,28 @@ AC_HELP_STRING([--disable-pthreads],[Disable POSIX threads]),
        want_pthreads=auto
        ]
 )
-if test "$want_thres" = "yes" && test "$dontwant_rt" = "no" && \
-   test "$want_pthreads" != "no"; then
+
+dnl turn off pthreads if rt is disabled
+if test "$want_pthreads" != "no"; then
+  if test "$want_pthreads" = "yes" && test "$dontwant_rt" = "yes"; then
+    AC_MSG_ERROR([options --enable-pthreads and --disable-rt are mutually exclusive])
+  fi
+  if test "$dontwant_rt" != "no"; then
+    dnl if --enable-pthreads was explicit then warn it's being ignored
+    if test "$want_pthreads" = "yes"; then
+      AC_MSG_WARN([--enable-pthreads Ignored since librt is disabled.])
+    fi
+    want_pthreads=no
+  fi
+fi
+
+dnl turn off pthreads if no threaded resolver
+if test "$want_pthreads" != "no" && test "$want_thres" != "yes"; then
+  want_pthreads=no
+fi
+
+dnl detect pthreads
+if test "$want_pthreads" != "no"; then
   AC_CHECK_HEADER(pthread.h,
     [ AC_DEFINE(HAVE_PTHREAD_H, 1, [if you have <pthread.h>])
       save_CFLAGS="$CFLAGS"
@@ -3452,22 +3471,21 @@ if test "$want_thres" = "yes" && test "$dontwant_rt" = "no" && \
       fi
   ])
 fi
-if test "x$USE_THREADS_POSIX" != "x1"; then
+
+dnl threaded resolver check
+if test "$want_thres" = "yes" && test "x$USE_THREADS_POSIX" != "x1"; then
   if test "$want_pthreads" = "yes"; then
     AC_MSG_ERROR([--enable-pthreads but pthreads was not found])
   fi
-  if test "$want_thres" = "yes"; then
-    dnl If native Windows fallback on Win32 threads since no POSIX threads
-    if test "$curl_cv_native_windows" = "yes"; then
-      USE_THREADS_WIN32=1
-      AC_DEFINE(USE_THREADS_WIN32, 1, [if you want Win32 threaded DNS lookup])
-      curl_res_msg="Win32 threaded"
-    else
-      AC_MSG_ERROR([Threaded resolver enabled but no thread library found])
-    fi
+  dnl If native Windows fallback on Win32 threads since no POSIX threads
+  if test "$curl_cv_native_windows" = "yes"; then
+    USE_THREADS_WIN32=1
+    AC_DEFINE(USE_THREADS_WIN32, 1, [if you want Win32 threaded DNS lookup])
+    curl_res_msg="Win32 threaded"
+  else
+    AC_MSG_ERROR([Threaded resolver enabled but no thread library found])
   fi
 fi
-
 
 dnl ************************************************************
 dnl disable verbose text strings

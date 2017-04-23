@@ -184,6 +184,8 @@ static const struct LongShort aliases[]= {
   {"$S", "tftp-no-options",          FALSE},
   {"$U", "connect-to",               TRUE},
   {"$W", "abstract-unix-socket",     TRUE},
+  {"$X", "tls-max",                  TRUE},
+  {"$Y", "suppress-connect-headers", FALSE},
   {"0",   "http1.0",                 FALSE},
   {"01",  "http1.1",                 FALSE},
   {"02",  "http2",                   FALSE},
@@ -781,11 +783,10 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
 
         if(!url)
           return PARAM_NO_MEM;
-        else {
-          /* fill in the URL */
-          GetStr(&url->url, nextarg);
-          url->flags |= GETOUT_URL;
-        }
+
+        /* fill in the URL */
+        GetStr(&url->url, nextarg);
+        url->flags |= GETOUT_URL;
       }
       }
       break;
@@ -876,7 +877,7 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
                     &config->localportrange);
         if(!rc)
           return PARAM_BAD_USE;
-        else if(rc == 1)
+        if(rc == 1)
           config->localportrange = 1; /* default number of ports to try */
         else {
           config->localportrange -= config->localport;
@@ -1059,6 +1060,14 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
       case 'W': /* --abstract-unix-socket */
         config->abstract_unix_socket = TRUE;
         GetStr(&config->unix_socket_path, nextarg);
+        break;
+      case 'X': /* --tls-max */
+        err = str2tls_max(&config->ssl_version_max, nextarg);
+        if(err)
+          return err;
+        break;
+      case 'Y': /* --suppress-connect-headers */
+        config->suppress_connect_headers = toggle;
         break;
       }
       break;
@@ -1718,21 +1727,20 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
 
       if(!url)
         return PARAM_NO_MEM;
-      else {
-        /* fill in the outfile */
-        if('o' == letter) {
-          GetStr(&url->outfile, nextarg);
-          url->flags &= ~GETOUT_USEREMOTE; /* switch off */
-        }
-        else {
-          url->outfile = NULL; /* leave it */
-          if(toggle)
-            url->flags |= GETOUT_USEREMOTE;  /* switch on */
-          else
-            url->flags &= ~GETOUT_USEREMOTE; /* switch off */
-        }
-        url->flags |= GETOUT_OUTFILE;
+
+      /* fill in the outfile */
+      if('o' == letter) {
+        GetStr(&url->outfile, nextarg);
+        url->flags &= ~GETOUT_USEREMOTE; /* switch off */
       }
+      else {
+        url->outfile = NULL; /* leave it */
+        if(toggle)
+          url->flags |= GETOUT_USEREMOTE;  /* switch on */
+        else
+          url->flags &= ~GETOUT_USEREMOTE; /* switch off */
+      }
+      url->flags |= GETOUT_OUTFILE;
     }
     break;
     case 'P':
@@ -1857,14 +1865,13 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
 
       if(!url)
         return PARAM_NO_MEM;
+
+      url->flags |= GETOUT_UPLOAD; /* mark -T used */
+      if(!*nextarg)
+        url->flags |= GETOUT_NOUPLOAD;
       else {
-        url->flags |= GETOUT_UPLOAD; /* mark -T used */
-        if(!*nextarg)
-          url->flags |= GETOUT_NOUPLOAD;
-        else {
-          /* "-" equals stdin, but keep the string around for now */
-          GetStr(&url->infile, nextarg);
-        }
+        /* "-" equals stdin, but keep the string around for now */
+        GetStr(&url->infile, nextarg);
       }
     }
     break;

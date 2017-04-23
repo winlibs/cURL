@@ -156,6 +156,7 @@ struct OperationConfig {
   struct curl_slist *postquote;
   struct curl_slist *prequote;
   long ssl_version;
+  long ssl_version_max;
   long proxy_ssl_version;
   long ip_version;
   curl_TimeCond timecond;
@@ -234,6 +235,8 @@ struct OperationConfig {
   bool falsestart;
   bool path_as_is;
   double expect100timeout;
+  bool suppress_connect_headers;  /* suppress proxy CONNECT response headers
+                                     from user callbacks */
   struct GlobalConfig *global;
   struct OperationConfig *prev;
   struct OperationConfig *next;   /* Always last in the struct */
