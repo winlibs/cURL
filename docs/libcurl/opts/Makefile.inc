@@ -231,6 +231,7 @@ man_MANS =                                      \
   CURLOPT_READFUNCTION.3                        \
   CURLOPT_REDIR_PROTOCOLS.3                     \
   CURLOPT_REFERER.3                             \
+  CURLOPT_REQUEST_TARGET.3                      \
   CURLOPT_RESOLVE.3                             \
   CURLOPT_RESUME_FROM.3                         \
   CURLOPT_RESUME_FROM_LARGE.3                   \
