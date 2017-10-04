@@ -237,7 +237,13 @@ CURL_DISABLE_TFTP = @CURL_DISABLE_TFTP@
 CURL_LT_SHLIB_VERSIONED_FLAVOUR = @CURL_LT_SHLIB_VERSIONED_FLAVOUR@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
 CURL_NETWORK_LIBS = @CURL_NETWORK_LIBS@
+CURL_WITH_MULTI_SSL = @CURL_WITH_MULTI_SSL@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXDEPMODE = @CXXDEPMODE@
+CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DEFAULT_SSL_BACKEND = @DEFAULT_SSL_BACKEND@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -342,6 +348,7 @@ abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
+ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -399,7 +406,9 @@ man_MANS = \
   CURLINFO_CONDITION_UNMET.3                    \
   CURLINFO_CONNECT_TIME.3                       \
   CURLINFO_CONTENT_LENGTH_DOWNLOAD.3            \
+  CURLINFO_CONTENT_LENGTH_DOWNLOAD_T.3          \
   CURLINFO_CONTENT_LENGTH_UPLOAD.3              \
+  CURLINFO_CONTENT_LENGTH_UPLOAD_T.3            \
   CURLINFO_CONTENT_TYPE.3                       \
   CURLINFO_COOKIELIST.3                         \
   CURLINFO_EFFECTIVE_URL.3                      \
@@ -433,9 +442,13 @@ man_MANS = \
   CURLINFO_RTSP_SESSION_ID.3                    \
   CURLINFO_SCHEME.3                             \
   CURLINFO_SIZE_DOWNLOAD.3                      \
+  CURLINFO_SIZE_DOWNLOAD_T.3                    \
   CURLINFO_SIZE_UPLOAD.3                        \
+  CURLINFO_SIZE_UPLOAD_T.3                      \
   CURLINFO_SPEED_DOWNLOAD.3                     \
+  CURLINFO_SPEED_DOWNLOAD_T.3                   \
   CURLINFO_SPEED_UPLOAD.3                       \
+  CURLINFO_SPEED_UPLOAD_T.3                     \
   CURLINFO_SSL_ENGINES.3                        \
   CURLINFO_SSL_VERIFYRESULT.3                   \
   CURLINFO_STARTTRANSFER_TIME.3                 \
@@ -561,6 +574,7 @@ man_MANS = \
   CURLOPT_MAXREDIRS.3                           \
   CURLOPT_MAX_RECV_SPEED_LARGE.3                \
   CURLOPT_MAX_SEND_SPEED_LARGE.3                \
+  CURLOPT_MIMEPOST.3                            \
   CURLOPT_NETRC.3                               \
   CURLOPT_NETRC_FILE.3                          \
   CURLOPT_NEW_DIRECTORY_PERMS.3                 \
@@ -640,9 +654,11 @@ man_MANS = \
   CURLOPT_SHARE.3                               \
   CURLOPT_SOCKOPTDATA.3                         \
   CURLOPT_SOCKOPTFUNCTION.3                     \
+  CURLOPT_SOCKS5_AUTH.3                         \
   CURLOPT_SOCKS5_GSSAPI_NEC.3                   \
   CURLOPT_SOCKS5_GSSAPI_SERVICE.3               \
   CURLOPT_SSH_AUTH_TYPES.3                      \
+  CURLOPT_SSH_COMPRESSION.3                     \
   CURLOPT_SSH_HOST_PUBLIC_KEY_MD5.3             \
   CURLOPT_SSH_KEYDATA.3                         \
   CURLOPT_SSH_KEYFUNCTION.3                     \

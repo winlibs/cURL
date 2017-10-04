@@ -14,6 +14,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -116,37 +117,30 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/lib/curl_config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__EXEEXT_1 = http11$(EXEEXT) ftp$(EXEEXT) imap$(EXEEXT) \
-	pop3$(EXEEXT) httpupload$(EXEEXT) http2$(EXEEXT)
+LIBRARIES = $(noinst_LIBRARIES)
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libstandaloneengine_a_AR = $(AR) $(ARFLAGS)
+libstandaloneengine_a_LIBADD =
+am_libstandaloneengine_a_OBJECTS =  \
+	libstandaloneengine_a-standalone_fuzz_target_runner.$(OBJEXT)
+libstandaloneengine_a_OBJECTS = $(am_libstandaloneengine_a_OBJECTS)
+am__EXEEXT_1 = curl_fuzzer$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_ftp_OBJECTS = ftp-curl_fuzzer.$(OBJEXT)
-ftp_OBJECTS = $(am_ftp_OBJECTS)
-ftp_LDADD = $(LDADD)
-ftp_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
+am_curl_fuzzer_OBJECTS = curl_fuzzer-curl_fuzzer.$(OBJEXT)
+curl_fuzzer_OBJECTS = $(am_curl_fuzzer_OBJECTS)
+curl_fuzzer_LDADD = $(LDADD)
+curl_fuzzer_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-am_http11_OBJECTS = http11-curl_fuzzer.$(OBJEXT)
-http11_OBJECTS = $(am_http11_OBJECTS)
-http11_LDADD = $(LDADD)
-http11_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
-am_http2_OBJECTS = http2-curl_fuzzer.$(OBJEXT)
-http2_OBJECTS = $(am_http2_OBJECTS)
-http2_LDADD = $(LDADD)
-http2_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
-am_httpupload_OBJECTS = httpupload-curl_fuzzer.$(OBJEXT)
-httpupload_OBJECTS = $(am_httpupload_OBJECTS)
-httpupload_LDADD = $(LDADD)
-httpupload_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
-am_imap_OBJECTS = imap-curl_fuzzer.$(OBJEXT)
-imap_OBJECTS = $(am_imap_OBJECTS)
-imap_LDADD = $(LDADD)
-imap_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
-am_pop3_OBJECTS = pop3-curl_fuzzer.$(OBJEXT)
-pop3_OBJECTS = $(am_pop3_OBJECTS)
-pop3_LDADD = $(LDADD)
-pop3_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
+curl_fuzzer_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(curl_fuzzer_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -163,28 +157,26 @@ DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
-AM_V_CC = $(am__v_CC_@AM_V@)
-am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
-am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
-CCLD = $(CC)
-LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CCLD = $(am__v_CCLD_@AM_V@)
-am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
-am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
-SOURCES = $(ftp_SOURCES) $(http11_SOURCES) $(http2_SOURCES) \
-	$(httpupload_SOURCES) $(imap_SOURCES) $(pop3_SOURCES)
-DIST_SOURCES = $(ftp_SOURCES) $(http11_SOURCES) $(http2_SOURCES) \
-	$(httpupload_SOURCES) $(imap_SOURCES) $(pop3_SOURCES)
+	$(AM_CXXFLAGS) $(CXXFLAGS)
+AM_V_CXX = $(am__v_CXX_@AM_V@)
+am__v_CXX_ = $(am__v_CXX_@AM_DEFAULT_V@)
+am__v_CXX_0 = @echo "  CXX     " $@;
+am__v_CXX_1 = 
+CXXLD = $(CXX)
+CXXLINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
+am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
+am__v_CXXLD_0 = @echo "  CXXLD   " $@;
+am__v_CXXLD_1 = 
+SOURCES = $(libstandaloneengine_a_SOURCES) $(curl_fuzzer_SOURCES)
+DIST_SOURCES = $(libstandaloneengine_a_SOURCES) $(curl_fuzzer_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -257,7 +249,13 @@ CURL_DISABLE_TFTP = @CURL_DISABLE_TFTP@
 CURL_LT_SHLIB_VERSIONED_FLAVOUR = @CURL_LT_SHLIB_VERSIONED_FLAVOUR@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
 CURL_NETWORK_LIBS = @CURL_NETWORK_LIBS@
+CURL_WITH_MULTI_SSL = @CURL_WITH_MULTI_SSL@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXDEPMODE = @CXXDEPMODE@
+CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DEFAULT_SSL_BACKEND = @DEFAULT_SSL_BACKEND@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -287,13 +285,13 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 IPV6_ENABLED = @IPV6_ENABLED@
 LCOV = @LCOV@
 LD = @LD@
-LDFLAGS = -L/usr/lib/llvm-5.0/lib #-L/home/daniel/src/Fuzzer/
+LDFLAGS = @LDFLAGS@
 LIBCURL_LIBS = @LIBCURL_LIBS@
 LIBMETALINK_CPPFLAGS = @LIBMETALINK_CPPFLAGS@
 LIBMETALINK_LDFLAGS = @LIBMETALINK_LDFLAGS@
 LIBMETALINK_LIBS = @LIBMETALINK_LIBS@
 LIBOBJS = @LIBOBJS@
-LIBS = -lpthread -lFuzzer -lstdc++ -lm
+LIBS = -lpthread -lm
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -362,6 +360,7 @@ abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
+ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -440,39 +439,28 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 # being currently built and tested are searched before the library which
 # might possibly already be installed in the system.
 #
-# $(top_builddir)/include/curl for generated curlbuild.h included from curl.h
-# $(top_builddir)/include for generated curlbuild.h inc. from lib/curl_setup.h
 # $(top_srcdir)/include is for libcurl's external include files
 # $(top_builddir)/lib is for libcurl's generated lib/curl_config.h file
 # $(top_srcdir)/lib for libcurl's lib/curl_setup.h and other "borrowed" files
-AM_CPPFLAGS = -I$(top_builddir)/include/curl \
-              -I$(top_builddir)/include      \
-              -I$(top_srcdir)/include        \
+AM_CXXFLAGS = -I$(top_srcdir)/include        \
               -I$(top_builddir)/lib          \
               -I$(top_srcdir)/lib            \
               -I$(top_srcdir)/tests/fuzz
 
-EXTRA_DIST = Makefile.inc CMakeLists.txt
 LDADD = $(top_builddir)/lib/libcurl.la      \
-        @LDFLAGS@ @LIBCURL_LIBS@
+        $(LIB_FUZZING_ENGINE) @LDFLAGS@ @LIBCURL_LIBS@
 
-FUZZPROGS = http11 ftp imap pop3 httpupload http2
-http11_SOURCES = curl_fuzzer.c
-http11_CPPFLAGS = $(AM_CPPFLAGS)
-ftp_SOURCES = curl_fuzzer.c
-ftp_CPPFLAGS = -DFUZZER_FTP $(AM_CPPFLAGS)
-imap_SOURCES = curl_fuzzer.c
-imap_CPPFLAGS = -DFUZZER_IMAP $(AM_CPPFLAGS)
-pop3_SOURCES = curl_fuzzer.c
-pop3_CPPFLAGS = -DFUZZER_POP3 $(AM_CPPFLAGS)
-httpupload_SOURCES = curl_fuzzer.c
-httpupload_CPPFLAGS = -DFUZZER_HTTP_UPLOAD $(AM_CPPFLAGS)
-http2_SOURCES = curl_fuzzer.c
-http2_CPPFLAGS = -DFUZZER_HTTP2 $(AM_CPPFLAGS)
+FUZZPROGS = curl_fuzzer
+FUZZLIBS = libstandaloneengine.a
+curl_fuzzer_SOURCES = curl_fuzzer.cc
+curl_fuzzer_CXXFLAGS = $(AM_CXXFLAGS)
+libstandaloneengine_a_SOURCES = standalone_fuzz_target_runner.cc
+libstandaloneengine_a_CXXFLAGS = $(AM_CXXFLAGS)
+noinst_LIBRARIES = $(FUZZLIBS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
+.SUFFIXES: .cc .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/Makefile.inc $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -504,6 +492,14 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+libstandaloneengine.a: $(libstandaloneengine_a_OBJECTS) $(libstandaloneengine_a_DEPENDENCIES) $(EXTRA_libstandaloneengine_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libstandaloneengine.a
+	$(AM_V_AR)$(libstandaloneengine_a_AR) libstandaloneengine.a $(libstandaloneengine_a_OBJECTS) $(libstandaloneengine_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libstandaloneengine.a
+
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
 	echo " rm -f" $$list; \
@@ -513,29 +509,9 @@ clean-noinstPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-ftp$(EXEEXT): $(ftp_OBJECTS) $(ftp_DEPENDENCIES) $(EXTRA_ftp_DEPENDENCIES) 
-	@rm -f ftp$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(ftp_OBJECTS) $(ftp_LDADD) $(LIBS)
-
-http11$(EXEEXT): $(http11_OBJECTS) $(http11_DEPENDENCIES) $(EXTRA_http11_DEPENDENCIES) 
-	@rm -f http11$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(http11_OBJECTS) $(http11_LDADD) $(LIBS)
-
-http2$(EXEEXT): $(http2_OBJECTS) $(http2_DEPENDENCIES) $(EXTRA_http2_DEPENDENCIES) 
-	@rm -f http2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(http2_OBJECTS) $(http2_LDADD) $(LIBS)
-
-httpupload$(EXEEXT): $(httpupload_OBJECTS) $(httpupload_DEPENDENCIES) $(EXTRA_httpupload_DEPENDENCIES) 
-	@rm -f httpupload$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(httpupload_OBJECTS) $(httpupload_LDADD) $(LIBS)
-
-imap$(EXEEXT): $(imap_OBJECTS) $(imap_DEPENDENCIES) $(EXTRA_imap_DEPENDENCIES) 
-	@rm -f imap$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(imap_OBJECTS) $(imap_LDADD) $(LIBS)
-
-pop3$(EXEEXT): $(pop3_OBJECTS) $(pop3_DEPENDENCIES) $(EXTRA_pop3_DEPENDENCIES) 
-	@rm -f pop3$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(pop3_OBJECTS) $(pop3_LDADD) $(LIBS)
+curl_fuzzer$(EXEEXT): $(curl_fuzzer_OBJECTS) $(curl_fuzzer_DEPENDENCIES) $(EXTRA_curl_fuzzer_DEPENDENCIES) 
+	@rm -f curl_fuzzer$(EXEEXT)
+	$(AM_V_CXXLD)$(curl_fuzzer_LINK) $(curl_fuzzer_OBJECTS) $(curl_fuzzer_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -543,120 +519,60 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ftp-curl_fuzzer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http11-curl_fuzzer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http2-curl_fuzzer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/httpupload-curl_fuzzer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imap-curl_fuzzer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pop3-curl_fuzzer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/curl_fuzzer-curl_fuzzer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libstandaloneengine_a-standalone_fuzz_target_runner.Po@am__quote@
 
-.c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
+.cc.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
 
-.c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+.cc.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+.cc.lo:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
 
-ftp-curl_fuzzer.o: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ftp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ftp-curl_fuzzer.o -MD -MP -MF $(DEPDIR)/ftp-curl_fuzzer.Tpo -c -o ftp-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ftp-curl_fuzzer.Tpo $(DEPDIR)/ftp-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='ftp-curl_fuzzer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ftp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ftp-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
+libstandaloneengine_a-standalone_fuzz_target_runner.o: standalone_fuzz_target_runner.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libstandaloneengine_a_CXXFLAGS) $(CXXFLAGS) -MT libstandaloneengine_a-standalone_fuzz_target_runner.o -MD -MP -MF $(DEPDIR)/libstandaloneengine_a-standalone_fuzz_target_runner.Tpo -c -o libstandaloneengine_a-standalone_fuzz_target_runner.o `test -f 'standalone_fuzz_target_runner.cc' || echo '$(srcdir)/'`standalone_fuzz_target_runner.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libstandaloneengine_a-standalone_fuzz_target_runner.Tpo $(DEPDIR)/libstandaloneengine_a-standalone_fuzz_target_runner.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='standalone_fuzz_target_runner.cc' object='libstandaloneengine_a-standalone_fuzz_target_runner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libstandaloneengine_a_CXXFLAGS) $(CXXFLAGS) -c -o libstandaloneengine_a-standalone_fuzz_target_runner.o `test -f 'standalone_fuzz_target_runner.cc' || echo '$(srcdir)/'`standalone_fuzz_target_runner.cc
 
-ftp-curl_fuzzer.obj: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ftp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ftp-curl_fuzzer.obj -MD -MP -MF $(DEPDIR)/ftp-curl_fuzzer.Tpo -c -o ftp-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ftp-curl_fuzzer.Tpo $(DEPDIR)/ftp-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='ftp-curl_fuzzer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ftp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ftp-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
+libstandaloneengine_a-standalone_fuzz_target_runner.obj: standalone_fuzz_target_runner.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libstandaloneengine_a_CXXFLAGS) $(CXXFLAGS) -MT libstandaloneengine_a-standalone_fuzz_target_runner.obj -MD -MP -MF $(DEPDIR)/libstandaloneengine_a-standalone_fuzz_target_runner.Tpo -c -o libstandaloneengine_a-standalone_fuzz_target_runner.obj `if test -f 'standalone_fuzz_target_runner.cc'; then $(CYGPATH_W) 'standalone_fuzz_target_runner.cc'; else $(CYGPATH_W) '$(srcdir)/standalone_fuzz_target_runner.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libstandaloneengine_a-standalone_fuzz_target_runner.Tpo $(DEPDIR)/libstandaloneengine_a-standalone_fuzz_target_runner.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='standalone_fuzz_target_runner.cc' object='libstandaloneengine_a-standalone_fuzz_target_runner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libstandaloneengine_a_CXXFLAGS) $(CXXFLAGS) -c -o libstandaloneengine_a-standalone_fuzz_target_runner.obj `if test -f 'standalone_fuzz_target_runner.cc'; then $(CYGPATH_W) 'standalone_fuzz_target_runner.cc'; else $(CYGPATH_W) '$(srcdir)/standalone_fuzz_target_runner.cc'; fi`
 
-http11-curl_fuzzer.o: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(http11_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT http11-curl_fuzzer.o -MD -MP -MF $(DEPDIR)/http11-curl_fuzzer.Tpo -c -o http11-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/http11-curl_fuzzer.Tpo $(DEPDIR)/http11-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='http11-curl_fuzzer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(http11_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o http11-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
+curl_fuzzer-curl_fuzzer.o: curl_fuzzer.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(curl_fuzzer_CXXFLAGS) $(CXXFLAGS) -MT curl_fuzzer-curl_fuzzer.o -MD -MP -MF $(DEPDIR)/curl_fuzzer-curl_fuzzer.Tpo -c -o curl_fuzzer-curl_fuzzer.o `test -f 'curl_fuzzer.cc' || echo '$(srcdir)/'`curl_fuzzer.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/curl_fuzzer-curl_fuzzer.Tpo $(DEPDIR)/curl_fuzzer-curl_fuzzer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='curl_fuzzer.cc' object='curl_fuzzer-curl_fuzzer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(curl_fuzzer_CXXFLAGS) $(CXXFLAGS) -c -o curl_fuzzer-curl_fuzzer.o `test -f 'curl_fuzzer.cc' || echo '$(srcdir)/'`curl_fuzzer.cc
 
-http11-curl_fuzzer.obj: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(http11_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT http11-curl_fuzzer.obj -MD -MP -MF $(DEPDIR)/http11-curl_fuzzer.Tpo -c -o http11-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/http11-curl_fuzzer.Tpo $(DEPDIR)/http11-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='http11-curl_fuzzer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(http11_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o http11-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-
-http2-curl_fuzzer.o: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(http2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT http2-curl_fuzzer.o -MD -MP -MF $(DEPDIR)/http2-curl_fuzzer.Tpo -c -o http2-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/http2-curl_fuzzer.Tpo $(DEPDIR)/http2-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='http2-curl_fuzzer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(http2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o http2-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-
-http2-curl_fuzzer.obj: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(http2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT http2-curl_fuzzer.obj -MD -MP -MF $(DEPDIR)/http2-curl_fuzzer.Tpo -c -o http2-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/http2-curl_fuzzer.Tpo $(DEPDIR)/http2-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='http2-curl_fuzzer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(http2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o http2-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-
-httpupload-curl_fuzzer.o: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(httpupload_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT httpupload-curl_fuzzer.o -MD -MP -MF $(DEPDIR)/httpupload-curl_fuzzer.Tpo -c -o httpupload-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/httpupload-curl_fuzzer.Tpo $(DEPDIR)/httpupload-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='httpupload-curl_fuzzer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(httpupload_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o httpupload-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-
-httpupload-curl_fuzzer.obj: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(httpupload_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT httpupload-curl_fuzzer.obj -MD -MP -MF $(DEPDIR)/httpupload-curl_fuzzer.Tpo -c -o httpupload-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/httpupload-curl_fuzzer.Tpo $(DEPDIR)/httpupload-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='httpupload-curl_fuzzer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(httpupload_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o httpupload-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-
-imap-curl_fuzzer.o: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT imap-curl_fuzzer.o -MD -MP -MF $(DEPDIR)/imap-curl_fuzzer.Tpo -c -o imap-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/imap-curl_fuzzer.Tpo $(DEPDIR)/imap-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='imap-curl_fuzzer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imap-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-
-imap-curl_fuzzer.obj: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT imap-curl_fuzzer.obj -MD -MP -MF $(DEPDIR)/imap-curl_fuzzer.Tpo -c -o imap-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/imap-curl_fuzzer.Tpo $(DEPDIR)/imap-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='imap-curl_fuzzer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(imap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imap-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-
-pop3-curl_fuzzer.o: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pop3_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pop3-curl_fuzzer.o -MD -MP -MF $(DEPDIR)/pop3-curl_fuzzer.Tpo -c -o pop3-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pop3-curl_fuzzer.Tpo $(DEPDIR)/pop3-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='pop3-curl_fuzzer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pop3_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pop3-curl_fuzzer.o `test -f 'curl_fuzzer.c' || echo '$(srcdir)/'`curl_fuzzer.c
-
-pop3-curl_fuzzer.obj: curl_fuzzer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pop3_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pop3-curl_fuzzer.obj -MD -MP -MF $(DEPDIR)/pop3-curl_fuzzer.Tpo -c -o pop3-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pop3-curl_fuzzer.Tpo $(DEPDIR)/pop3-curl_fuzzer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='curl_fuzzer.c' object='pop3-curl_fuzzer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pop3_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pop3-curl_fuzzer.obj `if test -f 'curl_fuzzer.c'; then $(CYGPATH_W) 'curl_fuzzer.c'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.c'; fi`
+curl_fuzzer-curl_fuzzer.obj: curl_fuzzer.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(curl_fuzzer_CXXFLAGS) $(CXXFLAGS) -MT curl_fuzzer-curl_fuzzer.obj -MD -MP -MF $(DEPDIR)/curl_fuzzer-curl_fuzzer.Tpo -c -o curl_fuzzer-curl_fuzzer.obj `if test -f 'curl_fuzzer.cc'; then $(CYGPATH_W) 'curl_fuzzer.cc'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/curl_fuzzer-curl_fuzzer.Tpo $(DEPDIR)/curl_fuzzer-curl_fuzzer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='curl_fuzzer.cc' object='curl_fuzzer-curl_fuzzer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(curl_fuzzer_CXXFLAGS) $(CXXFLAGS) -c -o curl_fuzzer-curl_fuzzer.obj `if test -f 'curl_fuzzer.cc'; then $(CYGPATH_W) 'curl_fuzzer.cc'; else $(CYGPATH_W) '$(srcdir)/curl_fuzzer.cc'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -748,7 +664,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -782,8 +698,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstLIBRARIES \
+	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -854,15 +770,15 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS cscopelist-am ctags \
-	ctags-am distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	clean-libtool clean-noinstLIBRARIES clean-noinstPROGRAMS \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am
@@ -870,10 +786,23 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
+# Run e.g. "make all LIB_FUZZING_ENGINE=/path/to/libFuzzer.a"
+# to link the fuzzer(s) against a real fuzzing engine.
+#
+# OSS-Fuzz will define its own value for LIB_FUZZING_ENGINE.
+LIB_FUZZING_ENGINE ?= libstandaloneengine.a
+
+# Some more targets.
+zip:
+	zip -q -r curl_fuzzer_seed_corpus.zip curl_fuzz_data
+
+check: all
+	./curl_fuzzer curl_fuzz_data/*
+
 # Makefile.inc provides neat definitions
 
 checksrc:
-	@PERL@ $(top_srcdir)/lib/checksrc.pl $(srcdir)/*.c
+	@PERL@ $(top_srcdir)/lib/checksrc.pl $(srcdir)/*.cc
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
