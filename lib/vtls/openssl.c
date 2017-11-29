@@ -69,7 +69,9 @@
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 
-#ifdef HAVE_OPENSSL_PKCS12_H
+#ifndef OPENSSL_IS_BORINGSSL
+/* BoringSSL does not support PKCS12 */
+#define HAVE_PKCS12_SUPPORT 1
 #include <openssl/pkcs12.h>
 #endif
 
@@ -151,14 +153,13 @@ static unsigned long OpenSSL_version_num(void)
 /*
  * Whether SSL_CTX_set_keylog_callback is available.
  * OpenSSL: supported since 1.1.1 https://github.com/openssl/openssl/pull/2287
- * BoringSSL: supported since d28f59c27bac (committed 2015-11-19), the
- *            BORINGSSL_201512 macro from 2016-01-21 should be close enough.
+ * BoringSSL: supported since d28f59c27bac (committed 2015-11-19)
  * LibreSSL: unsupported in at least 2.5.1 (explicitly check for it since it
  *           lies and pretends to be OpenSSL 2.0.0).
  */
 #if (OPENSSL_VERSION_NUMBER >= 0x10101000L && \
      !defined(LIBRESSL_VERSION_NUMBER)) || \
-    defined(BORINGSSL_201512)
+    defined(OPENSSL_IS_BORINGSSL)
 #define HAVE_KEYLOG_CALLBACK
 #endif
 
@@ -445,14 +446,14 @@ static CURLcode Curl_ossl_seed(struct Curl_easy *data)
     size_t len = sizeof(randb);
     size_t i, i_max;
     for(i = 0, i_max = len / sizeof(struct curltime); i < i_max; ++i) {
-      struct curltime tv = curlx_tvnow();
+      struct curltime tv = Curl_now();
       Curl_wait_ms(1);
       tv.tv_sec *= i + 1;
       tv.tv_usec *= (unsigned int)i + 2;
-      tv.tv_sec ^= ((curlx_tvnow().tv_sec + curlx_tvnow().tv_usec) *
+      tv.tv_sec ^= ((Curl_now().tv_sec + Curl_now().tv_usec) *
                     (i + 3)) << 8;
-      tv.tv_usec ^= (unsigned int) ((curlx_tvnow().tv_sec +
-                                     curlx_tvnow().tv_usec) *
+      tv.tv_usec ^= (unsigned int) ((Curl_now().tv_sec +
+                                     Curl_now().tv_usec) *
                                     (i + 4)) << 16;
       memcpy(&randb[i * sizeof(struct curltime)], &tv,
              sizeof(struct curltime));
@@ -653,7 +654,7 @@ int cert_stuff(struct connectdata *conn,
 
     case SSL_FILETYPE_PKCS12:
     {
-#ifdef HAVE_OPENSSL_PKCS12_H
+#ifdef HAVE_PKCS12_SUPPORT
       FILE *f;
       PKCS12 *p12;
       EVP_PKEY *pri;
@@ -837,12 +838,18 @@ int cert_stuff(struct connectdata *conn,
       EVP_PKEY_free(pktmp);
     }
 
-#ifndef OPENSSL_NO_RSA
+#if !defined(OPENSSL_NO_RSA) && !defined(OPENSSL_IS_BORINGSSL)
     {
       /* If RSA is used, don't check the private key if its flags indicate
        * it doesn't support it. */
       EVP_PKEY *priv_key = SSL_get_privatekey(ssl);
-      if(EVP_PKEY_id(priv_key) == EVP_PKEY_RSA) {
+      int pktype;
+#ifdef HAVE_OPAQUE_EVP_PKEY
+      pktype = EVP_PKEY_id(priv_key);
+#else
+      pktype = priv_key->type;
+#endif
+      if(pktype == EVP_PKEY_RSA) {
         RSA *rsa = EVP_PKEY_get1_RSA(priv_key);
         if(RSA_flags(rsa) & RSA_METHOD_FLAG_NO_CHECK)
           check_privkey = FALSE;
@@ -3060,12 +3067,12 @@ static CURLcode servercert(struct connectdata *conn,
   ASN1_TIME_print(mem, X509_get0_notBefore(BACKEND->server_cert));
   len = BIO_get_mem_data(mem, (char **) &ptr);
   infof(data, " start date: %.*s\n", len, ptr);
-  rc = BIO_reset(mem);
+  (void)BIO_reset(mem);
 
   ASN1_TIME_print(mem, X509_get0_notAfter(BACKEND->server_cert));
   len = BIO_get_mem_data(mem, (char **) &ptr);
   infof(data, " expire date: %.*s\n", len, ptr);
-  rc = BIO_reset(mem);
+  (void)BIO_reset(mem);
 
   BIO_free(mem);
 
@@ -3636,7 +3643,7 @@ const struct Curl_ssl Curl_ssl_openssl = {
   Curl_ossl_connect,             /* connect */
   Curl_ossl_connect_nonblocking, /* connect_nonblocking */
   Curl_ossl_get_internals,       /* get_internals */
-  Curl_ossl_close,               /* close */
+  Curl_ossl_close,               /* close_one */
   Curl_ossl_close_all,           /* close_all */
   Curl_ossl_session_free,        /* session_free */
   Curl_ossl_set_engine,          /* set_engine */

@@ -161,7 +161,7 @@ check_PROGRAMS = 10-at-a-time$(EXEEXT) anyauthput$(EXEEXT) \
 	http2-serverpush$(EXEEXT) getredirect$(EXEEXT) \
 	ftpuploadfrommem$(EXEEXT) ftpuploadresume$(EXEEXT) \
 	sslbackend$(EXEEXT) postit2-formadd$(EXEEXT) \
-	multi-formadd$(EXEEXT)
+	multi-formadd$(EXEEXT) shared-connection-cache$(EXEEXT)
 subdir = docs/examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_code_coverage.m4 \
@@ -664,6 +664,13 @@ sftpget_LDADD = $(LDADD)
 @USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
 @USE_EXPLICIT_LIB_DEPS_TRUE@sftpget_DEPENDENCIES =  \
 @USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
+shared_connection_cache_SOURCES = shared-connection-cache.c
+shared_connection_cache_OBJECTS = shared-connection-cache.$(OBJEXT)
+shared_connection_cache_LDADD = $(LDADD)
+@USE_EXPLICIT_LIB_DEPS_FALSE@shared_connection_cache_DEPENDENCIES =  \
+@USE_EXPLICIT_LIB_DEPS_FALSE@	$(LIBDIR)/libcurl.la
+@USE_EXPLICIT_LIB_DEPS_TRUE@shared_connection_cache_DEPENDENCIES =  \
+@USE_EXPLICIT_LIB_DEPS_TRUE@	$(LIBDIR)/libcurl.la
 simple_SOURCES = simple.c
 simple_OBJECTS = simple.$(OBJEXT)
 simple_LDADD = $(LDADD)
@@ -797,10 +804,10 @@ SOURCES = 10-at-a-time.c anyauthput.c certinfo.c chkspeed.c \
 	pop3-list.c pop3-multi.c pop3-noop.c pop3-retr.c pop3-ssl.c \
 	pop3-stat.c pop3-tls.c pop3-top.c pop3-uidl.c post-callback.c \
 	postinmemory.c postit2.c postit2-formadd.c progressfunc.c \
-	resolve.c rtsp.c sendrecv.c sepheaders.c sftpget.c simple.c \
-	simplepost.c simplessl.c smtp-expn.c smtp-mail.c smtp-mime.c \
-	smtp-multi.c smtp-ssl.c smtp-tls.c smtp-vrfy.c sslbackend.c \
-	url2file.c
+	resolve.c rtsp.c sendrecv.c sepheaders.c sftpget.c \
+	shared-connection-cache.c simple.c simplepost.c simplessl.c \
+	smtp-expn.c smtp-mail.c smtp-mime.c smtp-multi.c smtp-ssl.c \
+	smtp-tls.c smtp-vrfy.c sslbackend.c url2file.c
 DIST_SOURCES = 10-at-a-time.c anyauthput.c certinfo.c chkspeed.c \
 	cookie_interface.c debug.c externalsocket.c fileupload.c \
 	fopen.c ftp-wildcard.c ftpget.c ftpgetinfo.c ftpgetresp.c \
@@ -816,10 +823,10 @@ DIST_SOURCES = 10-at-a-time.c anyauthput.c certinfo.c chkspeed.c \
 	pop3-list.c pop3-multi.c pop3-noop.c pop3-retr.c pop3-ssl.c \
 	pop3-stat.c pop3-tls.c pop3-top.c pop3-uidl.c post-callback.c \
 	postinmemory.c postit2.c postit2-formadd.c progressfunc.c \
-	resolve.c rtsp.c sendrecv.c sepheaders.c sftpget.c simple.c \
-	simplepost.c simplessl.c smtp-expn.c smtp-mail.c smtp-mime.c \
-	smtp-multi.c smtp-ssl.c smtp-tls.c smtp-vrfy.c sslbackend.c \
-	url2file.c
+	resolve.c rtsp.c sendrecv.c sepheaders.c sftpget.c \
+	shared-connection-cache.c simple.c simplepost.c simplessl.c \
+	smtp-expn.c smtp-mail.c smtp-mime.c smtp-multi.c smtp-ssl.c \
+	smtp-tls.c smtp-vrfy.c sslbackend.c url2file.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -893,10 +900,6 @@ CURL_LT_SHLIB_VERSIONED_FLAVOUR = @CURL_LT_SHLIB_VERSIONED_FLAVOUR@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
 CURL_NETWORK_LIBS = @CURL_NETWORK_LIBS@
 CURL_WITH_MULTI_SSL = @CURL_WITH_MULTI_SSL@
-CXX = @CXX@
-CXXCPP = @CXXCPP@
-CXXDEPMODE = @CXXDEPMODE@
-CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFAULT_SSL_BACKEND = @DEFAULT_SSL_BACKEND@
 DEFS = @DEFS@
@@ -915,6 +918,7 @@ FGREP = @FGREP@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GREP = @GREP@
+HAVE_BROTLI = @HAVE_BROTLI@
 HAVE_GNUTLS_SRP = @HAVE_GNUTLS_SRP@
 HAVE_LDAP_SSL = @HAVE_LDAP_SSL@
 HAVE_LIBZ = @HAVE_LIBZ@
@@ -1005,7 +1009,6 @@ abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
-ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -1399,6 +1402,10 @@ sftpget$(EXEEXT): $(sftpget_OBJECTS) $(sftpget_DEPENDENCIES) $(EXTRA_sftpget_DEP
 	@rm -f sftpget$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(sftpget_OBJECTS) $(sftpget_LDADD) $(LIBS)
 
+shared-connection-cache$(EXEEXT): $(shared_connection_cache_OBJECTS) $(shared_connection_cache_DEPENDENCIES) $(EXTRA_shared_connection_cache_DEPENDENCIES) 
+	@rm -f shared-connection-cache$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(shared_connection_cache_OBJECTS) $(shared_connection_cache_LDADD) $(LIBS)
+
 simple$(EXEEXT): $(simple_OBJECTS) $(simple_DEPENDENCIES) $(EXTRA_simple_DEPENDENCIES) 
 	@rm -f simple$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(simple_OBJECTS) $(simple_LDADD) $(LIBS)
@@ -1521,6 +1528,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendrecv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sepheaders.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sftpget.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shared-connection-cache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simplepost.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simplessl.Po@am__quote@

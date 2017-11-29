@@ -1038,6 +1038,14 @@ SOURCE=..\..\..\..\lib\sendf.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\setopt.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\sha256.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\share.c
 # End Source File
 # Begin Source File
@@ -1358,6 +1366,10 @@ SOURCE=..\..\..\..\lib\curl_setup_once.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\curl_sha256.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\curl_sspi.h
 # End Source File
 # Begin Source File
@@ -1535,6 +1547,10 @@ SOURCE=..\..\..\..\lib\select.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\sendf.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\setopt.h
 # End Source File
 # Begin Source File
 

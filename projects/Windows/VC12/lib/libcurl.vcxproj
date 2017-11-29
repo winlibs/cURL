@@ -2456,6 +2456,8 @@
     <ClCompile Include="..\..\..\..\lib\security.c" />
     <ClCompile Include="..\..\..\..\lib\select.c" />
     <ClCompile Include="..\..\..\..\lib\sendf.c" />
+    <ClCompile Include="..\..\..\..\lib\setopt.c" />
+    <ClCompile Include="..\..\..\..\lib\sha256.c" />
     <ClCompile Include="..\..\..\..\lib\share.c" />
     <ClCompile Include="..\..\..\..\lib\slist.c" />
     <ClCompile Include="..\..\..\..\lib\smb.c" />
@@ -2537,6 +2539,7 @@
     <ClInclude Include="..\..\..\..\lib\curl_sec.h" />
     <ClInclude Include="..\..\..\..\lib\curl_setup.h" />
     <ClInclude Include="..\..\..\..\lib\curl_setup_once.h" />
+    <ClInclude Include="..\..\..\..\lib\curl_sha256.h" />
     <ClInclude Include="..\..\..\..\lib\curl_sspi.h" />
     <ClInclude Include="..\..\..\..\lib\curl_threads.h" />
     <ClInclude Include="..\..\..\..\lib\curlx.h" />
@@ -2582,6 +2585,7 @@
     <ClInclude Include="..\..\..\..\lib\rtsp.h" />
     <ClInclude Include="..\..\..\..\lib\select.h" />
     <ClInclude Include="..\..\..\..\lib\sendf.h" />
+    <ClInclude Include="..\..\..\..\lib\setopt.h" />
     <ClInclude Include="..\..\..\..\lib\setup-vms.h" />
     <ClInclude Include="..\..\..\..\lib\share.h" />
     <ClInclude Include="..\..\..\..\lib\sigpipe.h" />

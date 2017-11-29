@@ -3925,6 +3925,14 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\setopt.c"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\sha256.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\share.c"
 			>
 			</File>
@@ -4149,6 +4157,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_sha256.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_sspi.h"
 			>
 			</File>
@@ -4326,6 +4338,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\sendf.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\setopt.h"
 			>
 			</File>
 			<File

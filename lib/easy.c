@@ -68,10 +68,11 @@
 #include "amigaos.h"
 #include "non-ascii.h"
 #include "warnless.h"
-#include "conncache.h"
 #include "multiif.h"
 #include "sigpipe.h"
 #include "ssh.h"
+#include "setopt.h"
+
 /* The last 3 #include files should be in this order */
 #include "curl_printf.h"
 #include "curl_memory.h"
@@ -214,11 +215,10 @@ static CURLcode global_init(long flags, bool memoryfuncs)
 #endif
   }
 
-  if(flags & CURL_GLOBAL_SSL)
-    if(!Curl_ssl_init()) {
-      DEBUGF(fprintf(stderr, "Error: Curl_ssl_init failed\n"));
-      return CURLE_FAILED_INIT;
-    }
+  if(!Curl_ssl_init()) {
+    DEBUGF(fprintf(stderr, "Error: Curl_ssl_init failed\n"));
+    return CURLE_FAILED_INIT;
+  }
 
   if(flags & CURL_GLOBAL_WIN32)
     if(win32_init()) {
@@ -318,10 +318,7 @@ void curl_global_cleanup(void)
     return;
 
   Curl_global_host_cache_dtor();
-
-  if(init_flags & CURL_GLOBAL_SSL)
-    Curl_ssl_cleanup();
-
+  Curl_ssl_cleanup();
   Curl_resolver_global_cleanup();
 
   if(init_flags & CURL_GLOBAL_WIN32)
@@ -363,28 +360,6 @@ struct Curl_easy *curl_easy_init(void)
   }
 
   return data;
-}
-
-/*
- * curl_easy_setopt() is the external interface for setting options on an
- * easy handle.
- */
-
-#undef curl_easy_setopt
-CURLcode curl_easy_setopt(struct Curl_easy *data, CURLoption tag, ...)
-{
-  va_list arg;
-  CURLcode result;
-
-  if(!data)
-    return CURLE_BAD_FUNCTION_ARGUMENT;
-
-  va_start(arg, tag);
-
-  result = Curl_setopt(data, tag, arg);
-
-  va_end(arg);
-  return result;
 }
 
 #ifdef CURLDEBUG
@@ -586,12 +561,12 @@ static CURLcode wait_or_timeout(struct Curl_multi *multi, struct events *ev)
     }
 
     /* get the time stamp to use to figure out how long poll takes */
-    before = curlx_tvnow();
+    before = Curl_now();
 
     /* wait for activity or timeout */
     pollrc = Curl_poll(fds, numfds, (int)ev->ms);
 
-    after = curlx_tvnow();
+    after = Curl_now();
 
     ev->msbump = FALSE; /* reset here */
 
@@ -619,7 +594,7 @@ static CURLcode wait_or_timeout(struct Curl_multi *multi, struct events *ev)
         /* If nothing updated the timeout, we decrease it by the spent time.
          * If it was updated, it has the new timeout time stored already.
          */
-        time_t timediff = curlx_tvdiff(after, before);
+        timediff_t timediff = Curl_timediff(after, before);
         if(timediff > 0) {
           if(timediff > ev->ms)
             ev->ms = 0;
@@ -680,17 +655,17 @@ static CURLcode easy_transfer(struct Curl_multi *multi)
     int still_running = 0;
     int rc;
 
-    before = curlx_tvnow();
+    before = Curl_now();
     mcode = curl_multi_wait(multi, NULL, 0, 1000, &rc);
 
     if(!mcode) {
       if(!rc) {
-        struct curltime after = curlx_tvnow();
+        struct curltime after = Curl_now();
 
         /* If it returns without any filedescriptor instantly, we need to
            avoid busy-looping during periods where it has nothing particular
            to wait for */
-        if(curlx_tvdiff(after, before) <= 10) {
+        if(Curl_timediff(after, before) <= 10) {
           without_fds++;
           if(without_fds > 2) {
             int sleep_ms = without_fds < 10 ? (1 << (without_fds - 1)) : 1000;
@@ -861,6 +836,40 @@ CURLcode curl_easy_getinfo(struct Curl_easy *data, CURLINFO info, ...)
   return result;
 }
 
+static CURLcode dupset(struct Curl_easy *dst, struct Curl_easy *src)
+{
+  CURLcode result = CURLE_OK;
+  enum dupstring i;
+
+  /* Copy src->set into dst->set first, then deal with the strings
+     afterwards */
+  dst->set = src->set;
+
+  /* clear all string pointers first */
+  memset(dst->set.str, 0, STRING_LAST * sizeof(char *));
+
+  /* duplicate all strings */
+  for(i = (enum dupstring)0; i< STRING_LASTZEROTERMINATED; i++) {
+    result = Curl_setstropt(&dst->set.str[i], src->set.str[i]);
+    if(result)
+      return result;
+  }
+
+  /* duplicate memory areas pointed to */
+  i = STRING_COPYPOSTFIELDS;
+  if(src->set.postfieldsize && src->set.str[i]) {
+    /* postfieldsize is curl_off_t, Curl_memdup() takes a size_t ... */
+    dst->set.str[i] = Curl_memdup(src->set.str[i],
+                                  curlx_sotouz(src->set.postfieldsize));
+    if(!dst->set.str[i])
+      return CURLE_OUT_OF_MEMORY;
+    /* point to the new copy */
+    dst->set.postfields = dst->set.str[i];
+  }
+
+  return CURLE_OK;
+}
+
 /*
  * curl_easy_duphandle() is an external interface to allow duplication of a
  * given input easy handle. The returned handle will be a new working handle
@@ -888,7 +897,7 @@ struct Curl_easy *curl_easy_duphandle(struct Curl_easy *data)
   outcurl->state.headersize = HEADERSIZE;
 
   /* copy all userdefined values */
-  if(Curl_dupset(outcurl, data))
+  if(dupset(outcurl, data))
     goto fail;
 
   /* the connection cache is setup on demand */

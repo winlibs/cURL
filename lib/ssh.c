@@ -2347,8 +2347,8 @@ static CURLcode ssh_statemach_act(struct connectdata *conn, bool *block)
         }
         sshc->sftp_handle = NULL;
       }
-      if(sftp_scp)
-        Curl_safefree(sftp_scp->path);
+
+      Curl_safefree(sftp_scp->path);
 
       DEBUGF(infof(data, "SFTP DONE done\n"));
 
@@ -2833,8 +2833,8 @@ static CURLcode ssh_block_statemach(struct connectdata *conn,
 
   while((sshc->state != SSH_STOP) && !result) {
     bool block;
-    time_t left = 1000;
-    struct curltime now = Curl_tvnow();
+    timediff_t left = 1000;
+    struct curltime now = Curl_now();
 
     result = ssh_statemach_act(conn, &block);
     if(result)
