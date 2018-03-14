@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -59,6 +59,7 @@
 #include "ftp.h"
 #include "fileinfo.h"
 #include "ftplistparser.h"
+#include "curl_range.h"
 #include "curl_sec.h"
 #include "strtoofft.h"
 #include "strcase.h"
@@ -310,9 +311,11 @@ static CURLcode AcceptServerConnect(struct connectdata *conn)
     int error = 0;
 
     /* activate callback for setting socket options */
+    Curl_set_in_callback(data, true);
     error = data->set.fsockopt(data->set.sockopt_client,
                                s,
                                CURLSOCKTYPE_ACCEPT);
+    Curl_set_in_callback(data, false);
 
     if(error) {
       close_secondarysocket(conn);
@@ -1471,7 +1474,7 @@ static CURLcode ftp_state_list(struct connectdata *conn)
       slashPos = strrchr(inpath, '/');
       n = slashPos - inpath;
     }
-    result = Curl_urldecode(data, inpath, n, &lstArg, NULL, FALSE);
+    result = Curl_urldecode(data, inpath, n, &lstArg, NULL, TRUE);
     if(result)
       return result;
   }
@@ -1535,7 +1538,7 @@ static CURLcode ftp_state_type(struct connectdata *conn)
      date. */
   if(data->set.opt_no_body && ftpc->file &&
      ftp_need_type(conn, data->set.prefer_ascii)) {
-    /* The SIZE command is _not_ RFC 959 specified, and therefor many servers
+    /* The SIZE command is _not_ RFC 959 specified, and therefore many servers
        may not support it! It is however the only way we have to get a file's
        size! */
 
@@ -1615,8 +1618,10 @@ static CURLcode ftp_state_ul_setup(struct connectdata *conn,
 
     /* Let's read off the proper amount of bytes from the input. */
     if(conn->seek_func) {
+      Curl_set_in_callback(data, true);
       seekerr = conn->seek_func(conn->seek_client, data->state.resume_from,
                                 SEEK_SET);
+      Curl_set_in_callback(data, true);
     }
 
     if(seekerr != CURL_SEEKFUNC_OK) {
@@ -2060,7 +2065,7 @@ static CURLcode ftp_state_mdtm_resp(struct connectdata *conn,
                  "%04d%02d%02d %02d:%02d:%02d GMT",
                  year, month, day, hour, minute, second);
         /* now, convert this into a time() value: */
-        data->info.filetime = (long)curl_getdate(timebuf, &secs);
+        data->info.filetime = curl_getdate(timebuf, &secs);
       }
 
 #ifdef CURL_FTP_HTTPSTYLE_HEAD
@@ -2072,7 +2077,7 @@ static CURLcode ftp_state_mdtm_resp(struct connectdata *conn,
          data->set.get_filetime &&
          (data->info.filetime >= 0) ) {
         char headerbuf[128];
-        time_t filetime = (time_t)data->info.filetime;
+        time_t filetime = data->info.filetime;
         struct tm buffer;
         const struct tm *tm = &buffer;
 
@@ -3180,14 +3185,16 @@ static CURLcode ftp_done(struct connectdata *conn, CURLcode status,
 
   if(data->state.wildcardmatch) {
     if(data->set.chunk_end && ftpc->file) {
+      Curl_set_in_callback(data, true);
       data->set.chunk_end(data->wildcard.customptr);
+      Curl_set_in_callback(data, false);
     }
     ftpc->known_filesize = -1;
   }
 
   if(!result)
     /* get the "raw" path */
-    result = Curl_urldecode(data, path_to_use, 0, &path, NULL, FALSE);
+    result = Curl_urldecode(data, path_to_use, 0, &path, NULL, TRUE);
   if(result) {
     /* We can limp along anyway (and should try to since we may already be in
      * the error path) */
@@ -3463,62 +3470,6 @@ ftp_pasv_verbose(struct connectdata *conn,
 #endif
 
 /*
-  Check if this is a range download, and if so, set the internal variables
-  properly.
- */
-
-static CURLcode ftp_range(struct connectdata *conn)
-{
-  curl_off_t from, to;
-  char *ptr;
-  struct Curl_easy *data = conn->data;
-  struct ftp_conn *ftpc = &conn->proto.ftpc;
-
-  if(data->state.use_range && data->state.range) {
-    CURLofft from_t;
-    CURLofft to_t;
-    from_t = curlx_strtoofft(data->state.range, &ptr, 0, &from);
-    if(from_t == CURL_OFFT_FLOW)
-      return CURLE_RANGE_ERROR;
-    while(*ptr && (ISSPACE(*ptr) || (*ptr == '-')))
-      ptr++;
-    to_t = curlx_strtoofft(ptr, NULL, 0, &to);
-    if(to_t == CURL_OFFT_FLOW)
-      return CURLE_RANGE_ERROR;
-    if((to_t == CURL_OFFT_INVAL) && !from_t) {
-      /* X - */
-      data->state.resume_from = from;
-      DEBUGF(infof(conn->data, "FTP RANGE %" CURL_FORMAT_CURL_OFF_T
-                   " to end of file\n", from));
-    }
-    else if(!to_t && (from_t == CURL_OFFT_INVAL)) {
-      /* -Y */
-      data->req.maxdownload = to;
-      data->state.resume_from = -to;
-      DEBUGF(infof(conn->data, "FTP RANGE the last %" CURL_FORMAT_CURL_OFF_T
-                   " bytes\n", to));
-    }
-    else {
-      /* X-Y */
-      data->req.maxdownload = (to - from) + 1; /* include last byte */
-      data->state.resume_from = from;
-      DEBUGF(infof(conn->data, "FTP RANGE from %" CURL_FORMAT_CURL_OFF_T
-                   " getting %" CURL_FORMAT_CURL_OFF_T " bytes\n",
-                   from, data->req.maxdownload));
-    }
-    DEBUGF(infof(conn->data, "range-download from %" CURL_FORMAT_CURL_OFF_T
-                 " to %" CURL_FORMAT_CURL_OFF_T ", totally %"
-                 CURL_FORMAT_CURL_OFF_T " bytes\n",
-                 from, to, data->req.maxdownload));
-    ftpc->dont_check = TRUE; /* don't check for successful transfer */
-  }
-  else
-    data->req.maxdownload = -1;
-  return CURLE_OK;
-}
-
-
-/*
  * ftp_do_more()
  *
  * This function shall be called when the second FTP (data) connection is
@@ -3640,7 +3591,13 @@ static CURLcode ftp_do_more(struct connectdata *conn, int *completep)
       /* download */
       ftp->downloadsize = -1; /* unknown as of yet */
 
-      result = ftp_range(conn);
+      result = Curl_range(conn);
+
+      if(result == CURLE_OK && data->req.maxdownload >= 0) {
+        /* Don't check for successful transfer */
+        ftpc->dont_check = TRUE;
+      }
+
       if(result)
         ;
       else if(data->set.ftp_list_only || !ftpc->file) {
@@ -3883,8 +3840,11 @@ static CURLcode wc_statemach(struct connectdata *conn)
 
     infof(conn->data, "Wildcard - START of \"%s\"\n", finfo->filename);
     if(conn->data->set.chunk_bgn) {
-      long userresponse = conn->data->set.chunk_bgn(
+      long userresponse;
+      Curl_set_in_callback(conn->data, true);
+      userresponse = conn->data->set.chunk_bgn(
         finfo, wildcard->customptr, (int)wildcard->filelist.size);
+      Curl_set_in_callback(conn->data, false);
       switch(userresponse) {
       case CURL_CHUNK_BGN_FUNC_SKIP:
         infof(conn->data, "Wildcard - \"%s\" skipped by user\n",
@@ -3920,8 +3880,11 @@ static CURLcode wc_statemach(struct connectdata *conn)
   } break;
 
   case CURLWC_SKIP: {
-    if(conn->data->set.chunk_end)
+    if(conn->data->set.chunk_end) {
+      Curl_set_in_callback(conn->data, true);
       conn->data->set.chunk_end(conn->data->wildcard.customptr);
+      Curl_set_in_callback(conn->data, false);
+    }
     Curl_llist_remove(&wildcard->filelist, wildcard->filelist.head, NULL);
     wildcard->state = (wildcard->filelist.size == 0) ?
                       CURLWC_CLEAN : CURLWC_DOWNLOADING;
@@ -4192,7 +4155,7 @@ CURLcode ftp_parse_url_path(struct connectdata *conn)
       result = Curl_urldecode(conn->data, slash_pos ? cur_pos : "/",
                               slash_pos ? dirlen : 1,
                               &ftpc->dirs[0], NULL,
-                              FALSE);
+                              TRUE);
       if(result) {
         freedirs(ftpc);
         return result;
@@ -4299,7 +4262,7 @@ CURLcode ftp_parse_url_path(struct connectdata *conn)
     size_t dlen;
     char *path;
     CURLcode result =
-      Curl_urldecode(conn->data, data->state.path, 0, &path, &dlen, FALSE);
+      Curl_urldecode(conn->data, data->state.path, 0, &path, &dlen, TRUE);
     if(result) {
       freedirs(ftpc);
       return result;

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -24,6 +24,7 @@
 
 #include "urldata.h"
 #include "sendf.h"
+#include "multiif.h"
 #include "progress.h"
 #include "curl_printf.h"
 
@@ -237,8 +238,8 @@ void Curl_pgrsStartNow(struct Curl_easy *data)
 }
 
 /*
- * This is used to handle speed limits, calculating how much milliseconds we
- * need to wait until we're back under the speed limit, if needed.
+ * This is used to handle speed limits, calculating how many milliseconds to
+ * wait until we're back under the speed limit, if needed.
  *
  * The way it works is by having a "starting point" (time & amount of data
  * transferred by then) used in the speed computation, to be used instead of
@@ -250,16 +251,15 @@ void Curl_pgrsStartNow(struct Curl_easy *data)
  * the starting point, the limit (in bytes/s), the time of the starting point
  * and the current time.
  *
- * Returns -1 if no waiting is needed (not enough data transferred since
- * starting point yet), 0 when no waiting is needed but the starting point
- * should be reset (to current), or the number of milliseconds to wait to get
- * back under the speed limit.
+ * Returns 0 if no waiting is needed or when no waiting is needed but the
+ * starting point should be reset (to current); or the number of milliseconds
+ * to wait to get back under the speed limit.
  */
-long Curl_pgrsLimitWaitTime(curl_off_t cursize,
-                            curl_off_t startsize,
-                            curl_off_t limit,
-                            struct curltime start,
-                            struct curltime now)
+timediff_t Curl_pgrsLimitWaitTime(curl_off_t cursize,
+                                  curl_off_t startsize,
+                                  curl_off_t limit,
+                                  struct curltime start,
+                                  struct curltime now)
 {
   curl_off_t size = cursize - startsize;
   time_t minimum;
@@ -269,16 +269,23 @@ long Curl_pgrsLimitWaitTime(curl_off_t cursize,
   if(start.tv_sec == 0 && start.tv_usec == 0)
     return 0;
 
-  /* not enough data yet */
-  if(size < limit)
-    return -1;
+  if(!limit)
+    return 0;
 
-  minimum = (time_t) (CURL_OFF_T_C(1000) * size / limit);
+  if(size < CURL_OFF_T_MAX/1000)
+    minimum = (time_t) (CURL_OFF_T_C(1000) * size / limit);
+  else {
+    minimum = (time_t) (size / limit);
+    if(minimum < TIME_T_MAX/1000)
+      minimum *= 1000;
+    else
+      minimum = TIME_T_MAX;
+  }
+
   actual = Curl_timediff(now, start);
 
   if(actual < minimum)
-    /* this is a conversion on some systems (64bit time_t => 32bit long) */
-    return (long)(minimum - actual);
+    return (minimum - actual);
 
   return 0;
 }
@@ -358,6 +365,7 @@ int Curl_pgrsUpdate(struct connectdata *conn)
   curl_off_t total_transfer;
   curl_off_t total_expected_transfer;
   curl_off_t timespent;
+  curl_off_t timespent_ms; /* milliseconds */
   struct Curl_easy *data = conn->data;
   int nowindex = data->progress.speeder_c% CURR_TIME;
   int checkindex;
@@ -369,22 +377,27 @@ int Curl_pgrsUpdate(struct connectdata *conn)
   curl_off_t dlestimate = 0;
   curl_off_t total_estimate;
   bool shownow = FALSE;
+  curl_off_t dl = data->progress.downloaded;
+  curl_off_t ul = data->progress.uploaded;
 
   now = Curl_now(); /* what time is it */
 
   /* The time spent so far (from the start) */
   data->progress.timespent = Curl_timediff_us(now, data->progress.start);
   timespent = (curl_off_t)data->progress.timespent/1000000; /* seconds */
+  timespent_ms = (curl_off_t)data->progress.timespent/1000; /* ms */
 
   /* The average download speed this far */
-  data->progress.dlspeed = (curl_off_t)
-    (data->progress.downloaded/
-     (timespent>0?timespent:1));
+  if(dl < CURL_OFF_T_MAX/1000)
+    data->progress.dlspeed = (dl * 1000 / (timespent_ms>0?timespent_ms:1));
+  else
+    data->progress.dlspeed = (dl / (timespent>0?timespent:1));
 
   /* The average upload speed this far */
-  data->progress.ulspeed = (curl_off_t)
-    (data->progress.uploaded/
-     (timespent>0?timespent:1));
+  if(ul < CURL_OFF_T_MAX/1000)
+    data->progress.ulspeed = (ul * 1000 / (timespent_ms>0?timespent_ms:1));
+  else
+    data->progress.ulspeed = (ul / (timespent>0?timespent:1));
 
   /* Calculations done at most once a second, unless end is reached */
   if(data->progress.lastshow != now.tv_sec) {
@@ -455,22 +468,26 @@ int Curl_pgrsUpdate(struct connectdata *conn)
 
     if(data->set.fxferinfo) {
       /* There's a callback set, call that */
+      Curl_set_in_callback(data, true);
       result = data->set.fxferinfo(data->set.progress_client,
                                    data->progress.size_dl,
                                    data->progress.downloaded,
                                    data->progress.size_ul,
                                    data->progress.uploaded);
+      Curl_set_in_callback(data, false);
       if(result)
         failf(data, "Callback aborted");
       return result;
     }
     if(data->set.fprogress) {
       /* The older deprecated callback is set, call that */
+      Curl_set_in_callback(data, true);
       result = data->set.fprogress(data->set.progress_client,
                                    (double)data->progress.size_dl,
                                    (double)data->progress.downloaded,
                                    (double)data->progress.size_ul,
                                    (double)data->progress.uploaded);
+      Curl_set_in_callback(data, false);
       if(result)
         failf(data, "Callback aborted");
       return result;
