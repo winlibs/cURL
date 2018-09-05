@@ -1030,6 +1030,10 @@ SOURCE=..\..\..\..\lib\progress.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\psl.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\rand.c
 # End Source File
 # Begin Source File
@@ -1251,6 +1255,10 @@ SOURCE=..\..\..\..\lib\vtls\polarssl_threadlock.c
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\vtls\schannel.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\vtls\schannel_verify.c
 # End Source File
 # Begin Source File
 
@@ -1559,6 +1567,10 @@ SOURCE=..\..\..\..\lib\pop3.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\progress.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\psl.h
 # End Source File
 # Begin Source File
 

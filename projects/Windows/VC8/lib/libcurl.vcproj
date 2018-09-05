@@ -3917,6 +3917,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\psl.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\rand.c"
 			>
 			</File>
@@ -4353,6 +4357,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\psl.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\rand.h"
 			>
 			</File>
@@ -4605,6 +4613,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\schannel.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\schannel_verify.c"
 				>
 				</File>
 				<File
