@@ -548,6 +548,15 @@ static void ascii_uppercase_to_unicode_le(unsigned char *dest,
 
 #endif /* USE_NTLM_V2 && !USE_WINDOWS_SSPI */
 
+#ifndef SIZE_T_MAX
+/* some limits.h headers have this defined, some don't */
+#if defined(SIZEOF_SIZE_T) && (SIZEOF_SIZE_T > 4)
+#define SIZE_T_MAX 18446744073709551615U
+#else
+#define SIZE_T_MAX 4294967295U
+#endif
+#endif
+
 /*
  * Set up nt hashed passwords
  * @unittest: 1600
@@ -648,15 +657,6 @@ CURLcode Curl_hmac_md5(const unsigned char *key, unsigned int keylen,
 
   return CURLE_OK;
 }
-
-#ifndef SIZE_T_MAX
-/* some limits.h headers have this defined, some don't */
-#if defined(SIZEOF_SIZE_T) && (SIZEOF_SIZE_T > 4)
-#define SIZE_T_MAX 18446744073709551615U
-#else
-#define SIZE_T_MAX 4294967295U
-#endif
-#endif
 
 /* This creates the NTLMv2 hash by using NTLM hash as the key and Unicode
  * (uppercase UserName + Domain) as the data
