@@ -43,6 +43,7 @@ void config_init(struct OperationConfig* config)
   config->proto_default = NULL;
   config->tcp_nodelay = TRUE; /* enabled by default */
   config->happy_eyeballs_timeout_ms = CURL_HET_DEFAULT;
+  config->http09_allowed = TRUE;
 }
 
 static void free_config_fields(struct OperationConfig *config)
@@ -102,6 +103,7 @@ static void free_config_fields(struct OperationConfig *config)
   config->url_get = NULL;
   config->url_out = NULL;
 
+  Curl_safefree(config->doh_url);
   Curl_safefree(config->cipher_list);
   Curl_safefree(config->proxy_cipher_list);
   Curl_safefree(config->cert);

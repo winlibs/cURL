@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -83,7 +83,16 @@ AC_DEFUN([CURL_CHECK_COMPILER_CLANG], [
   CURL_CHECK_DEF([__clang__], [], [silent])
   if test "$curl_cv_have_def___clang__" = "yes"; then
     AC_MSG_RESULT([yes])
-    compiler_id="CLANG"
+    AC_MSG_CHECKING([if compiler is xlclang])
+    CURL_CHECK_DEF([__ibmxl__], [], [silent])
+    if test "$curl_cv_have_def___ibmxl__" = "yes" ; then
+      dnl IBM's almost-compatible clang version
+      AC_MSG_RESULT([yes])
+      compiler_id="XLCLANG"
+    else
+      AC_MSG_RESULT([no])
+      compiler_id="CLANG"
+    fi
     fullclangver=`$CC -v 2>&1 | grep version`
     clangver=`echo $fullclangver | grep "based on LLVM " | "$SED" 's/.*(based on LLVM \(@<:@0-9@:>@*\.@<:@0-9@:>@*\).*)/\1/'`
     if test -z "$clangver"; then
@@ -513,7 +522,7 @@ AC_DEFUN([CURL_COMPILER_WORKS_IFELSE], [
   dnl only do runtime verification when not cross-compiling
   if test "x$cross_compiling" != "xyes" &&
     test "$tmp_compiler_works" = "yes"; then
-    AC_RUN_IFELSE([
+    CURL_RUN_IFELSE([
       AC_LANG_PROGRAM([[
 #       ifdef __STDC__
 #         include <stdlib.h>
@@ -1633,4 +1642,3 @@ AC_DEFUN([CURL_VAR_STRIP], [
   [$1]="$ac_var_stripped"
   squeeze [$1]
 ])
-

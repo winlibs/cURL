@@ -48,6 +48,9 @@
 /* to disable --libcurl C code generation option */
 #undef CURL_DISABLE_LIBCURL_OPTION
 
+/* if the OpenSSL configuration won't be loaded automatically */
+#undef CURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG
+
 /* to disable POP3 */
 #undef CURL_DISABLE_POP3
 
@@ -171,9 +174,6 @@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
-
-/* Define to 1 if you have the `ENGINE_cleanup' function. */
-#undef HAVE_ENGINE_CLEANUP
 
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
@@ -498,6 +498,9 @@
 
 /* Define to 1 if you have the <openssl/ssl.h> header file. */
 #undef HAVE_OPENSSL_SSL_H
+
+/* Define to 1 if you have the `OpenSSL_version' function. */
+#undef HAVE_OPENSSL_VERSION
 
 /* Define to 1 if you have the <openssl/x509.h> header file. */
 #undef HAVE_OPENSSL_X509_H
@@ -925,9 +928,6 @@
 /* Define to enable c-ares support */
 #undef USE_ARES
 
-/* if axTLS is enabled */
-#undef USE_AXTLS
-
 /* if CyaSSL/WolfSSL is enabled */
 #undef USE_CYASSL
 
@@ -957,6 +957,9 @@
 
 /* if mbedTLS is enabled */
 #undef USE_MBEDTLS
+
+/* if MesaLink is enabled */
+#undef USE_MESALINK
 
 /* Define to enable metalink support */
 #undef USE_METALINK

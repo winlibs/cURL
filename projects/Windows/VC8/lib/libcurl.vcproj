@@ -3721,6 +3721,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\doh.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\dotdot.c"
 			>
 			</File>
@@ -4033,6 +4037,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi.c"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\url.c"
 			>
 			</File>
@@ -4206,6 +4214,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\dict.h"
+			>
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\doh.h"
 			>
 			</File>
 			<File
@@ -4465,6 +4477,10 @@
 			>
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi-int.h"
+			>
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\urldata.h"
 			>
 			</File>
@@ -4572,10 +4588,6 @@
 				Name="Source Files"
 				>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.c"
-				>
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\cyassl.c"
 				>
 				</File>
@@ -4593,6 +4605,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.c"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.c"
 				>
 				</File>
 				<File
@@ -4628,10 +4644,6 @@
 				Name="Header Files"
 				>
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.h"
-				>
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\cyassl.h"
 				>
 				</File>
@@ -4649,6 +4661,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.h"
+				>
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.h"
 				>
 				</File>
 				<File

@@ -11,7 +11,7 @@
 # This configure script is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 #
-# Copyright (c) 1998 - 2017 Daniel Stenberg, <daniel@haxx.se>
+# Copyright (c) 1998 - 2019 Daniel Stenberg, <daniel@haxx.se>
 # This configure script may be copied, distributed and modified under the
 # terms of the curl license; see COPYING for more details
 
@@ -920,9 +920,9 @@ USE_LIBPSL_TRUE
 CURL_CA_BUNDLE
 CURL_WITH_MULTI_SSL
 SSL_ENABLED
-USE_AXTLS
 NSS_LIBS
 USE_NSS
+USE_MESALINK
 USE_CYASSL
 USE_MBEDTLS
 USE_POLARSSL
@@ -1041,18 +1041,8 @@ VERSION
 PACKAGE
 CYGPATH_W
 am__isrc
-CODE_COVERAGE_RULES
-CODE_COVERAGE_LDFLAGS
-CODE_COVERAGE_LIBS
-CODE_COVERAGE_CXXFLAGS
-CODE_COVERAGE_CFLAGS
-CODE_COVERAGE_CPPFLAGS
-GENHTML
 LCOV
 GCOV
-CODE_COVERAGE_ENABLED
-CODE_COVERAGE_ENABLED_FALSE
-CODE_COVERAGE_ENABLED_TRUE
 CPP
 OBJEXT
 EXEEXT
@@ -1132,7 +1122,6 @@ enable_symbol_hiding
 enable_hidden_symbols
 enable_ares
 enable_rt
-with_gcov
 enable_code_coverage
 enable_dependency_tracking
 enable_largefile
@@ -1172,17 +1161,19 @@ with_gssapi_libs
 with_gssapi
 with_default_ssl_backend
 with_winssl
+with_schannel
 with_darwinssl
 with_ssl
 with_egd_socket
 with_random
+enable_openssl_auto_load_config
 with_gnutls
 with_polarssl
 with_mbedtls
 with_cyassl
 with_wolfssl
+with_mesalink
 with_nss
-with_axtls
 with_ca_bundle
 with_ca_path
 with_ca_fallback
@@ -1868,7 +1859,7 @@ Optional Features:
   --enable-ares[=PATH]    Enable c-ares for DNS lookups
   --disable-ares          Disable c-ares for DNS lookups
   --disable-rt            disable dependency on -lrt
-  --enable-code-coverage  Whether to enable code coverage support
+  --enable-code-coverage  Provide code coverage
   --enable-dependency-tracking
                           do not reject slow dependency extractors
   --disable-dependency-tracking
@@ -1917,6 +1908,10 @@ Optional Features:
   --enable-libgcc         use libgcc when linking
   --enable-ipv6           Enable IPv6 (with IPv4) support
   --disable-ipv6          Disable IPv6 support
+  --enable-openssl-auto-load-config
+                          Enable automatic loading of OpenSSL configuration
+  --disable-openssl-auto-load-config
+                          Disable automatic loading of OpenSSL configuration
   --enable-versioned-symbols
                           Enable versioned symbols in shared library
   --disable-versioned-symbols
@@ -1948,7 +1943,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-gcov=GCOV        use given GCOV for coverage (GCOV=gcov).
   --with-pic[=PKGS]       try to use only PIC/non-PIC objects [default=use
                           both]
   --with-aix-soname=aix|svr4|both
@@ -1975,6 +1969,8 @@ Optional Packages:
                           Use implicit default SSL backend
   --with-winssl           enable Windows native SSL/TLS
   --without-winssl        disable Windows native SSL/TLS
+  --with-schannel         enable Windows native SSL/TLS
+  --without-schannel      disable Windows native SSL/TLS
   --with-darwinssl        enable Apple OS native SSL/TLS
   --without-darwinssl     disable Apple OS native SSL/TLS
   --with-ssl=PATH         Where to look for OpenSSL, PATH points to the SSL
@@ -1999,13 +1995,12 @@ Optional Packages:
   --with-wolfssl=PATH     where to look for WolfSSL, PATH points to the
                           installation root (default: system lib default)
   --without-wolfssl       disable WolfSSL detection
+  --with-mesalink=PATH    where to look for MesaLink, PATH points to the
+                          installation root
+  --without-mesalink      disable MesaLink detection
   --with-nss=PATH         where to look for NSS, PATH points to the
                           installation root
   --without-nss           disable NSS detection
-  --with-axtls=PATH       Where to look for axTLS, PATH points to the axTLS
-                          installation prefix (default: /usr/local). Ignored
-                          if another SSL engine is selected.
-  --without-axtls         disable axTLS
   --with-ca-bundle=FILE   Path to a file containing CA certificates (example:
                           /etc/ca-bundle.crt)
   --without-ca-bundle     Don't use a default CA bundle
@@ -2132,7 +2127,7 @@ Copyright (C) 2012 Free Software Foundation, Inc.
 This configure script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it.
 
-Copyright (c) 1998 - 2017 Daniel Stenberg, <daniel@haxx.se>
+Copyright (c) 1998 - 2019 Daniel Stenberg, <daniel@haxx.se>
 This configure script may be copied, distributed and modified under the
 terms of the curl license; see COPYING for more details
 _ACEOF
@@ -4959,49 +4954,34 @@ $as_echo "$ac_cv_path_SED" >&6; }
  SED="$ac_cv_path_SED"
   rm -f conftest.sed
 
-if  test "$GCC" = "yes" ; then :
 
 
 
-	# allow to override gcov location
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for code coverage support" >&5
+$as_echo_n "checking for code coverage support... " >&6; }
+  coverage="no"
+  curl_coverage_msg="disabled"
 
-# Check whether --with-gcov was given.
-if test "${with_gcov+set}" = set; then :
-  withval=$with_gcov; _AX_CODE_COVERAGE_GCOV_PROG_WITH=$with_gcov
-else
-  _AX_CODE_COVERAGE_GCOV_PROG_WITH=gcov
-fi
-
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build with code coverage support" >&5
-$as_echo_n "checking whether to build with code coverage support... " >&6; }
-	# Check whether --enable-code-coverage was given.
+    # Check whether --enable-code-coverage was given.
 if test "${enable_code_coverage+set}" = set; then :
-  enableval=$enable_code_coverage;
+  enableval=$enable_code_coverage; coverage="yes"
 else
-  enable_code_coverage=no
+  coverage="no"
 fi
 
 
-	 if test x$enable_code_coverage = xyes; then
-  CODE_COVERAGE_ENABLED_TRUE=
-  CODE_COVERAGE_ENABLED_FALSE='#'
-else
-  CODE_COVERAGE_ENABLED_TRUE='#'
-  CODE_COVERAGE_ENABLED_FALSE=
+    if  test "$GCC" != "yes" ; then :
+  coverage="no"
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $coverage" >&5
+$as_echo "$coverage" >&6; }
 
-	CODE_COVERAGE_ENABLED=$enable_code_coverage
+  if test "x$coverage" = "xyes"; then
+    curl_coverage_msg="enabled"
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_code_coverage" >&5
-$as_echo "$enable_code_coverage" >&6; }
-
-	if  test "$enable_code_coverage" = "yes" ; then :
-
-		# check for gcov
-		if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}$_AX_CODE_COVERAGE_GCOV_PROG_WITH", so it can be a program name with args.
-set dummy ${ac_tool_prefix}$_AX_CODE_COVERAGE_GCOV_PROG_WITH; ac_word=$2
+    if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}gcov", so it can be a program name with args.
+set dummy ${ac_tool_prefix}gcov; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_prog_GCOV+:} false; then :
@@ -5017,7 +4997,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_GCOV="${ac_tool_prefix}$_AX_CODE_COVERAGE_GCOV_PROG_WITH"
+    ac_cv_prog_GCOV="${ac_tool_prefix}gcov"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -5040,8 +5020,8 @@ fi
 fi
 if test -z "$ac_cv_prog_GCOV"; then
   ac_ct_GCOV=$GCOV
-  # Extract the first word of "$_AX_CODE_COVERAGE_GCOV_PROG_WITH", so it can be a program name with args.
-set dummy $_AX_CODE_COVERAGE_GCOV_PROG_WITH; ac_word=$2
+  # Extract the first word of "gcov", so it can be a program name with args.
+set dummy gcov; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_prog_ac_ct_GCOV+:} false; then :
@@ -5057,7 +5037,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_GCOV="$_AX_CODE_COVERAGE_GCOV_PROG_WITH"
+    ac_cv_prog_ac_ct_GCOV="gcov"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -5077,7 +5057,7 @@ $as_echo "no" >&6; }
 fi
 
   if test "x$ac_ct_GCOV" = x; then
-    GCOV=":"
+    GCOV="gcov"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -5091,18 +5071,10 @@ else
   GCOV="$ac_cv_prog_GCOV"
 fi
 
-		if test "X$GCOV" = "X:"; then :
-  as_fn_error $? "gcov is needed to do coverage" "$LINENO" 5
-fi
-
-
-				if  test "$GCC" = "no" ; then :
-
-			as_fn_error $? "not compiling with gcc, which is required for gcov code coverage" "$LINENO" 5
-
-fi
-
-		# Extract the first word of "lcov", so it can be a program name with args.
+    if test -z "$GCOV"; then
+      as_fn_error $? "needs gcov for code coverage" "$LINENO" 5
+    fi
+    # Extract the first word of "lcov", so it can be a program name with args.
 set dummy lcov; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5139,202 +5111,15 @@ $as_echo "no" >&6; }
 fi
 
 
-		# Extract the first word of "genhtml", so it can be a program name with args.
-set dummy genhtml; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_GENHTML+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$GENHTML"; then
-  ac_cv_prog_GENHTML="$GENHTML" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_GENHTML="genhtml"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
+    if test -z "$LCOV"; then
+      as_fn_error $? "needs lcov for code coverage" "$LINENO" 5
+    fi
+
+    CPPFLAGS="$CPPFLAGS -DNDEBUG"
+    CFLAGS="$CLAGS -O0 -g -fprofile-arcs -ftest-coverage"
+    LIBS="$LIBS -lgcov"
   fi
-done
-  done
-IFS=$as_save_IFS
 
-fi
-fi
-GENHTML=$ac_cv_prog_GENHTML
-if test -n "$GENHTML"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GENHTML" >&5
-$as_echo "$GENHTML" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-		if  test -z "$LCOV" ; then :
-
-			as_fn_error $? "To enable code coverage reporting you must have lcov installed" "$LINENO" 5
-
-fi
-
-		if  test -z "$GENHTML" ; then :
-
-			as_fn_error $? "Could not find genhtml from the lcov package" "$LINENO" 5
-
-fi
-
-						CODE_COVERAGE_CPPFLAGS="-DNDEBUG"
-		CODE_COVERAGE_CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
-		CODE_COVERAGE_CXXFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
-		CODE_COVERAGE_LIBS="-lgcov"
-		CODE_COVERAGE_LDFLAGS="$CODE_COVERAGE_LIBS"
-
-
-
-
-
-
-
-		CODE_COVERAGE_RULES_CHECK='
-	-$(A''M_V_at)$(MAKE) $(AM_MAKEFLAGS) -k check
-	$(A''M_V_at)$(MAKE) $(AM_MAKEFLAGS) code-coverage-capture
-'
-		CODE_COVERAGE_RULES_CAPTURE='
-	$(code_coverage_v_lcov_cap)$(LCOV) $(code_coverage_quiet) $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --capture --output-file "$(CODE_COVERAGE_OUTPUT_FILE).tmp" --test-name "$(call code_coverage_sanitize,$(PACKAGE_NAME)-$(PACKAGE_VERSION))" --no-checksum --compat-libtool $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_OPTIONS)
-	$(code_coverage_v_lcov_ign)$(LCOV) $(code_coverage_quiet) $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --remove "$(CODE_COVERAGE_OUTPUT_FILE).tmp" "/tmp/*" $(CODE_COVERAGE_IGNORE_PATTERN) --output-file "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_RMOPTS)
-	-@rm -f $(CODE_COVERAGE_OUTPUT_FILE).tmp
-	$(code_coverage_v_genhtml)LANG=C $(GENHTML) $(code_coverage_quiet) $(addprefix --prefix ,$(CODE_COVERAGE_DIRECTORY)) --output-directory "$(CODE_COVERAGE_OUTPUT_DIRECTORY)" --title "$(PACKAGE_NAME)-$(PACKAGE_VERSION) Code Coverage" --legend --show-details "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_GENHTML_OPTIONS)
-	@echo "file://$(abs_builddir)/$(CODE_COVERAGE_OUTPUT_DIRECTORY)/index.html"
-'
-		CODE_COVERAGE_RULES_CLEAN='
-clean: code-coverage-clean
-distclean: code-coverage-clean
-code-coverage-clean:
-	-$(LCOV) --directory $(top_builddir) -z
-	-rm -rf $(CODE_COVERAGE_OUTPUT_FILE) $(CODE_COVERAGE_OUTPUT_FILE).tmp $(CODE_COVERAGE_OUTPUT_DIRECTORY)
-	-find . \( -name "*.gcda" -o -name "*.gcno" -o -name "*.gcov" \) -delete
-'
-
-else
-
-		CODE_COVERAGE_RULES_CHECK='
-	@echo "Need to reconfigure with --enable-code-coverage"
-'
-		CODE_COVERAGE_RULES_CAPTURE="$CODE_COVERAGE_RULES_CHECK"
-		CODE_COVERAGE_RULES_CLEAN=''
-
-fi
-
-CODE_COVERAGE_RULES='
-# Code coverage
-#
-# Optional:
-#  - CODE_COVERAGE_DIRECTORY: Top-level directory for code coverage reporting.
-#    Multiple directories may be specified, separated by whitespace.
-#    (Default: $(top_builddir))
-#  - CODE_COVERAGE_OUTPUT_FILE: Filename and path for the .info file generated
-#    by lcov for code coverage. (Default:
-#    $(PACKAGE_NAME)-$(PACKAGE_VERSION)-coverage.info)
-#  - CODE_COVERAGE_OUTPUT_DIRECTORY: Directory for generated code coverage
-#    reports to be created. (Default:
-#    $(PACKAGE_NAME)-$(PACKAGE_VERSION)-coverage)
-#  - CODE_COVERAGE_BRANCH_COVERAGE: Set to 1 to enforce branch coverage,
-#    set to 0 to disable it and leave empty to stay with the default.
-#    (Default: empty)
-#  - CODE_COVERAGE_LCOV_SHOPTS_DEFAULT: Extra options shared between both lcov
-#    instances. (Default: based on $CODE_COVERAGE_BRANCH_COVERAGE)
-#  - CODE_COVERAGE_LCOV_SHOPTS: Extra options to shared between both lcov
-#    instances. (Default: $CODE_COVERAGE_LCOV_SHOPTS_DEFAULT)
-#  - CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH: --gcov-tool pathtogcov
-#  - CODE_COVERAGE_LCOV_OPTIONS_DEFAULT: Extra options to pass to the
-#    collecting lcov instance. (Default: $CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH)
-#  - CODE_COVERAGE_LCOV_OPTIONS: Extra options to pass to the collecting lcov
-#    instance. (Default: $CODE_COVERAGE_LCOV_OPTIONS_DEFAULT)
-#  - CODE_COVERAGE_LCOV_RMOPTS_DEFAULT: Extra options to pass to the filtering
-#    lcov instance. (Default: empty)
-#  - CODE_COVERAGE_LCOV_RMOPTS: Extra options to pass to the filtering lcov
-#    instance. (Default: $CODE_COVERAGE_LCOV_RMOPTS_DEFAULT)
-#  - CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT: Extra options to pass to the
-#    genhtml instance. (Default: based on $CODE_COVERAGE_BRANCH_COVERAGE)
-#  - CODE_COVERAGE_GENHTML_OPTIONS: Extra options to pass to the genhtml
-#    instance. (Default: $CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT)
-#  - CODE_COVERAGE_IGNORE_PATTERN: Extra glob pattern of files to ignore
-#
-# The generated report will be titled using the $(PACKAGE_NAME) and
-# $(PACKAGE_VERSION). In order to add the current git hash to the title,
-# use the git-version-gen script, available online.
-
-# Optional variables
-CODE_COVERAGE_DIRECTORY ?= $(top_builddir)
-CODE_COVERAGE_OUTPUT_FILE ?= $(PACKAGE_NAME)-$(PACKAGE_VERSION)-coverage.info
-CODE_COVERAGE_OUTPUT_DIRECTORY ?= $(PACKAGE_NAME)-$(PACKAGE_VERSION)-coverage
-CODE_COVERAGE_BRANCH_COVERAGE ?=
-CODE_COVERAGE_LCOV_SHOPTS_DEFAULT ?= $(if $(CODE_COVERAGE_BRANCH_COVERAGE),\
---rc lcov_branch_coverage=$(CODE_COVERAGE_BRANCH_COVERAGE))
-CODE_COVERAGE_LCOV_SHOPTS ?= $(CODE_COVERAGE_LCOV_SHOPTS_DEFAULT)
-CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH ?= --gcov-tool "$(GCOV)"
-CODE_COVERAGE_LCOV_OPTIONS_DEFAULT ?= $(CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH)
-CODE_COVERAGE_LCOV_OPTIONS ?= $(CODE_COVERAGE_LCOV_OPTIONS_DEFAULT)
-CODE_COVERAGE_LCOV_RMOPTS_DEFAULT ?=
-CODE_COVERAGE_LCOV_RMOPTS ?= $(CODE_COVERAGE_LCOV_RMOPTS_DEFAULT)
-CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT ?=\
-$(if $(CODE_COVERAGE_BRANCH_COVERAGE),\
---rc genhtml_branch_coverage=$(CODE_COVERAGE_BRANCH_COVERAGE))
-CODE_COVERAGE_GENHTML_OPTIONS ?= $(CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT)
-CODE_COVERAGE_IGNORE_PATTERN ?=
-
-GITIGNOREFILES ?=
-GITIGNOREFILES += $(CODE_COVERAGE_OUTPUT_FILE) $(CODE_COVERAGE_OUTPUT_DIRECTORY)
-
-code_coverage_v_lcov_cap = $(code_coverage_v_lcov_cap_$(V))
-code_coverage_v_lcov_cap_ = $(code_coverage_v_lcov_cap_$(AM_DEFAULT_VERBOSITY))
-code_coverage_v_lcov_cap_0 = @echo "  LCOV   --capture"\
- $(CODE_COVERAGE_OUTPUT_FILE);
-code_coverage_v_lcov_ign = $(code_coverage_v_lcov_ign_$(V))
-code_coverage_v_lcov_ign_ = $(code_coverage_v_lcov_ign_$(AM_DEFAULT_VERBOSITY))
-code_coverage_v_lcov_ign_0 = @echo "  LCOV   --remove /tmp/*"\
- $(CODE_COVERAGE_IGNORE_PATTERN);
-code_coverage_v_genhtml = $(code_coverage_v_genhtml_$(V))
-code_coverage_v_genhtml_ = $(code_coverage_v_genhtml_$(AM_DEFAULT_VERBOSITY))
-code_coverage_v_genhtml_0 = @echo "  GEN   " $(CODE_COVERAGE_OUTPUT_DIRECTORY);
-code_coverage_quiet = $(code_coverage_quiet_$(V))
-code_coverage_quiet_ = $(code_coverage_quiet_$(AM_DEFAULT_VERBOSITY))
-code_coverage_quiet_0 = --quiet
-
-# sanitizes the test-name: replaces with underscores: dashes and dots
-code_coverage_sanitize = $(subst -,_,$(subst .,_,$(1)))
-
-# Use recursive makes in order to ignore errors during check
-check-code-coverage:'"$CODE_COVERAGE_RULES_CHECK"'
-
-# Capture code coverage data
-code-coverage-capture: code-coverage-capture-hook'"$CODE_COVERAGE_RULES_CAPTURE"'
-
-# Hook rule executed before code-coverage-capture, overridable by the user
-code-coverage-capture-hook:
-
-'"$CODE_COVERAGE_RULES_CLEAN"'
-
-A''M_DISTCHECK_CONFIGURE_FLAGS ?=
-A''M_DISTCHECK_CONFIGURE_FLAGS += --disable-code-coverage
-
-.PHONY: check-code-coverage code-coverage-capture code-coverage-capture-hook code-coverage-clean
-'
-
-
-
-
-else
-  # not using GCC so pass a test below - CODE_COVERAGE_ENABLED_TRUE is not zero length
-  CODE_COVERAGE_ENABLED_TRUE='#'
-
-fi
 
 am__api_version='1.16'
 
@@ -5997,7 +5782,7 @@ PKGADD_VENDOR="curl.haxx.se"
 
 
 
-    curl_ssl_msg="no      (--with-{ssl,gnutls,nss,polarssl,mbedtls,cyassl,axtls,winssl,darwinssl} )"
+    curl_ssl_msg="no      (--with-{ssl,gnutls,nss,polarssl,mbedtls,cyassl,winssl,darwinssl,mesalink} )"
     curl_ssh_msg="no      (--with-libssh2)"
    curl_zlib_msg="no      (--with-zlib)"
  curl_brotli_msg="no      (--with-brotli)"
@@ -9404,11 +9189,8 @@ _LT_EOF
   test $ac_status = 0; }; then
     # Now try to grab the symbols.
     nlist=conftest.nm
-    if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$NM conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist\""; } >&5
-  (eval $NM conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } && test -s "$nlist"; then
+    $ECHO "$as_me:$LINENO: $NM conftest.$ac_objext | $lt_cv_sys_global_symbol_pipe > $nlist" >&5
+    if eval "$NM" conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist 2>&5 && test -s "$nlist"; then
       # Try sorting and uniquifying the output.
       if sort "$nlist" | uniq > "$nlist"T; then
 	mv -f "$nlist"T "$nlist"
@@ -16327,7 +16109,61 @@ rm -f conftest.err conftest.i conftest.$ac_ext
   if test "$curl_cv_have_def___clang__" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    compiler_id="CLANG"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler is xlclang" >&5
+$as_echo_n "checking if compiler is xlclang... " >&6; }
+
+    OLDCPPFLAGS=$CPPFLAGS
+  # CPPPFLAG comes from CURL_CPP_P
+  CPPFLAGS="$CPPFLAGS $CPPPFLAG"
+      if test -z "$SED"; then
+    as_fn_error $? "SED not set. Cannot continue without SED being set." "$LINENO" 5
+  fi
+  if test -z "$GREP"; then
+    as_fn_error $? "GREP not set. Cannot continue without GREP being set." "$LINENO" 5
+  fi
+
+  tmp_exp=""
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#ifdef __ibmxl__
+CURL_DEF_TOKEN __ibmxl__
+#endif
+
+
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+
+    tmp_exp=`eval "$ac_cpp conftest.$ac_ext" 2>/dev/null | \
+      "$GREP" CURL_DEF_TOKEN 2>/dev/null | \
+      "$SED" 's/.*CURL_DEF_TOKEN[ ][ ]*//' 2>/dev/null | \
+      "$SED" 's/["][ ]*["]//g' 2>/dev/null`
+    if test -z "$tmp_exp" || test "$tmp_exp" = "__ibmxl__"; then
+      tmp_exp=""
+    fi
+
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+  if test -z "$tmp_exp"; then
+    curl_cv_have_def___ibmxl__=no
+
+  else
+    curl_cv_have_def___ibmxl__=yes
+    curl_cv_def___ibmxl__=$tmp_exp
+
+  fi
+      CPPFLAGS=$OLDCPPFLAGS
+
+    if test "$curl_cv_have_def___ibmxl__" = "yes" ; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      compiler_id="XLCLANG"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      compiler_id="CLANG"
+    fi
     fullclangver=`$CC -v 2>&1 | grep version`
     clangver=`echo $fullclangver | grep "based on LLVM " | "$SED" 's/.*(based on LLVM \([0-9]*\.[0-9]*\).*)/\1/'`
     if test -z "$clangver"; then
@@ -17277,7 +17113,12 @@ rm -f core conftest.err conftest.$ac_objext \
   fi
     if test "x$cross_compiling" != "xyes" &&
     test "$tmp_compiler_works" = "yes"; then
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -17303,12 +17144,10 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      tmp_compiler_works="yes"
+  tmp_compiler_works="yes"
 
 else
-
-      tmp_compiler_works="no"
+  tmp_compiler_works="no"
       echo " " >&6
       echo "run-fail: test program exited with status $ac_status" >&6
       echo " " >&6
@@ -17317,6 +17156,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
     if test "$tmp_compiler_works" = "yes"; then
@@ -17469,7 +17310,12 @@ rm -f core conftest.err conftest.$ac_objext \
   fi
     if test "x$cross_compiling" != "xyes" &&
     test "$tmp_compiler_works" = "yes"; then
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -17495,12 +17341,10 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      tmp_compiler_works="yes"
+  tmp_compiler_works="yes"
 
 else
-
-      tmp_compiler_works="no"
+  tmp_compiler_works="no"
       echo " " >&6
       echo "run-fail: test program exited with status $ac_status" >&6
       echo " " >&6
@@ -17509,6 +17353,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
     if test "$tmp_compiler_works" = "yes"; then
@@ -17714,7 +17560,12 @@ rm -f core conftest.err conftest.$ac_objext \
   fi
     if test "x$cross_compiling" != "xyes" &&
     test "$tmp_compiler_works" = "yes"; then
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -17740,12 +17591,10 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      tmp_compiler_works="yes"
+  tmp_compiler_works="yes"
 
 else
-
-      tmp_compiler_works="no"
+  tmp_compiler_works="no"
       echo " " >&6
       echo "run-fail: test program exited with status $ac_status" >&6
       echo " " >&6
@@ -17754,6 +17603,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
     if test "$tmp_compiler_works" = "yes"; then
@@ -18147,7 +17998,12 @@ rm -f core conftest.err conftest.$ac_objext \
   fi
     if test "x$cross_compiling" != "xyes" &&
     test "$tmp_compiler_works" = "yes"; then
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -18173,12 +18029,10 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      tmp_compiler_works="yes"
+  tmp_compiler_works="yes"
 
 else
-
-      tmp_compiler_works="no"
+  tmp_compiler_works="no"
       echo " " >&6
       echo "run-fail: test program exited with status $ac_status" >&6
       echo " " >&6
@@ -18187,6 +18041,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
     if test "$tmp_compiler_works" = "yes"; then
@@ -20504,7 +20360,12 @@ $as_echo "$curl_cv_gclk_LIBS" >&6; }
       test "$curl_func_clock_gettime" = "yes"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking if monotonic clock_gettime works" >&5
 $as_echo_n "checking if monotonic clock_gettime works... " >&6; }
-      if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -20546,13 +20407,11 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
 else
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: HAVE_CLOCK_GETTIME_MONOTONIC will not be defined" >&5
 $as_echo "$as_me: WARNING: HAVE_CLOCK_GETTIME_MONOTONIC will not be defined" >&2;}
@@ -20563,6 +20422,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
     fi
     #
@@ -22207,6 +22068,13 @@ if test "${with_winssl+set}" = set; then :
 fi
 
 
+
+# Check whether --with-schannel was given.
+if test "${with_schannel+set}" = set; then :
+  withval=$with_schannel; OPT_WINSSL=$withval
+fi
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable Windows native SSL/TLS (Windows native builds only)" >&5
 $as_echo_n "checking whether to enable Windows native SSL/TLS (Windows native builds only)... " >&6; }
 if test -z "$ssl_backends" -o "x$OPT_WINSSL" != xno; then
@@ -22495,7 +22363,7 @@ $as_echo "found" >&6; }
       PKG_CONFIG_LIBDIR="$OPENSSL_PCDIR"
       export PKG_CONFIG_LIBDIR
     fi
-         $PKGCONFIG --libs-only-l openssl 2>/dev/null`
+         $PKGCONFIG --libs-only-l --libs-only-other openssl 2>/dev/null`
 
       SSL_LDFLAGS=`
     if test -n "$OPENSSL_PCDIR"; then
@@ -22849,9 +22717,9 @@ done
   if test X"$OPENSSL_ENABLED" = X"1"; then
 
     for ac_func in RAND_egd \
-                    ENGINE_cleanup \
                     SSL_get_shutdown \
-                    SSLv2_client_method
+                    SSLv2_client_method \
+                    OpenSSL_version
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -23719,6 +23587,21 @@ $as_echo "#define HAVE_OPENSSL_SRP 1" >>confdefs.h
 
      HAVE_OPENSSL_SRP=1
 
+
+fi
+
+fi
+
+if test X"$OPENSSL_ENABLED" = X"1"; then
+# Check whether --enable-openssl-auto-load-config was given.
+if test "${enable_openssl_auto_load_config+set}" = set; then :
+  enableval=$enable_openssl_auto_load_config;  if test X"$enableval" = X"no"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: automatic loading of OpenSSL configuration disabled" >&5
+$as_echo "$as_me: automatic loading of OpenSSL configuration disabled" >&6;}
+
+$as_echo "#define CURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG 1" >>confdefs.h
+
+  fi
 
 fi
 
@@ -24890,6 +24773,167 @@ $as_echo "$as_me: Added $cyassllib to CURL_LIBRARY_PATH" >&6;}
 fi
 
 
+OPT_MESALINK=no
+
+_cppflags=$CPPFLAGS
+_ldflags=$LDFLAGS
+
+# Check whether --with-mesalink was given.
+if test "${with_mesalink+set}" = set; then :
+  withval=$with_mesalink; OPT_MESALINK=$withval
+fi
+
+
+if test -z "$ssl_backends" -o "x$OPT_MESALINK" != xno; then
+  ssl_msg=
+
+  if test X"$OPT_MESALINK" != Xno; then
+
+    if test "$OPT_MESALINK" = "yes"; then
+      OPT_MESALINK=""
+    fi
+
+    if test -z "$OPT_MESALINK" ; then
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mesalink_library_init in -lmesalink" >&5
+$as_echo_n "checking for mesalink_library_init in -lmesalink... " >&6; }
+if ${ac_cv_lib_mesalink_mesalink_library_init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmesalink  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#ifdef __cplusplus
+extern "C"
+#endif
+char mesalink_library_init ();
+int main (void)
+{
+return mesalink_library_init ();
+ ;
+ return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mesalink_mesalink_library_init=yes
+else
+  ac_cv_lib_mesalink_mesalink_library_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mesalink_mesalink_library_init" >&5
+$as_echo "$ac_cv_lib_mesalink_mesalink_library_init" >&6; }
+if test "x$ac_cv_lib_mesalink_mesalink_library_init" = xyes; then :
+
+
+$as_echo "#define USE_MESALINK 1" >>confdefs.h
+
+         USE_MESALINK=1
+
+         MESALINK_ENABLED=1
+         USE_MESALINK="yes"
+         ssl_msg="MesaLink"
+	 test mesalink != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
+
+fi
+
+    fi
+
+    addld=""
+    addlib=""
+    addcflags=""
+    mesalinklib=""
+
+    if test "x$USE_MESALINK" != "xyes"; then
+            addld=-L$OPT_MESALINK/lib$libsuff
+      addcflags=-I$OPT_MESALINK/include
+      mesalinklib=$OPT_MESALINK/lib$libsuff
+
+      LDFLAGS="$LDFLAGS $addld"
+      if test "$addcflags" != "-I/usr/include"; then
+         CPPFLAGS="$CPPFLAGS $addcflags"
+      fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mesalink_library_init in -lmesalink" >&5
+$as_echo_n "checking for mesalink_library_init in -lmesalink... " >&6; }
+if ${ac_cv_lib_mesalink_mesalink_library_init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmesalink  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#ifdef __cplusplus
+extern "C"
+#endif
+char mesalink_library_init ();
+int main (void)
+{
+return mesalink_library_init ();
+ ;
+ return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mesalink_mesalink_library_init=yes
+else
+  ac_cv_lib_mesalink_mesalink_library_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mesalink_mesalink_library_init" >&5
+$as_echo "$ac_cv_lib_mesalink_mesalink_library_init" >&6; }
+if test "x$ac_cv_lib_mesalink_mesalink_library_init" = xyes; then :
+
+
+$as_echo "#define USE_MESALINK 1" >>confdefs.h
+
+       USE_MESALINK=1
+
+       MESALINK_ENABLED=1
+       USE_MESALINK="yes"
+       ssl_msg="MesaLink"
+       test mesalink != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
+
+else
+
+         CPPFLAGS=$_cppflags
+         LDFLAGS=$_ldflags
+
+fi
+
+    fi
+
+    if test "x$USE_MESALINK" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: detected MesaLink" >&5
+$as_echo "$as_me: detected MesaLink" >&6;}
+
+      LIBS="-lmesalink $LIBS"
+
+      if test -n "$mesalinklib"; then
+                                        if test "x$cross_compiling" != "xyes"; then
+          LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$mesalinklib"
+          export LD_LIBRARY_PATH
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Added $mesalinklib to LD_LIBRARY_PATH" >&5
+$as_echo "$as_me: Added $mesalinklib to LD_LIBRARY_PATH" >&6;}
+        fi
+      fi
+    fi
+
+  fi
+  test -z "$ssl_msg" || ssl_backends="${ssl_backends:+$ssl_backends, }$ssl_msg"
+fi
+
+
 OPT_NSS=no
 
 
@@ -25326,112 +25370,12 @@ $as_echo "$as_me: Added $nssprefix/lib$libsuff to CURL_LIBRARY_PATH" >&6;}
   test -z "$ssl_msg" || ssl_backends="${ssl_backends:+$ssl_backends, }$ssl_msg"
 fi
 
-OPT_AXTLS=off
-
-
-# Check whether --with-axtls was given.
-if test "${with_axtls+set}" = set; then :
-  withval=$with_axtls; OPT_AXTLS=$withval
-fi
-
-
-if test -z "$ssl_backends" -o "x$OPT_AXTLS" != xno; then
-  ssl_msg=
-  if test X"$OPT_AXTLS" != Xno; then
-        CLEANLDFLAGS="$LDFLAGS"
-    CLEANCPPFLAGS="$CPPFLAGS"
-    CLEANLIBS="$LIBS"
-
-    case "$OPT_AXTLS" in
-    yes)
-            PREFIX_AXTLS=/usr/local
-      LIB_AXTLS="$PREFIX_AXTLS/lib"
-      LDFLAGS="$LDFLAGS -L$LIB_AXTLS"
-      CPPFLAGS="$CPPFLAGS -I$PREFIX_AXTLS/include"
-      ;;
-    off)
-            PREFIX_AXTLS=
-      ;;
-    *)
-            PREFIX_AXTLS=$OPT_AXTLS
-      LIB_AXTLS="$PREFIX_AXTLS/lib"
-      LDFLAGS="$LDFLAGS -L$LIB_AXTLS"
-      CPPFLAGS="$CPPFLAGS -I$PREFIX_AXTLS/include"
-      ;;
-    esac
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ssl_version in -laxtls" >&5
-$as_echo_n "checking for ssl_version in -laxtls... " >&6; }
-if ${ac_cv_lib_axtls_ssl_version+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-laxtls  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-#ifdef __cplusplus
-extern "C"
-#endif
-char ssl_version ();
-int main (void)
-{
-return ssl_version ();
- ;
- return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_axtls_ssl_version=yes
-else
-  ac_cv_lib_axtls_ssl_version=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_axtls_ssl_version" >&5
-$as_echo "$ac_cv_lib_axtls_ssl_version" >&6; }
-if test "x$ac_cv_lib_axtls_ssl_version" = xyes; then :
-
-      LIBS="-laxtls $LIBS"
-
-$as_echo "#define USE_AXTLS 1" >>confdefs.h
-
-      USE_AXTLS=1
-
-      AXTLS_ENABLED=1
-      check_for_ca_bundle=1
-      USE_AXTLS="yes"
-      ssl_msg="axTLS"
-      test axtls != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
-
-      if test "x$cross_compiling" != "xyes"; then
-        CURL_LIBRARY_PATH="$CURL_LIBRARY_PATH:$LIB_AXTLS"
-        export CURL_LIBRARY_PATH
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Added $LIB_AXTLS to CURL_LIBRARY_PATH" >&5
-$as_echo "$as_me: Added $LIB_AXTLS to CURL_LIBRARY_PATH" >&6;}
-      fi
-
-else
-
-      LDFLAGS="$CLEANLDFLAGS"
-      CPPFLAGS="$CLEANCPPFLAGS"
-      LIBS="$CLEANLIBS"
-
-fi
-
-  fi
-  test -z "$ssl_msg" || ssl_backends="${ssl_backends:+$ssl_backends, }$ssl_msg"
-fi
-
-case "x$OPENSSL_ENABLED$GNUTLS_ENABLED$NSS_ENABLED$POLARSSL_ENABLED$MBEDTLS_ENABLED$AXTLS_ENABLED$CYASSL_ENABLED$WINSSL_ENABLED$DARWINSSL_ENABLED" in
+case "x$OPENSSL_ENABLED$GNUTLS_ENABLED$NSS_ENABLED$POLARSSL_ENABLED$MBEDTLS_ENABLED$CYASSL_ENABLED$WINSSL_ENABLED$DARWINSSL_ENABLED$MESALINK_ENABLED" in
 x)
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: SSL disabled, you will not be able to use HTTPS, FTPS, NTLM and more." >&5
 $as_echo "$as_me: WARNING: SSL disabled, you will not be able to use HTTPS, FTPS, NTLM and more." >&2;}
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Use --with-ssl, --with-gnutls, --with-polarssl, --with-cyassl, --with-nss, --with-axtls, --with-winssl, or --with-darwinssl to address this." >&5
-$as_echo "$as_me: WARNING: Use --with-ssl, --with-gnutls, --with-polarssl, --with-cyassl, --with-nss, --with-axtls, --with-winssl, or --with-darwinssl to address this." >&2;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Use --with-ssl, --with-gnutls, --with-polarssl, --with-cyassl, --with-nss, --with-winssl, --with-darwinssl, or --with-mesalink to address this." >&5
+$as_echo "$as_me: WARNING: Use --with-ssl, --with-gnutls, --with-polarssl, --with-cyassl, --with-nss, --with-winssl, --with-darwinssl, or --with-mesalink to address this." >&2;}
   ;;
 x1)
   # one SSL backend is enabled
@@ -26881,8 +26825,6 @@ $as_echo "yes" >&6; }
           versioned_symbols_flavour="POLARSSL_"
         elif test "x$CYASSL_ENABLED" = "x1"; then
           versioned_symbols_flavour="CYASSL_"
-        elif test "x$AXTLS_ENABLED" = "x1"; then
-          versioned_symbols_flavour="AXTLS_"
         elif test "x$WINSSL_ENABLED" = "x1"; then
           versioned_symbols_flavour="WINSSL_"
         elif test "x$DARWINSSL_ENABLED" = "x1"; then
@@ -28919,403 +28861,6 @@ fi
 
 
 
-curl_includes_ws2tcpip="\
-/* includes start */
-#ifdef HAVE_WINDOWS_H
-#  ifndef WIN32_LEAN_AND_MEAN
-#    define WIN32_LEAN_AND_MEAN
-#  endif
-#  include <windows.h>
-#  ifdef HAVE_WINSOCK2_H
-#    include <winsock2.h>
-#    ifdef HAVE_WS2TCPIP_H
-#       include <ws2tcpip.h>
-#    endif
-#  endif
-#endif
-/* includes end */"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for windows.h" >&5
-$as_echo_n "checking for windows.h... " >&6; }
-if ${curl_cv_header_windows_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-#undef inline
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-
-int main (void)
-{
-
-#if defined(__CYGWIN__) || defined(__CEGCC__)
-        HAVE_WINDOWS_H shall not be defined.
-#else
-        int dummy=2*WINVER;
-#endif
-
- ;
- return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-      curl_cv_header_windows_h="yes"
-
-else
-
-      curl_cv_header_windows_h="no"
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_cv_header_windows_h" >&5
-$as_echo "$curl_cv_header_windows_h" >&6; }
-  case "$curl_cv_header_windows_h" in
-    yes)
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_WINDOWS_H 1
-_ACEOF
-
-      ;;
-  esac
-
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for winsock2.h" >&5
-$as_echo_n "checking for winsock2.h... " >&6; }
-if ${curl_cv_header_winsock2_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-#undef inline
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <winsock2.h>
-
-int main (void)
-{
-
-#if defined(__CYGWIN__) || defined(__CEGCC__) || defined(__MINGW32CE__)
-        HAVE_WINSOCK2_H shall not be defined.
-#else
-        int dummy=2*IPPROTO_ESP;
-#endif
-
- ;
- return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-      curl_cv_header_winsock2_h="yes"
-
-else
-
-      curl_cv_header_winsock2_h="no"
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_cv_header_winsock2_h" >&5
-$as_echo "$curl_cv_header_winsock2_h" >&6; }
-  case "$curl_cv_header_winsock2_h" in
-    yes)
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_WINSOCK2_H 1
-_ACEOF
-
-      ;;
-  esac
-
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ws2tcpip.h" >&5
-$as_echo_n "checking for ws2tcpip.h... " >&6; }
-if ${curl_cv_header_ws2tcpip_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-#undef inline
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
-int main (void)
-{
-
-#if defined(__CYGWIN__) || defined(__CEGCC__) || defined(__MINGW32CE__)
-        HAVE_WS2TCPIP_H shall not be defined.
-#else
-        int dummy=2*IP_PKTINFO;
-#endif
-
- ;
- return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-      curl_cv_header_ws2tcpip_h="yes"
-
-else
-
-      curl_cv_header_ws2tcpip_h="no"
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_cv_header_ws2tcpip_h" >&5
-$as_echo "$curl_cv_header_ws2tcpip_h" >&6; }
-  case "$curl_cv_header_ws2tcpip_h" in
-    yes)
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_WS2TCPIP_H 1
-_ACEOF
-
-      ;;
-  esac
-
-
-
-curl_includes_sys_socket="\
-/* includes start */
-#ifdef HAVE_SYS_TYPES_H
-#  include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#  include <sys/socket.h>
-#endif
-/* includes end */"
-  for ac_header in sys/types.h sys/socket.h
-do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$curl_includes_sys_socket
-"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
-
-fi
-
-done
-
-
-
-curl_preprocess_callconv="\
-/* preprocess start */
-#ifdef HAVE_WINDOWS_H
-#  define FUNCALLCONV __stdcall
-#else
-#  define FUNCALLCONV
-#endif
-/* preprocess end */"
-
-
-        #
-    #
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curl_socklen_t data type" >&5
-$as_echo_n "checking for curl_socklen_t data type... " >&6; }
-  curl_typeof_curl_socklen_t="unknown"
-  for arg1 in int SOCKET; do
-    for arg2 in 'struct sockaddr' void; do
-      for t in socklen_t int size_t 'unsigned int' long 'unsigned long' void; do
-        if test "$curl_typeof_curl_socklen_t" = "unknown"; then
-          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-              $curl_includes_ws2tcpip
-              $curl_includes_sys_socket
-              $curl_preprocess_callconv
-              extern int FUNCALLCONV getpeername($arg1, $arg2 *, $t *);
-
-int main (void)
-{
-
-              $t *lenptr = 0;
-              if(0 != getpeername(0, 0, lenptr))
-                return 1;
-
- ;
- return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-            curl_typeof_curl_socklen_t="$t"
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-        fi
-      done
-    done
-  done
-  for t in socklen_t int; do
-    if test "$curl_typeof_curl_socklen_t" = "void"; then
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-          $curl_includes_sys_socket
-          typedef $t curl_socklen_t;
-
-int main (void)
-{
-
-          curl_socklen_t dummy;
-
- ;
- return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-        curl_typeof_curl_socklen_t="$t"
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    fi
-  done
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_typeof_curl_socklen_t" >&5
-$as_echo "$curl_typeof_curl_socklen_t" >&6; }
-  if test "$curl_typeof_curl_socklen_t" = "void" ||
-    test "$curl_typeof_curl_socklen_t" = "unknown"; then
-    as_fn_error $? "cannot find data type for curl_socklen_t." "$LINENO" 5
-  fi
-  #
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking size of curl_socklen_t" >&5
-$as_echo_n "checking size of curl_socklen_t... " >&6; }
-  curl_sizeof_curl_socklen_t="unknown"
-  curl_pull_headers_socklen_t="unknown"
-  if test "$curl_cv_header_ws2tcpip_h" = "yes"; then
-    tst_pull_header_checks='none ws2tcpip'
-    tst_size_checks='4'
-  else
-    tst_pull_header_checks='none systypes syssocket'
-    tst_size_checks='4 8 2'
-  fi
-  for tst_size in $tst_size_checks; do
-    for tst_pull_headers in $tst_pull_header_checks; do
-      if test "$curl_sizeof_curl_socklen_t" = "unknown"; then
-        case $tst_pull_headers in
-          ws2tcpip)
-            tmp_includes="$curl_includes_ws2tcpip"
-            ;;
-          systypes)
-            tmp_includes="$curl_includes_sys_types"
-            ;;
-          syssocket)
-            tmp_includes="$curl_includes_sys_socket"
-            ;;
-          *)
-            tmp_includes=""
-            ;;
-        esac
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-            $tmp_includes
-            typedef $curl_typeof_curl_socklen_t curl_socklen_t;
-            typedef char dummy_arr[sizeof(curl_socklen_t) == $tst_size ? 1 : -1];
-
-int main (void)
-{
-
-            curl_socklen_t dummy;
-
- ;
- return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-          curl_sizeof_curl_socklen_t="$tst_size"
-          curl_pull_headers_socklen_t="$tst_pull_headers"
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      fi
-    done
-  done
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_sizeof_curl_socklen_t" >&5
-$as_echo "$curl_sizeof_curl_socklen_t" >&6; }
-  if test "$curl_sizeof_curl_socklen_t" = "unknown"; then
-    as_fn_error $? "cannot find out size of curl_socklen_t." "$LINENO" 5
-  fi
-  #
-  case $curl_pull_headers_socklen_t in
-    ws2tcpip)
-
-cat >>confdefs.h <<_EOF
-#define CURL_PULL_WS2TCPIP_H 1
-_EOF
-
-      ;;
-    systypes)
-
-cat >>confdefs.h <<_EOF
-#define CURL_PULL_SYS_TYPES_H 1
-_EOF
-
-      ;;
-    syssocket)
-
-cat >>confdefs.h <<_EOF
-#define CURL_PULL_SYS_TYPES_H 1
-_EOF
-
-
-cat >>confdefs.h <<_EOF
-#define CURL_PULL_SYS_SOCKET_H 1
-_EOF
-
-      ;;
-  esac
-
-cat >>confdefs.h <<_EOF
-#define CURL_TYPEOF_CURL_SOCKLEN_T $curl_typeof_curl_socklen_t
-_EOF
-
-
-cat >>confdefs.h <<_EOF
-#define CURL_SIZEOF_CURL_SOCKLEN_T $curl_sizeof_curl_socklen_t
-_EOF
-
-
-
-
 curl_includes_poll="\
 /* includes start */
 #ifdef HAVE_SYS_TYPES_H
@@ -29793,10 +29338,7 @@ else
                     };
 #endif
                     extern $sel_retv SELECTCALLCONV
-#ifdef __ANDROID__
-__attribute__((overloadable))
-#endif
-			select($sel_arg1,
+				select($sel_arg1,
 					$sel_arg234,
 					$sel_arg234,
 					$sel_arg234,
@@ -30021,9 +29563,6 @@ else
 #define RECVCALLCONV
 #endif
                       extern $recv_retv RECVCALLCONV
-#ifdef __ANDROID__
-__attribute__((overloadable))
-#endif
                       recv($recv_arg1, $recv_arg2, $recv_arg3, $recv_arg4);
 
 int main (void)
@@ -30212,9 +29751,6 @@ else
 #define SENDCALLCONV
 #endif
                       extern $send_retv SENDCALLCONV
-#ifdef __ANDROID__
-__attribute__((overloadable))
-#endif
                       send($send_arg1, $send_arg2, $send_arg3, $send_arg4);
 
 int main (void)
@@ -30957,6 +30493,31 @@ $as_echo "no" >&6; }
   fi
 
 
+curl_includes_sys_socket="\
+/* includes start */
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#  include <sys/socket.h>
+#endif
+/* includes end */"
+  for ac_header in sys/types.h sys/socket.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$curl_includes_sys_socket
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
+
     #
   tst_links_closesocket_camel="unknown"
   tst_proto_closesocket_camel="unknown"
@@ -31670,6 +31231,191 @@ _ACEOF
 $as_echo "no" >&6; }
     curl_cv_func_fdopen="no"
   fi
+
+
+curl_includes_ws2tcpip="\
+/* includes start */
+#ifdef HAVE_WINDOWS_H
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
+#  ifdef HAVE_WINSOCK2_H
+#    include <winsock2.h>
+#    ifdef HAVE_WS2TCPIP_H
+#       include <ws2tcpip.h>
+#    endif
+#  endif
+#endif
+/* includes end */"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for windows.h" >&5
+$as_echo_n "checking for windows.h... " >&6; }
+if ${curl_cv_header_windows_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#undef inline
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
+int main (void)
+{
+
+#if defined(__CYGWIN__) || defined(__CEGCC__)
+        HAVE_WINDOWS_H shall not be defined.
+#else
+        int dummy=2*WINVER;
+#endif
+
+ ;
+ return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+      curl_cv_header_windows_h="yes"
+
+else
+
+      curl_cv_header_windows_h="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_cv_header_windows_h" >&5
+$as_echo "$curl_cv_header_windows_h" >&6; }
+  case "$curl_cv_header_windows_h" in
+    yes)
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_WINDOWS_H 1
+_ACEOF
+
+      ;;
+  esac
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for winsock2.h" >&5
+$as_echo_n "checking for winsock2.h... " >&6; }
+if ${curl_cv_header_winsock2_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#undef inline
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <winsock2.h>
+
+int main (void)
+{
+
+#if defined(__CYGWIN__) || defined(__CEGCC__) || defined(__MINGW32CE__)
+        HAVE_WINSOCK2_H shall not be defined.
+#else
+        int dummy=2*IPPROTO_ESP;
+#endif
+
+ ;
+ return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+      curl_cv_header_winsock2_h="yes"
+
+else
+
+      curl_cv_header_winsock2_h="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_cv_header_winsock2_h" >&5
+$as_echo "$curl_cv_header_winsock2_h" >&6; }
+  case "$curl_cv_header_winsock2_h" in
+    yes)
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_WINSOCK2_H 1
+_ACEOF
+
+      ;;
+  esac
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ws2tcpip.h" >&5
+$as_echo_n "checking for ws2tcpip.h... " >&6; }
+if ${curl_cv_header_ws2tcpip_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#undef inline
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+int main (void)
+{
+
+#if defined(__CYGWIN__) || defined(__CEGCC__) || defined(__MINGW32CE__)
+        HAVE_WS2TCPIP_H shall not be defined.
+#else
+        int dummy=2*IP_PKTINFO;
+#endif
+
+ ;
+ return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+      curl_cv_header_ws2tcpip_h="yes"
+
+else
+
+      curl_cv_header_ws2tcpip_h="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_cv_header_ws2tcpip_h" >&5
+$as_echo "$curl_cv_header_ws2tcpip_h" >&6; }
+  case "$curl_cv_header_ws2tcpip_h" in
+    yes)
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_WS2TCPIP_H 1
+_ACEOF
+
+      ;;
+  esac
+
 
 
 curl_includes_netdb="\
@@ -32543,7 +32289,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     test "$tst_compi_getaddrinfo" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if getaddrinfo seems to work" >&5
 $as_echo_n "checking if getaddrinfo seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -32588,14 +32339,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_getaddrinfo="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_getaddrinfo="no"
 
@@ -32603,6 +32352,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -33739,6 +33490,16 @@ $as_echo "no" >&6; }
   fi
 
 
+curl_preprocess_callconv="\
+/* preprocess start */
+#ifdef HAVE_WINDOWS_H
+#  define FUNCALLCONV __stdcall
+#else
+#  define FUNCALLCONV
+#endif
+/* preprocess end */"
+
+
         #
   tst_links_gethostname="unknown"
   tst_proto_gethostname="unknown"
@@ -34047,7 +33808,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     test "$tst_compi_getifaddrs" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if getifaddrs seems to work" >&5
 $as_echo_n "checking if getifaddrs seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -34078,14 +33844,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_getifaddrs="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_getifaddrs="no"
 
@@ -34093,6 +33857,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -34532,7 +34298,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     test "$tst_compi_gmtime_r" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if gmtime_r seems to work" >&5
 $as_echo_n "checking if gmtime_r seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -34563,14 +34334,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_gmtime_r="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_gmtime_r="no"
 
@@ -34578,6 +34347,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -34983,7 +34754,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     test "$tst_compi_inet_ntop" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if inet_ntop seems to work" >&5
 $as_echo_n "checking if inet_ntop seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -35056,14 +34832,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_inet_ntop="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_inet_ntop="no"
 
@@ -35071,6 +34845,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -35230,7 +35006,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     test "$tst_compi_inet_pton" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if inet_pton seems to work" >&5
 $as_echo_n "checking if inet_pton seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -35296,14 +35077,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_inet_pton="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_inet_pton="no"
 
@@ -35311,6 +35090,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -36238,7 +36019,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     test "$tst_compi_localtime_r" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if localtime_r seems to work" >&5
 $as_echo_n "checking if localtime_r seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -36269,14 +36055,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_localtime_r="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_localtime_r="no"
 
@@ -36284,6 +36068,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -36628,7 +36414,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     test "$tst_compi_poll" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if poll seems to work" >&5
 $as_echo_n "checking if poll seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -36671,14 +36462,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_poll="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_poll="no"
 
@@ -36686,6 +36475,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -38548,7 +38339,12 @@ $as_echo "yes" >&6; }
     test "$tst_glibc_strerror_r" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if strerror_r seems to work" >&5
 $as_echo_n "checking if strerror_r seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -38582,14 +38378,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_glibc_strerror_r="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_glibc_strerror_r="no"
 
@@ -38597,6 +38391,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -38651,7 +38447,12 @@ $as_echo "yes" >&6; }
     test "$tst_posix_strerror_r" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if strerror_r seems to work" >&5
 $as_echo_n "checking if strerror_r seems to work... " >&6; }
-    if test "$cross_compiling" = yes; then :
+
+
+   old=$LD_LIBRARY_PATH
+   LD_LIBRARY_PATH=$CURL_LIBRARY_PATH:$old
+   export LD_LIBRARY_PATH
+   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run test program while cross compiling
@@ -38685,14 +38486,12 @@ int main (void)
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       tst_works_posix_strerror_r="yes"
 
 else
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       tst_works_posix_strerror_r="no"
 
@@ -38700,6 +38499,8 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
+   LD_LIBRARY_PATH=$old # restore
 
   fi
   #
@@ -40777,6 +40578,14 @@ if test "x$ac_cv_func_pthread_create" = xyes; then :
 fi
 
 
+            case $host in
+      *-hp-hpux*)
+                  USE_THREADS_POSIX=""
+         ;;
+      *)
+         ;;
+      esac
+
             if test "$USE_THREADS_POSIX" != "1"
       then
         CFLAGS="$CFLAGS -pthread"
@@ -41503,7 +41312,7 @@ if test "x$want_curldebug_assumed" = "xyes" &&
   ac_configure_args="$ac_configure_args --enable-curldebug"
 fi
 
-ac_config_files="$ac_config_files Makefile docs/Makefile docs/examples/Makefile docs/libcurl/Makefile docs/libcurl/opts/Makefile docs/cmdline-opts/Makefile include/Makefile include/curl/Makefile src/Makefile lib/Makefile scripts/Makefile lib/libcurl.vers tests/Makefile tests/certs/Makefile tests/certs/scripts/Makefile tests/data/Makefile tests/server/Makefile tests/libtest/Makefile tests/unit/Makefile packages/Makefile packages/Win32/Makefile packages/Win32/cygwin/Makefile packages/Linux/Makefile packages/Linux/RPM/Makefile packages/Linux/RPM/curl.spec packages/Linux/RPM/curl-ssl.spec packages/Solaris/Makefile packages/EPM/curl.list packages/EPM/Makefile packages/vms/Makefile packages/AIX/Makefile packages/AIX/RPM/Makefile packages/AIX/RPM/curl.spec curl-config libcurl.pc"
+ac_config_files="$ac_config_files Makefile docs/Makefile docs/examples/Makefile docs/libcurl/Makefile docs/libcurl/opts/Makefile docs/cmdline-opts/Makefile include/Makefile include/curl/Makefile src/Makefile lib/Makefile scripts/Makefile lib/libcurl.vers tests/Makefile tests/certs/Makefile tests/certs/scripts/Makefile tests/data/Makefile tests/server/Makefile tests/libtest/Makefile tests/unit/Makefile packages/Makefile packages/vms/Makefile curl-config libcurl.pc"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -41616,10 +41425,6 @@ LTLIBOBJS=$ac_ltlibobjs
 
 if test -z "${MAINTAINER_MODE_TRUE}" && test -z "${MAINTAINER_MODE_FALSE}"; then
   as_fn_error $? "conditional \"MAINTAINER_MODE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${CODE_COVERAGE_ENABLED_TRUE}" && test -z "${CODE_COVERAGE_ENABLED_FALSE}"; then
-  as_fn_error $? "conditional \"CODE_COVERAGE_ENABLED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking that generated files are newer than configure" >&5
@@ -42606,19 +42411,7 @@ do
     "tests/libtest/Makefile") CONFIG_FILES="$CONFIG_FILES tests/libtest/Makefile" ;;
     "tests/unit/Makefile") CONFIG_FILES="$CONFIG_FILES tests/unit/Makefile" ;;
     "packages/Makefile") CONFIG_FILES="$CONFIG_FILES packages/Makefile" ;;
-    "packages/Win32/Makefile") CONFIG_FILES="$CONFIG_FILES packages/Win32/Makefile" ;;
-    "packages/Win32/cygwin/Makefile") CONFIG_FILES="$CONFIG_FILES packages/Win32/cygwin/Makefile" ;;
-    "packages/Linux/Makefile") CONFIG_FILES="$CONFIG_FILES packages/Linux/Makefile" ;;
-    "packages/Linux/RPM/Makefile") CONFIG_FILES="$CONFIG_FILES packages/Linux/RPM/Makefile" ;;
-    "packages/Linux/RPM/curl.spec") CONFIG_FILES="$CONFIG_FILES packages/Linux/RPM/curl.spec" ;;
-    "packages/Linux/RPM/curl-ssl.spec") CONFIG_FILES="$CONFIG_FILES packages/Linux/RPM/curl-ssl.spec" ;;
-    "packages/Solaris/Makefile") CONFIG_FILES="$CONFIG_FILES packages/Solaris/Makefile" ;;
-    "packages/EPM/curl.list") CONFIG_FILES="$CONFIG_FILES packages/EPM/curl.list" ;;
-    "packages/EPM/Makefile") CONFIG_FILES="$CONFIG_FILES packages/EPM/Makefile" ;;
     "packages/vms/Makefile") CONFIG_FILES="$CONFIG_FILES packages/vms/Makefile" ;;
-    "packages/AIX/Makefile") CONFIG_FILES="$CONFIG_FILES packages/AIX/Makefile" ;;
-    "packages/AIX/RPM/Makefile") CONFIG_FILES="$CONFIG_FILES packages/AIX/RPM/Makefile" ;;
-    "packages/AIX/RPM/curl.spec") CONFIG_FILES="$CONFIG_FILES packages/AIX/RPM/curl.spec" ;;
     "curl-config") CONFIG_FILES="$CONFIG_FILES curl-config" ;;
     "libcurl.pc") CONFIG_FILES="$CONFIG_FILES libcurl.pc" ;;
 
@@ -44178,10 +43971,15 @@ done
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: Configured to build curl/libcurl:
 
-  curl version:     ${CURLVERSION}
   Host setup:       ${host}
   Install prefix:   ${prefix}
   Compiler:         ${CC}
+   CFLAGS:          ${CFLAGS}
+   CPPFLAGS:        ${CPPFLAGS}
+   LDFLAGS:         ${LDFLAGS}
+   LIBS:            ${LIBS}
+
+  curl version:     ${CURLVERSION}
   SSL support:      ${curl_ssl_msg}
   SSH support:      ${curl_ssh_msg}
   zlib support:     ${curl_zlib_msg}
@@ -44196,6 +43994,7 @@ done
   Built-in manual:  ${curl_manual_msg}
   --libcurl option: ${curl_libcurl_msg}
   Verbose errors:   ${curl_verbose_msg}
+  Code coverage:    ${curl_coverage_msg}
   SSPI support:     ${curl_sspi_msg}
   ca cert bundle:   ${ca}${ca_warning}
   ca cert path:     ${capath}${capath_warning}
@@ -44211,10 +44010,15 @@ done
 " >&5
 $as_echo "$as_me: Configured to build curl/libcurl:
 
-  curl version:     ${CURLVERSION}
   Host setup:       ${host}
   Install prefix:   ${prefix}
   Compiler:         ${CC}
+   CFLAGS:          ${CFLAGS}
+   CPPFLAGS:        ${CPPFLAGS}
+   LDFLAGS:         ${LDFLAGS}
+   LIBS:            ${LIBS}
+
+  curl version:     ${CURLVERSION}
   SSL support:      ${curl_ssl_msg}
   SSH support:      ${curl_ssh_msg}
   zlib support:     ${curl_zlib_msg}
@@ -44229,6 +44033,7 @@ $as_echo "$as_me: Configured to build curl/libcurl:
   Built-in manual:  ${curl_manual_msg}
   --libcurl option: ${curl_libcurl_msg}
   Verbose errors:   ${curl_verbose_msg}
+  Code coverage:    ${curl_coverage_msg}
   SSPI support:     ${curl_sspi_msg}
   ca cert bundle:   ${ca}${ca_warning}
   ca cert path:     ${capath}${capath_warning}

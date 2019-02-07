@@ -42,7 +42,7 @@ static char *parse_filename(const char *ptr, size_t len);
 #define BOLDOFF
 #else
 #define BOLD "\x1b[1m"
-/* Switch off bold by settting "all attributes off" since the explicit
+/* Switch off bold by setting "all attributes off" since the explicit
    bold-off code (21) isn't supported everywhere - like in the mac
    Terminal. */
 #define BOLDOFF "\x1b[0m"
@@ -132,15 +132,24 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
       filename = parse_filename(p, len);
       if(filename) {
         if(outs->stream) {
+          int rc;
           /* already opened and possibly written to */
           if(outs->fopened)
             fclose(outs->stream);
           outs->stream = NULL;
 
           /* rename the initial file name to the new file name */
-          rename(outs->filename, filename);
+          rc = rename(outs->filename, filename);
+          if(rc != 0) {
+            warnf(outs->config->global, "Failed to rename %s -> %s: %s\n",
+                  outs->filename, filename, strerror(errno));
+          }
           if(outs->alloc_filename)
-            free(outs->filename);
+            Curl_safefree(outs->filename);
+          if(rc != 0) {
+            free(filename);
+            return failure;
+          }
         }
         outs->is_cd_filename = TRUE;
         outs->s_isreg = TRUE;
@@ -148,21 +157,22 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
         outs->filename = filename;
         outs->alloc_filename = TRUE;
         hdrcbdata->honor_cd_filename = FALSE; /* done now! */
-        if(!tool_create_output_file(outs, TRUE))
+        if(!tool_create_output_file(outs))
           return failure;
       }
       break;
     }
-    if(!outs->stream && !tool_create_output_file(outs, FALSE))
+    if(!outs->stream && !tool_create_output_file(outs))
       return failure;
   }
 
   if(hdrcbdata->config->show_headers &&
-     (protocol & (CURLPROTO_HTTP|CURLPROTO_HTTPS|CURLPROTO_RTSP))) {
-    /* bold headers only happen for HTTP(S) and RTSP */
+    (protocol &
+     (CURLPROTO_HTTP|CURLPROTO_HTTPS|CURLPROTO_RTSP|CURLPROTO_FILE))) {
+    /* bold headers only for selected protocols */
     char *value = NULL;
 
-    if(!outs->stream && !tool_create_output_file(outs, FALSE))
+    if(!outs->stream && !tool_create_output_file(outs))
       return failure;
 
     if(hdrcbdata->global->isatty && hdrcbdata->global->styled_output)
@@ -264,7 +274,7 @@ static char *parse_filename(const char *ptr, size_t len)
     char *tdir = curlx_getenv("CURL_TESTDIR");
     if(tdir) {
       char buffer[512]; /* suitably large */
-      snprintf(buffer, sizeof(buffer), "%s/%s", tdir, copy);
+      msnprintf(buffer, sizeof(buffer), "%s/%s", tdir, copy);
       Curl_safefree(copy);
       copy = strdup(buffer); /* clone the buffer, we don't use the libcurl
                                 aprintf() or similar since we want to use the

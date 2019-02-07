@@ -253,11 +253,10 @@ FAQ
   any way by the project.
 
   We still get help from companies. Haxx provides web site, bandwidth, mailing
-  lists etc, sourceforge.net hosts project services we take advantage from,
-  like the bug tracker, and GitHub hosts the primary git repository at
-  https://github.com/curl/curl. Also again, some companies have sponsored
-  certain parts of the development in the past and I hope some will continue to
-  do so in the future.
+  lists etc, GitHub hosts the primary git repository and other services like
+  the bug tracker at https://github.com/curl/curl. Also again, some companies
+  have sponsored certain parts of the development in the past and I hope some
+  will continue to do so in the future.
 
   If you want to support our project, consider a donation or a banner-program
   or even better: by helping us with coding, documenting or testing etc.
@@ -370,7 +369,7 @@ FAQ
   https://www.bis.doc.gov/licensing/do_i_needaneccn.html
 
   An incomprehensible description of the two numbers above is here
-  http://www.access.gpo.gov/bis/ear/pdf/ccl5-pt2.pdf
+  https://www.bis.doc.gov/index.php/documents/new-encryption/1653-ccl5-pt2-3
 
   1.14 How do I submit my patch?
 
@@ -447,7 +446,7 @@ FAQ
   backends.
 
   curl can be built to use one of the following SSL alternatives: OpenSSL,
-  GnuTLS, yassl, NSS, PolarSSL, axTLS, Secure Transport (native iOS/OS X),
+  GnuTLS, yassl, NSS, PolarSSL, MesaLink, Secure Transport (native iOS/OS X),
   WinSSL (native Windows) or GSKit (native IBM i). They all have their pros
   and cons, and we try to maintain a comparison of them here:
   https://curl.haxx.se/docs/ssl-compared.html
@@ -874,7 +873,7 @@ FAQ
 
     4.5.3 "403 Forbidden"
 
-    The server understood the request, but is refusing to fulfil it.
+    The server understood the request, but is refusing to fulfill it.
     Authorization will not help and the request SHOULD NOT be repeated.
 
     4.5.4 "404 Not Found"

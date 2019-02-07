@@ -69,8 +69,8 @@ struct OperationConfig {
   char *headerfile;
   char *ftpport;
   char *iface;
-  int localport;
-  int localportrange;
+  long localport;
+  long localportrange;
   unsigned short porttouse;
   char *range;
   long low_speed_limit;
@@ -115,6 +115,7 @@ struct OperationConfig {
   struct getout *url_get;   /* point to the node to fill in URL */
   struct getout *url_out;   /* point to the node to fill in outfile */
   struct getout *url_ul;    /* point to the node to fill in upload */
+  char *doh_url;
   char *cipher_list;
   char *proxy_cipher_list;
   char *cipher13_list;
@@ -145,6 +146,7 @@ struct OperationConfig {
   char *krblevel;
   char *request_target;
   long httpversion;
+  bool http09_allowed;
   bool nobuffer;
   bool readbusy;            /* set when reading input returns EAGAIN */
   bool globoff;

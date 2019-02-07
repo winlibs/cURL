@@ -321,7 +321,7 @@ dnl ])
 
 dnl CURL_CHECK_OPTION_RT
 dnl -------------------------------------------------
-dnl Verify if configure has been involed with option
+dnl Verify if configure has been invoked with option
 dnl --disable-rt and set shell variable dontwant_rt
 dnl as appropriate.
 
@@ -350,7 +350,6 @@ AC_DEFUN([CURL_CHECK_OPTION_RT], [
       ;;
   esac
 ])
- 
 
 dnl CURL_CHECK_OPTION_WARNINGS
 dnl -------------------------------------------------
@@ -649,4 +648,3 @@ AC_DEFUN([CURL_CHECK_NTLM_WB], [
     NTLM_WB_ENABLED=1
   fi
 ])
-

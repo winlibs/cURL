@@ -94,6 +94,7 @@ man_MANS =                                      \
   CURLOPT_CHUNK_END_FUNCTION.3                  \
   CURLOPT_CLOSESOCKETDATA.3                     \
   CURLOPT_CLOSESOCKETFUNCTION.3                 \
+  CURLOPT_UPKEEP_INTERVAL_MS.3             \
   CURLOPT_CONNECTTIMEOUT.3                      \
   CURLOPT_CONNECTTIMEOUT_MS.3                   \
   CURLOPT_CONNECT_ONLY.3                        \
@@ -110,6 +111,7 @@ man_MANS =                                      \
   CURLOPT_CRLF.3                                \
   CURLOPT_CRLFILE.3                             \
   CURLOPT_CUSTOMREQUEST.3                       \
+  CURLOPT_CURLU.3                               \
   CURLOPT_DEBUGDATA.3                           \
   CURLOPT_DEBUGFUNCTION.3                       \
   CURLOPT_DEFAULT_PROTOCOL.3                    \
@@ -122,6 +124,7 @@ man_MANS =                                      \
   CURLOPT_DNS_SERVERS.3                         \
   CURLOPT_DNS_SHUFFLE_ADDRESSES.3               \
   CURLOPT_DNS_USE_GLOBAL_CACHE.3                \
+  CURLOPT_DOH_URL.3                             \
   CURLOPT_EGDSOCKET.3                           \
   CURLOPT_ERRORBUFFER.3                         \
   CURLOPT_EXPECT_100_TIMEOUT_MS.3               \
@@ -151,6 +154,7 @@ man_MANS =                                      \
   CURLOPT_HEADERDATA.3                          \
   CURLOPT_HEADERFUNCTION.3                      \
   CURLOPT_HEADEROPT.3                           \
+  CURLOPT_HTTP09_ALLOWED.3                      \
   CURLOPT_HTTP200ALIASES.3                      \
   CURLOPT_HTTPAUTH.3                            \
   CURLOPT_HTTPGET.3                             \
@@ -161,6 +165,8 @@ man_MANS =                                      \
   CURLOPT_HTTP_TRANSFER_DECODING.3              \
   CURLOPT_HTTP_VERSION.3                        \
   CURLOPT_IGNORE_CONTENT_LENGTH.3               \
+  CURLOPT_TRAILERDATA.3                         \
+  CURLOPT_TRAILERFUNCTION.3                     \
   CURLOPT_INFILESIZE.3                          \
   CURLOPT_INFILESIZE_LARGE.3                    \
   CURLOPT_INTERFACE.3                           \
@@ -326,6 +332,7 @@ man_MANS =                                      \
   CURLOPT_UNIX_SOCKET_PATH.3                    \
   CURLOPT_UNRESTRICTED_AUTH.3                   \
   CURLOPT_UPLOAD.3                              \
+  CURLOPT_UPLOAD_BUFFERSIZE.3                   \
   CURLOPT_URL.3                                 \
   CURLOPT_USERAGENT.3                           \
   CURLOPT_USERNAME.3                            \

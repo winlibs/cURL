@@ -1188,6 +1188,9 @@
 				RelativePath="..\..\..\..\lib\dict.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\doh.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\dotdot.c">
 			</File>
 			<File
@@ -1422,6 +1425,9 @@
 				RelativePath="..\..\..\..\lib\transfer.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\url.c">
 			</File>
 			<File
@@ -1553,6 +1559,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\dict.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\doh.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\dotdot.h">
@@ -1747,6 +1756,9 @@
 				RelativePath="..\..\..\..\lib\transfer.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\urlapi-int.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\urldata.h">
 			</File>
 			<File
@@ -1833,9 +1845,6 @@
 				Name="Source Files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.c">
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\cyassl.c">
 				</File>
 				<File
@@ -1849,6 +1858,9 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.c">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\nss.c">
@@ -1876,9 +1888,6 @@
 				Name="Header Files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\..\lib\vtls\axtls.h">
-				</File>
-				<File
 					RelativePath="..\..\..\..\lib\vtls\cyassl.h">
 				</File>
 				<File
@@ -1892,6 +1901,9 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\mbedtls.h">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\mesalink.h">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\nssg.h">
