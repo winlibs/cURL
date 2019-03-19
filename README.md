@@ -19,7 +19,9 @@ SDK](http://windows.php.net/downloads/php-sdk/)
 
   * Zlib binaries and development files
 
-  * Create a clean build tree without the classic php dependencies in ..\..\deps but only the required deps (ssl and zlib). Having curl headers in your include path is likely to break the build
+  * Nghttp2 binaries and development files
+
+  * Create a clean build tree without the classic php dependencies in ..\..\deps but only the required deps (ssl, ssh2, zlib and nghttp2). Having curl headers in your include path is likely to break the build
 
 ## Configuration
 
