@@ -28,19 +28,27 @@ See [https://github.com/pierrejoye/curl/blob/master/winbuild/BUILD.WINDOWS.txt
 
 ### Release build command lines:
 
-#### PHP 5.5 x86
+#### PHP 5.6 x86
 
 	nmake /f Makefile.vc mode=static VC=11 WITH_DEVEL=D:\repo\curl_deps.x86 WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x86
 
-#### PHP 5.5 x64
+#### PHP 5.6 x64
 
 	nmake /f Makefile.vc mode=static VC=11 WITH_DEVEL=D:\repo\curl_deps.x64 WITH_SSL=dll WITH_ZLIB=static WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x64
 
-#### PHP 7.x x86
+#### PHP 7.0/7.1 x86
 
 	nmake /f Makefile.vc mode=static VC=14 WITH_DEVEL=E:\repo\deps_curl\vc14\x86 WITH_SSL=dll WITH_ZLIB=static WITH_NGHTTP2=dll WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x86 
 
-#### PHP 7.x x64
+#### PHP 7.0/7.1 x64
 
 	nmake /f Makefile.vc mode=static VC=14 WITH_DEVEL=E:\repo\deps_curl\vc14\x64 WITH_SSL=dll WITH_ZLIB=static WITH_NGHTTP2=dll WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x64 
+
+#### PHP 7.2+ x86
+
+	nmake /f Makefile.vc mode=static VC=15 WITH_DEVEL=E:\repo\deps_curl\vc14\x86 WITH_SSL=dll WITH_ZLIB=static WITH_NGHTTP2=dll WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x86 
+
+#### PHP 7.2+ x64
+
+	nmake /f Makefile.vc mode=static VC=15 WITH_DEVEL=E:\repo\deps_curl\vc14\x64 WITH_SSL=dll WITH_ZLIB=static WITH_NGHTTP2=dll WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=x64 
 
