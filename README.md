@@ -25,8 +25,7 @@ SDK](http://windows.php.net/downloads/php-sdk/)
 
 ## Configuration
 
-See [https://github.com/pierrejoye/curl/blob/master/winbuild/BUILD.WINDOWS.txt
-](https://github.com/pierrejoye/curl/blob/master/winbuild/BUILD.WINDOWS.txt)
+See also https://github.com/winlibs/cURL/blob/master/winbuild/BUILD.WINDOWS.txt
 
 ### Release build command lines:
 
