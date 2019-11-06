@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -150,8 +150,8 @@ void win32_perror(const char *msg)
   char buf[512];
   DWORD err = SOCKERRNO;
 
-  if(!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
-                    LANG_NEUTRAL, buf, sizeof(buf), NULL))
+  if(!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
+                     LANG_NEUTRAL, buf, sizeof(buf), NULL))
     msnprintf(buf, sizeof(buf), "Unknown error %lu (%#lx)", err, err);
   if(msg)
     fprintf(stderr, "%s: ", msg);

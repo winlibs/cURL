@@ -12,14 +12,13 @@ check the changelog of the current development status, as one or more of these
 problems may have been fixed or changed somewhat since this was written!
 
  1. HTTP
- 1.1 CURLFORM_CONTENTLEN in an array
- 1.2 Disabling HTTP Pipelining
  1.3 STARTTRANSFER time is wrong for HTTP POSTs
  1.4 multipart formposts file name encoding
  1.5 Expect-100 meets 417
  1.6 Unnecessary close when 401 received waiting for 100
+ 1.7 Deflate error after all content was received
+ 1.8 DoH isn't used for all name resolves when enabled
  1.9 HTTP/2 frames while in the connection pool kill reuse
- 1.10 Strips trailing dot from host name
  1.11 CURLOPT_SEEKFUNCTION not called with CURLFORM_STREAM
 
  2. TLS
@@ -29,6 +28,8 @@ problems may have been fixed or changed somewhat since this was written!
  2.4 DarwinSSL won't import PKCS#12 client certificates without a password
  2.5 Client cert handling with Issuer DN differs between backends
  2.6 CURL_GLOBAL_SSL
+ 2.7 Client cert (MTLS) issues with Schannel
+ 2.8 Schannel disable CURLOPT_SSL_VERIFYPEER and verify hostname
 
  3. Email protocols
  3.1 IMAP SEARCH ALL truncated response
@@ -44,13 +45,16 @@ problems may have been fixed or changed somewhat since this was written!
  4.5 Improve --data-urlencode space encoding
 
  5. Build and portability issues
- 5.1 tests not compatible with python3
+ 5.1 USE_UNIX_SOCKETS on Windows
  5.2 curl-config --libs contains private details
+ 5.3 curl compiled on OSX 10.13 failed to run on OSX 10.10
+ 5.4 Cannot compile against a static build of OpenLDAP
  5.5 can't handle Unicode arguments in Windows
  5.6 cmake support gaps
  5.7 Visual Studio project gaps
  5.8 configure finding libs in wrong directory
  5.9 Utilize Requires.private directives in libcurl.pc
+ 5.10 IDN tests failing on Windows / MSYS2
 
  6. Authentication
  6.1 NTLM authentication and unicode
@@ -59,6 +63,7 @@ problems may have been fixed or changed somewhat since this was written!
  6.4 Negotiate and Kerberos V5 need a fake user name
  6.5 NTLM doesn't support password with § character
  6.6 libcurl can fail to try alternatives with --proxy-any
+ 6.7 Don't clear digest for single realm
 
  7. FTP
  7.1 FTP without or slow 220 response
@@ -92,9 +97,11 @@ problems may have been fixed or changed somewhat since this was written!
  11.4 HTTP test server 'connection-monitor' problems
  11.5 Connection information when using TCP Fast Open
  11.6 slow connect to localhost on Windows
+ 11.7 signal-based resolver timeouts
 
  12. LDAP and OpenLDAP
  12.1 OpenLDAP hangs after returning results
+ 12.2 LDAP on Windows does authentication wrong?
 
  13. TCP/IP
  13.1 --interface for ipv6 binds to unusable IP address
@@ -105,23 +112,6 @@ problems may have been fixed or changed somewhat since this was written!
 ==============================================================================
 
 1. HTTP
-
-1.1 CURLFORM_CONTENTLEN in an array
-
- It is not possible to pass a 64-bit value using CURLFORM_CONTENTLEN with
- CURLFORM_ARRAY, when compiled on 32-bit platforms that support 64-bit
- integers. This is because the underlying structure 'curl_forms' uses a dual
- purpose char* for storing these values in via casting. For more information
- see the now closed related issue:
- https://github.com/curl/curl/issues/608
-
-1.2 Disabling HTTP Pipelining
-
- Disabling HTTP Pipelining when there are ongoing transfers can lead to
- heap corruption and crash. https://curl.haxx.se/bug/view.cgi?id=1411
-
- Similarly, removing a handle when pipelining corrupts data:
- https://github.com/curl/curl/issues/2101
 
 1.3 STARTTRANSFER time is wrong for HTTP POSTs
 
@@ -154,6 +144,25 @@ problems may have been fixed or changed somewhat since this was written!
  waiting for the the 100-continue response.
  https://curl.haxx.se/mail/lib-2008-08/0462.html
 
+1.7 Deflate error after all content was received
+
+ There's a situation where we can get an error in a HTTP response that is
+ compressed, when that error is detected after all the actual body contents
+ have been received and delivered to the application. This is tricky, but is
+ ultimately a broken server.
+
+ See https://github.com/curl/curl/issues/2719
+
+1.8 DoH isn't used for all name resolves when enabled
+
+ Even if DoH is specified to be used, there are some name resolves that are
+ done without it. This should be fixed. When the internal function
+ `Curl_resolver_wait_resolv()` is called, it doesn't use DoH to complete the
+ resolve as it otherwise should.
+
+ See https://github.com/curl/curl/pull/3857 and
+ https://github.com/curl/curl/pull/3850
+
 1.9 HTTP/2 frames while in the connection pool kill reuse
 
  If the server sends HTTP/2 frames (like for example an HTTP/2 PING frame) to
@@ -163,42 +172,6 @@ problems may have been fixed or changed somewhat since this was written!
 
  This is *best* fixed by adding monitoring to connections while they are kept
  in the pool so that pings can be responded to appropriately.
-
-1.10 Strips trailing dot from host name
-
- When given a URL with a trailing dot for the host name part:
- "https://example.com./", libcurl will strip off the dot and use the name
- without a dot internally and send it dot-less in HTTP Host: headers and in
- the TLS SNI field. For the purpose of resolving the name to an address
- the hostname is used as is without any change.
-
- The HTTP part violates RFC 7230 section 5.4 but the SNI part is accordance
- with RFC 6066 section 3.
-
- URLs using these trailing dots are very rare in the wild and we have not seen
- or gotten any real-world problems with such URLs reported. The popular
- browsers seem to have stayed with not stripping the dot for both uses (thus
- they violate RFC 6066 instead of RFC 7230).
-
- Daniel took the discussion to the HTTPbis mailing list in March 2016:
- https://lists.w3.org/Archives/Public/ietf-http-wg/2016JanMar/0430.html but
- there was not major rush or interest to fix this. The impression I get is
- that most HTTP people rather not rock the boat now and instead prioritize web
- compatibility rather than to strictly adhere to these RFCs.
-
- Our current approach allows a knowing client to send a custom HTTP header
- with the dot added.
-
- In a few cases there is a difference in name resolving to IP addresses with
- a trailing dot, but it can be noted that many HTTP servers will not happily
- accept the trailing dot there unless that has been specifically configured
- to be a fine virtual host.
-
- If URLs with trailing dots for host names become more popular or even just
- used more than for just plain fun experiments, I'm sure we will have reason
- to go back and reconsider.
-
- See https://github.com/curl/curl/issues/716 for the discussion.
 
 1.11 CURLOPT_SEEKFUNCTION not called with CURLFORM_STREAM
 
@@ -272,6 +245,15 @@ problems may have been fixed or changed somewhat since this was written!
 
  https://github.com/curl/curl/issues/2276
 
+2.7 Client cert (MTLS) issues with Schannel
+
+ See https://github.com/curl/curl/issues/3145
+
+2.8 Schannel disable CURLOPT_SSL_VERIFYPEER and verify hostname
+
+ This seems to be a limitation in the underlying Schannel API.
+
+ https://github.com/curl/curl/issues/3284
 
 3. Email protocols
 
@@ -355,17 +337,26 @@ problems may have been fixed or changed somewhat since this was written!
 
 5. Build and portability issues
 
-5.1 tests not compatible with python3
+5.1 USE_UNIX_SOCKETS on Windows
 
- The smb test server still needs python2.
+ Due to incorrect CMake checks for the presense of the feature, it will never
+ be enabled for windows in a cmake build.
 
- See https://github.com/curl/curl/issues/3289
+ See https://github.com/curl/curl/issues/4040
 
 5.2 curl-config --libs contains private details
 
  "curl-config --libs" will include details set in LDFLAGS when configure is
  run that might be needed only for building libcurl. Further, curl-config
  --cflags suffers from the same effects with CFLAGS/CPPFLAGS.
+
+5.3 curl compiled on OSX 10.13 failed to run on OSX 10.10
+
+ See https://github.com/curl/curl/issues/2905
+
+5.4 Cannot compile against a static build of OpenLDAP
+
+ See https://github.com/curl/curl/issues/2367
 
 5.5 can't handle Unicode arguments in Windows
 
@@ -429,6 +420,13 @@ problems may have been fixed or changed somewhat since this was written!
 
  https://github.com/curl/curl/issues/864
 
+5.10 IDN tests failing on Windows / MSYS2
+
+ It seems like MSYS2 does some UTF-8-to-something-else conversion for Windows
+ compatibility.
+
+ https://github.com/curl/curl/issues/3747
+
 6. Authentication
 
 6.1 NTLM authentication and unicode
@@ -480,6 +478,10 @@ problems may have been fixed or changed somewhat since this was written!
  using NTLM.
 
  https://github.com/curl/curl/issues/876
+
+6.7 Don't clear digest for single realm
+
+ https://github.com/curl/curl/issues/3267
 
 7. FTP
 
@@ -688,6 +690,19 @@ problems may have been fixed or changed somewhat since this was written!
 
  https://github.com/curl/curl/issues/2281
 
+11.7 signal-based resolver timeouts
+
+ libcurl built without an asynchronous resolver library uses alarm() to time
+ out DNS lookups. When a timeout occurs, this causes libcurl to jump from the
+ signal handler back into the library with a sigsetjmp, which effectively
+ causes libcurl to continue running within the signal handler. This is
+ non-portable and could cause problems on some platforms. A discussion on the
+ problem is available at https://curl.haxx.se/mail/lib-2008-09/0197.html
+
+ Also, alarm() provides timeout resolution only to the nearest second. alarm
+ ought to be replaced by setitimer on systems that support it.
+
+
 12. LDAP and OpenLDAP
 
 12.1 OpenLDAP hangs after returning results
@@ -709,6 +724,9 @@ problems may have been fixed or changed somewhat since this was written!
  See https://github.com/curl/curl/issues/622 and
      https://curl.haxx.se/mail/lib-2016-01/0101.html
 
+12.2 LDAP on Windows does authentication wrong?
+
+ https://github.com/curl/curl/issues/3116
 
 13. TCP/IP
 

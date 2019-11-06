@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -72,13 +72,6 @@ callback.
 #include <unistd.h>
 
 #include <curl/curl.h>
-#include <curl/multi.h>
-
-#ifdef __GNUC__
-#define _Unused __attribute__((unused))
-#else
-#define _Unused
-#endif
 
 #define MSG_OUT stdout /* Send info to stdout, change to stderr if you want */
 
@@ -115,7 +108,7 @@ typedef struct _SockInfo
   GlobalInfo *global;
 } SockInfo;
 
-#define __case(code) \
+#define mycase(code) \
   case code: s = __STRING(code)
 
 /* Die if we get a bad CURLMcode somewhere */
@@ -124,14 +117,14 @@ static void mcode_or_die(const char *where, CURLMcode code)
   if(CURLM_OK != code) {
     const char *s;
     switch(code) {
-      __case(CURLM_BAD_HANDLE); break;
-      __case(CURLM_BAD_EASY_HANDLE); break;
-      __case(CURLM_OUT_OF_MEMORY); break;
-      __case(CURLM_INTERNAL_ERROR); break;
-      __case(CURLM_UNKNOWN_OPTION); break;
-      __case(CURLM_LAST); break;
+      mycase(CURLM_BAD_HANDLE); break;
+      mycase(CURLM_BAD_EASY_HANDLE); break;
+      mycase(CURLM_OUT_OF_MEMORY); break;
+      mycase(CURLM_INTERNAL_ERROR); break;
+      mycase(CURLM_UNKNOWN_OPTION); break;
+      mycase(CURLM_LAST); break;
       default: s = "CURLM_unknown"; break;
-      __case(CURLM_BAD_SOCKET);
+      mycase(CURLM_BAD_SOCKET);
       fprintf(MSG_OUT, "ERROR: %s returns %s\n", where, s);
       /* ignore this error */
       return;
@@ -149,27 +142,29 @@ static void timer_cb(GlobalInfo* g, int revents);
 static int multi_timer_cb(CURLM *multi, long timeout_ms, GlobalInfo *g)
 {
   struct itimerspec its;
-  CURLMcode rc;
 
   fprintf(MSG_OUT, "multi_timer_cb: Setting timeout to %ld ms\n", timeout_ms);
 
-  timerfd_settime(g->tfd, /*flags=*/0, &its, NULL);
   if(timeout_ms > 0) {
     its.it_interval.tv_sec = 1;
     its.it_interval.tv_nsec = 0;
     its.it_value.tv_sec = timeout_ms / 1000;
-    its.it_value.tv_nsec = (timeout_ms % 1000) * 1000;
-    timerfd_settime(g->tfd, /*flags=*/0, &its, NULL);
+    its.it_value.tv_nsec = (timeout_ms % 1000) * 1000 * 1000;
   }
   else if(timeout_ms == 0) {
-    rc = curl_multi_socket_action(g->multi,
-                                  CURL_SOCKET_TIMEOUT, 0, &g->still_running);
-    mcode_or_die("multi_timer_cb: curl_multi_socket_action", rc);
+    /* libcurl wants us to timeout now, however setting both fields of
+     * new_value.it_value to zero disarms the timer. The closest we can
+     * do is to schedule the timer to fire in 1 ns. */
+    its.it_interval.tv_sec = 1;
+    its.it_interval.tv_nsec = 0;
+    its.it_value.tv_sec = 0;
+    its.it_value.tv_nsec = 1;
   }
   else {
     memset(&its, 0, sizeof(struct itimerspec));
-    timerfd_settime(g->tfd, /*flags=*/0, &its, NULL);
   }
+
+  timerfd_settime(g->tfd, /*flags=*/0, &its, NULL);
   return 0;
 }
 
@@ -206,8 +201,8 @@ static void event_cb(GlobalInfo *g, int fd, int revents)
   CURLMcode rc;
   struct itimerspec its;
 
-  int action = (revents & EPOLLIN ? CURL_POLL_IN : 0) |
-               (revents & EPOLLOUT ? CURL_POLL_OUT : 0);
+  int action = ((revents & EPOLLIN) ? CURL_CSELECT_IN : 0) |
+               ((revents & EPOLLOUT) ? CURL_CSELECT_OUT : 0);
 
   rc = curl_multi_socket_action(g->multi, fd, action, &g->still_running);
   mcode_or_die("event_cb: curl_multi_socket_action", rc);
@@ -272,8 +267,8 @@ static void setsock(SockInfo *f, curl_socket_t s, CURL *e, int act,
                     GlobalInfo *g)
 {
   struct epoll_event ev;
-  int kind = (act & CURL_POLL_IN ? EPOLLIN : 0) |
-             (act & CURL_POLL_OUT ? EPOLLOUT : 0);
+  int kind = ((act & CURL_POLL_IN) ? EPOLLIN : 0) |
+             ((act & CURL_POLL_OUT) ? EPOLLOUT : 0);
 
   if(f->sockfd) {
     if(epoll_ctl(g->epfd, EPOLL_CTL_DEL, f->sockfd, NULL))
@@ -335,21 +330,21 @@ static int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
 
 
 /* CURLOPT_WRITEFUNCTION */
-static size_t write_cb(void *ptr _Unused, size_t size, size_t nmemb,
-                       void *data)
+static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *data)
 {
-  size_t realsize = size * nmemb;
-  ConnInfo *conn _Unused = (ConnInfo*) data;
-
-  return realsize;
+  (void)ptr;
+  (void)data;
+  return size * nmemb;
 }
 
 
 /* CURLOPT_PROGRESSFUNCTION */
-static int prog_cb(void *p, double dltotal, double dlnow, double ult _Unused,
-                   double uln _Unused)
+static int prog_cb(void *p, double dltotal, double dlnow, double ult,
+                   double uln)
 {
   ConnInfo *conn = (ConnInfo *)p;
+  (void)ult;
+  (void)uln;
 
   fprintf(MSG_OUT, "Progress: %s (%g/%g)\n", conn->url, dlnow, dltotal);
   return 0;
@@ -467,14 +462,14 @@ void SignalHandler(int signo)
   }
 }
 
-int main(int argc _Unused, char **argv _Unused)
+int main(int argc, char **argv)
 {
   GlobalInfo g;
-  int err;
-  int idx;
   struct itimerspec its;
   struct epoll_event ev;
   struct epoll_event events[10];
+  (void)argc;
+  (void)argv;
 
   g_should_exit_ = 0;
   signal(SIGINT, SignalHandler);
@@ -516,11 +511,9 @@ int main(int argc _Unused, char **argv _Unused)
   fprintf(MSG_OUT, "Entering wait loop\n");
   fflush(MSG_OUT);
   while(!g_should_exit_) {
-    /* TODO(josh): use epoll_pwait to avoid a race on the signal. Mask the
-     * signal before the while loop, and then re-enable the signal during
-     * epoll wait. Mask at the end of the loop. */
-    err = epoll_wait(g.epfd, events, sizeof(events)/sizeof(struct epoll_event),
-                     10000);
+    int idx;
+    int err = epoll_wait(g.epfd, events,
+                         sizeof(events)/sizeof(struct epoll_event), 10000);
     if(err == -1) {
       if(errno == EINTR) {
         fprintf(MSG_OUT, "note: wait interrupted\n");
@@ -549,5 +542,6 @@ int main(int argc _Unused, char **argv _Unused)
   fflush(MSG_OUT);
 
   curl_multi_cleanup(g.multi);
+  clean_fifo(&g);
   return 0;
 }

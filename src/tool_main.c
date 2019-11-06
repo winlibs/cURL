@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -112,10 +112,10 @@ static void memory_tracking_init(void)
       env[CURL_MT_LOGFNAME_BUFSIZE-1] = '\0';
     strcpy(fname, env);
     curl_free(env);
-    curl_memdebug(fname);
-    /* this weird stuff here is to make curl_free() get called
-       before curl_memdebug() as otherwise memory tracking will
-       log a free() without an alloc! */
+    curl_dbg_memdebug(fname);
+    /* this weird stuff here is to make curl_free() get called before
+       curl_gdb_memdebug() as otherwise memory tracking will log a free()
+       without an alloc! */
   }
   /* if CURL_MEMLIMIT is set, this enables fail-on-alloc-number-N feature */
   env = curlx_getenv("CURL_MEMLIMIT");
@@ -123,7 +123,7 @@ static void memory_tracking_init(void)
     char *endptr;
     long num = strtol(env, &endptr, 10);
     if((endptr != env) && (endptr == env + strlen(env)) && (num > 0))
-      curl_memlimit(num);
+      curl_dbg_memlimit(num);
     curl_free(env);
   }
 }
@@ -149,6 +149,7 @@ static CURLcode main_init(struct GlobalConfig *config)
   config->showerror = -1;             /* Will show errors */
   config->errors = stderr;            /* Default errors to stderr */
   config->styled_output = TRUE;       /* enable detection */
+  config->parallel_max = PARALLEL_DEFAULT;
 
   /* Allocate the initial operate config */
   config->first = config->last = malloc(sizeof(struct OperationConfig));
@@ -160,19 +161,9 @@ static CURLcode main_init(struct GlobalConfig *config)
       result = get_libcurl_info();
 
       if(!result) {
-        /* Get a curl handle to use for all forthcoming curl transfers */
-        config->easy = curl_easy_init();
-        if(config->easy) {
-          /* Initialise the config */
-          config_init(config->first);
-          config->first->easy = config->easy;
-          config->first->global = config;
-        }
-        else {
-          helpf(stderr, "error initializing curl easy handle\n");
-          result = CURLE_FAILED_INIT;
-          free(config->first);
-        }
+        /* Initialise the config */
+        config_init(config->first);
+        config->first->global = config;
       }
       else {
         helpf(stderr, "error retrieving curl library information\n");
@@ -214,9 +205,6 @@ static void free_globalconfig(struct GlobalConfig *config)
 static void main_free(struct GlobalConfig *config)
 {
   /* Cleanup the easy handle */
-  curl_easy_cleanup(config->easy);
-  config->easy = NULL;
-
   /* Main cleanup */
   curl_global_cleanup();
   convert_cleanup();
@@ -237,7 +225,7 @@ static void main_free(struct GlobalConfig *config)
   config->last = NULL;
 }
 
-#ifdef _WIN32
+#ifdef WIN32
 /* TerminalSettings for Windows */
 static struct TerminalSettings {
   HANDLE hStdOut;
@@ -275,7 +263,7 @@ static void configure_terminal(void)
 
 static void restore_terminal(void)
 {
-#ifdef _WIN32
+#ifdef WIN32
   /* Restore Console output mode and codepage to whatever they were
    * when Curl started */
   SetConsoleMode(TerminalSettings.hStdOut, TerminalSettings.dwOutputMode);

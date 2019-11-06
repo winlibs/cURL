@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2018 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -33,7 +33,7 @@ static void unit_stop(void)
 
 }
 #if defined(USE_GSKIT) || defined(USE_NSS) || defined(USE_GNUTLS) || \
-    defined(USE_CYASSL) || defined(USE_SCHANNEL)
+    defined(USE_WOLFSSL) || defined(USE_SCHANNEL)
 
 /* cert captured from gdb when connecting to curl.haxx.se on October 26
    2018 */
@@ -352,6 +352,8 @@ UNITTEST_START
   struct Curl_easy *data = curl_easy_init();
   int i;
   int byte;
+  if(!data)
+    return 2;
 
   memset(&conn, 0, sizeof(struct connectdata));
   /* this is a lot of assuming, but we expect the parsing function to only

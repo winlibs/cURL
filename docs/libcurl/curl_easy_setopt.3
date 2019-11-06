@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH curl_easy_setopt 3 "December 17, 2018" "libcurl 7.64.0" "libcurl Manual"
+.TH curl_easy_setopt 3 "August 09, 2019" "libcurl 7.67.0" "libcurl Manual"
 
 .SH NAME
 curl_easy_setopt \- set options for a curl easy handle
@@ -257,6 +257,8 @@ TLS authentication methods. See \fICURLOPT_TLSAUTH_TYPE(3)\fP
 Proxy TLS authentication methods. See \fICURLOPT_PROXY_TLSAUTH_TYPE(3)\fP
 .IP CURLOPT_PROXYAUTH
 HTTP proxy authentication methods. See \fICURLOPT_PROXYAUTH(3)\fP
+.IP CURLOPT_SASL_AUTHZID
+SASL authorisation identity (identity to act as). See \fICURLOPT_SASL_AUTHZID(3)\fP
 .IP CURLOPT_SASL_IR
 Enable SASL initial response. See \fICURLOPT_SASL_IR(3)\fP
 .IP CURLOPT_XOAUTH2_BEARER
@@ -314,6 +316,10 @@ File to write cookies to. See \fICURLOPT_COOKIEJAR(3)\fP
 Start a new cookie session. See \fICURLOPT_COOKIESESSION(3)\fP
 .IP CURLOPT_COOKIELIST
 Add or control cookies. See \fICURLOPT_COOKIELIST(3)\fP
+.IP CURLOPT_ALTSVC
+Specify the Alt-Svc: cache file name. See \fICURLOPT_ALTSVC(3)\fP
+.IP CURLOPT_ALTSVC_CTRL
+Enable and configure Alt-Svc: treatment. See \fICURLOPT_ALTSVC_CTRL(3)\fP
 .IP CURLOPT_HTTPGET
 Do an HTTP GET request. See \fICURLOPT_HTTPGET(3)\fP
 .IP CURLOPT_REQUEST_TARGET
@@ -465,6 +471,8 @@ Maximum number of connections in the connection pool. See \fICURLOPT_MAXCONNECTS
 Use a new connection. \fICURLOPT_FRESH_CONNECT(3)\fP
 .IP CURLOPT_FORBID_REUSE
 Prevent subsequent connections from re-using this. See \fICURLOPT_FORBID_REUSE(3)\fP
+.IP CURLOPT_MAXAGE_CONN
+Limit the age of connections for reuse. See \fICURLOPT_MAXAGE_CONN(3)\fP
 .IP CURLOPT_CONNECTTIMEOUT
 Timeout for the connection phase. See \fICURLOPT_CONNECTTIMEOUT(3)\fP
 .IP CURLOPT_CONNECTTIMEOUT_MS
