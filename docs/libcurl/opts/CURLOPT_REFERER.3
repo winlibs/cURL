@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_REFERER 3 "March 23, 2020" "libcurl 7.70.0" "curl_easy_setopt options"
+.TH CURLOPT_REFERER 3 "June 25, 2020" "libcurl 7.71.1" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_REFERER \- set the HTTP referer header
@@ -29,7 +29,7 @@ CURLOPT_REFERER \- set the HTTP referer header
 
 CURLcode curl_easy_setopt(CURL *handle, CURLOPT_REFERER, char *where);
 .SH DESCRIPTION
-Pass a pointer to a zero terminated string as parameter. It will be used to
+Pass a pointer to a null-terminated string as parameter. It will be used to
 set the Referer: header in the http request sent to the remote server. This
 can be used to fool servers or scripts. You can also set any custom header
 with \fICURLOPT_HTTPHEADER(3)\fP.

@@ -183,7 +183,7 @@ static void smtp_to_smtps(struct connectdata *conn)
   conn->handler = &Curl_handler_smtps;
 
   /* Set the connection's upgraded to TLS flag */
-  conn->tls_upgraded = TRUE;
+  conn->bits.tls_upgraded = TRUE;
 }
 #else
 #define smtp_to_smtps(x) Curl_nop_stmt
@@ -1617,7 +1617,7 @@ static CURLcode smtp_setup_connection(struct connectdata *conn)
   CURLcode result;
 
   /* Clear the TLS upgraded flag */
-  conn->tls_upgraded = FALSE;
+  conn->bits.tls_upgraded = FALSE;
 
   /* Initialise the SMTP layer */
   result = smtp_init(conn);
@@ -1689,7 +1689,8 @@ static CURLcode smtp_parse_url_path(struct connectdata *conn)
   }
 
   /* URL decode the path and use it as the domain in our EHLO */
-  return Curl_urldecode(conn->data, path, 0, &smtpc->domain, NULL, TRUE);
+  return Curl_urldecode(conn->data, path, 0, &smtpc->domain, NULL,
+                        REJECT_CTRL);
 }
 
 /***********************************************************************
@@ -1707,7 +1708,7 @@ static CURLcode smtp_parse_custom_request(struct connectdata *conn)
 
   /* URL decode the custom request */
   if(custom)
-    result = Curl_urldecode(data, custom, 0, &smtp->custom, NULL, TRUE);
+    result = Curl_urldecode(data, custom, 0, &smtp->custom, NULL, REJECT_CTRL);
 
   return result;
 }

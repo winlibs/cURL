@@ -774,7 +774,7 @@ enum curl_khtype {
 };
 
 struct curl_khkey {
-  const char *key; /* points to a zero-terminated string encoded with base64
+  const char *key; /* points to a null-terminated string encoded with base64
                       if len is zero, otherwise to the "raw" data */
   size_t len;
   enum curl_khtype keytype;
@@ -837,6 +837,10 @@ typedef enum {
    checks and ignore missing revocation list for those SSL backends where such
    behavior is present. */
 #define CURLSSLOPT_REVOKE_BEST_EFFORT (1<<3)
+
+/* - CURLSSLOPT_NATIVE_CA tells libcurl to use standard certificate store of
+   operating system. Currently implemented under MS-Windows. */
+#define CURLSSLOPT_NATIVE_CA (1<<4)
 
 /* The default connection attempt delay in milliseconds for happy eyeballs.
    CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS.3 and happy-eyeballs-timeout-ms.d document
@@ -946,6 +950,7 @@ typedef enum {
 #define CURLOPTTYPE_OBJECTPOINT   10000
 #define CURLOPTTYPE_FUNCTIONPOINT 20000
 #define CURLOPTTYPE_OFF_T         30000
+#define CURLOPTTYPE_BLOB          40000
 
 /* *STRINGPOINT is an alias for OBJECTPOINT to allow tools to extract the
    string options from the header file */
@@ -1441,7 +1446,7 @@ typedef enum {
   /* 132 OBSOLETE. Gone in 7.16.0 */
   /* 133 OBSOLETE. Gone in 7.16.0 */
 
-  /* zero terminated string for pass on to the FTP server when asked for
+  /* null-terminated string for pass on to the FTP server when asked for
      "account" info */
   CURLOPT(CURLOPT_FTP_ACCOUNT, CURLOPTTYPE_STRINGPOINT, 134),
 
@@ -1955,6 +1960,17 @@ typedef enum {
   /* allow RCPT TO command to fail for some recipients */
   CURLOPT(CURLOPT_MAIL_RCPT_ALLLOWFAILS, CURLOPTTYPE_LONG, 290),
 
+  /* the private SSL-certificate as a "blob" */
+  CURLOPT(CURLOPT_SSLCERT_BLOB, CURLOPTTYPE_BLOB, 291),
+  CURLOPT(CURLOPT_SSLKEY_BLOB, CURLOPTTYPE_BLOB, 292),
+  CURLOPT(CURLOPT_PROXY_SSLCERT_BLOB, CURLOPTTYPE_BLOB, 293),
+  CURLOPT(CURLOPT_PROXY_SSLKEY_BLOB, CURLOPTTYPE_BLOB, 294),
+  CURLOPT(CURLOPT_ISSUERCERT_BLOB, CURLOPTTYPE_BLOB, 295),
+
+  /* Issuer certificate for proxy */
+  CURLOPT(CURLOPT_PROXY_ISSUERCERT, CURLOPTTYPE_STRINGPOINT, 296),
+  CURLOPT(CURLOPT_PROXY_ISSUERCERT_BLOB, CURLOPTTYPE_BLOB, 297),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 
@@ -2102,7 +2118,7 @@ typedef enum {
   CURL_TIMECOND_LAST
 } curl_TimeCond;
 
-/* Special size_t value signaling a zero-terminated string. */
+/* Special size_t value signaling a null-terminated string. */
 #define CURL_ZERO_TERMINATED ((size_t) -1)
 
 /* curl_strequal() and curl_strnequal() are subject for removal in a future
@@ -2111,8 +2127,8 @@ CURL_EXTERN int curl_strequal(const char *s1, const char *s2);
 CURL_EXTERN int curl_strnequal(const char *s1, const char *s2, size_t n);
 
 /* Mime/form handling support. */
-typedef struct curl_mime_s      curl_mime;      /* Mime context. */
-typedef struct curl_mimepart_s  curl_mimepart;  /* Mime part context. */
+typedef struct curl_mime      curl_mime;      /* Mime context. */
+typedef struct curl_mimepart  curl_mimepart;  /* Mime part context. */
 
 /*
  * NAME curl_mime_init()
@@ -2486,10 +2502,11 @@ struct curl_slist {
  * subsequent attempt to change it will result in a CURLSSLSET_TOO_LATE.
  */
 
-typedef struct {
+struct curl_ssl_backend {
   curl_sslbackend id;
   const char *name;
-} curl_ssl_backend;
+};
+typedef struct curl_ssl_backend curl_ssl_backend;
 
 typedef enum {
   CURLSSLSET_OK = 0,
@@ -2741,7 +2758,7 @@ typedef enum {
    from above. */
 #define CURLVERSION_NOW CURLVERSION_SEVENTH
 
-typedef struct {
+struct curl_version_info_data {
   CURLversion age;          /* age of the returned struct */
   const char *version;      /* LIBCURL_VERSION */
   unsigned int version_num; /* LIBCURL_VERSION_NUM */
@@ -2785,7 +2802,8 @@ typedef struct {
   const char *capath;          /* the built-in default CURLOPT_CAPATH, might
                                   be NULL */
 
-} curl_version_info_data;
+};
+typedef struct curl_version_info_data curl_version_info_data;
 
 #define CURL_VERSION_IPV6         (1<<0)  /* IPv6-enabled */
 #define CURL_VERSION_KERBEROS4    (1<<1)  /* Kerberos V4 auth is supported
