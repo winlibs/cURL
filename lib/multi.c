@@ -430,6 +430,7 @@ CURLMcode curl_multi_add_handle(struct Curl_multi *multi,
     data->state.conn_cache = &data->share->conn_cache;
   else
     data->state.conn_cache = &multi->conn_cache;
+    data->state.lastconnect_id = -1;
 
 #ifdef USE_LIBPSL
   /* Do the same for PSL. */
@@ -638,11 +639,11 @@ static CURLcode multi_done(struct Curl_easy *data,
     /* the connection is no longer in use by this transfer */
     if(Curl_conncache_return_conn(conn)) {
       /* remember the most recently used connection */
-      data->state.lastconnect = conn;
+      data->state.lastconnect_id = conn->connection_id;
       infof(data, "%s\n", buffer);
     }
     else
-      data->state.lastconnect = NULL;
+      data->state.lastconnect_id = -1;
   }
 
   Curl_detach_connnection(data);
