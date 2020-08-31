@@ -1443,6 +1443,9 @@
 				RelativePath="..\..\..\..\lib\version.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\version_win32.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\warnless.c">
 			</File>
 			<File
@@ -1787,6 +1790,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\url.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\version_win32.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\warnless.h">

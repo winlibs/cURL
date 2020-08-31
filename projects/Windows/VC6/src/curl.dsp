@@ -695,6 +695,10 @@ SOURCE=..\..\..\..\lib\strtoofft.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\version_win32.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\warnless.c
 # End Source File
 # Begin Source File
@@ -888,6 +892,10 @@ SOURCE=..\..\..\..\lib\nonblock.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\strtoofft.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\version_win32.h
 # End Source File
 # Begin Source File
 

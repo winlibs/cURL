@@ -2659,6 +2659,7 @@
     <ClCompile Include="..\..\..\..\lib\curl_multibyte.c" />
     <ClCompile Include="..\..\..\..\lib\nonblock.c" />
     <ClCompile Include="..\..\..\..\lib\strtoofft.c" />
+    <ClCompile Include="..\..\..\..\lib\version_win32.c" />
     <ClCompile Include="..\..\..\..\lib\warnless.c" />
     <ClCompile Include="..\..\..\..\src\slist_wc.c" />
     <ClCompile Include="..\..\..\..\src\tool_binmode.c" />
@@ -2709,6 +2710,7 @@
     <ClInclude Include="..\..\..\..\lib\curl_setup.h" />
     <ClInclude Include="..\..\..\..\lib\nonblock.h" />
     <ClInclude Include="..\..\..\..\lib\strtoofft.h" />
+    <ClInclude Include="..\..\..\..\lib\version_win32.h" />
     <ClInclude Include="..\..\..\..\lib\warnless.h" />
     <ClInclude Include="..\..\..\..\src\slist_wc.h" />
     <ClInclude Include="..\..\..\..\src\tool_binmode.h" />

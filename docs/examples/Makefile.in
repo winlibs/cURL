@@ -1056,6 +1056,7 @@ HAVE_LDAP_SSL = @HAVE_LDAP_SSL@
 HAVE_LIBZ = @HAVE_LIBZ@
 HAVE_OPENSSL_SRP = @HAVE_OPENSSL_SRP@
 HAVE_PROTO_BSDSOCKET_H = @HAVE_PROTO_BSDSOCKET_H@
+HAVE_ZSTD = @HAVE_ZSTD@
 IDN_ENABLED = @IDN_ENABLED@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -2177,7 +2178,7 @@ uninstall-am:
 all: $(check_PROGRAMS)
 
 checksrc:
-	$(CHECKSRC)(@PERL@ $(top_srcdir)/lib/checksrc.pl $(srcdir)/*.c)
+	$(CHECKSRC)(@PERL@ $(top_srcdir)/lib/checksrc.pl -D$(srcdir) $(srcdir)/*.c)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

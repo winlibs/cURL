@@ -2462,6 +2462,7 @@
     <ClCompile Include="..\..\..\..\lib\urlapi.c" />
     <ClCompile Include="..\..\..\..\lib\url.c" />
     <ClCompile Include="..\..\..\..\lib\version.c" />
+    <ClCompile Include="..\..\..\..\lib\version_win32.c" />
     <ClCompile Include="..\..\..\..\lib\warnless.c" />
     <ClCompile Include="..\..\..\..\lib\wildcard.c" />
     <ClCompile Include="..\..\..\..\lib\x509asn1.c" />
@@ -2610,6 +2611,7 @@
     <ClInclude Include="..\..\..\..\lib\urlapi-int.h" />
     <ClInclude Include="..\..\..\..\lib\urldata.h" />
     <ClInclude Include="..\..\..\..\lib\url.h" />
+    <ClInclude Include="..\..\..\..\lib\version_win32.h" />
     <ClInclude Include="..\..\..\..\lib\warnless.h" />
     <ClInclude Include="..\..\..\..\lib\wildcard.h" />
     <ClInclude Include="..\..\..\..\lib\x509asn1.h" />

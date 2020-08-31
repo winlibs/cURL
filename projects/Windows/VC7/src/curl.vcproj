@@ -1228,6 +1228,9 @@
 				RelativePath="..\..\..\..\lib\strtoofft.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\version_win32.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\warnless.c">
 			</File>
 			<File
@@ -1374,6 +1377,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strtoofft.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\version_win32.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\warnless.h">

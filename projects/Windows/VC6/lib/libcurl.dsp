@@ -1174,6 +1174,10 @@ SOURCE=..\..\..\..\lib\version.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\version_win32.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\warnless.c
 # End Source File
 # Begin Source File
@@ -1759,6 +1763,10 @@ SOURCE=..\..\..\..\lib\urldata.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\url.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\version_win32.h
 # End Source File
 # Begin Source File
 
