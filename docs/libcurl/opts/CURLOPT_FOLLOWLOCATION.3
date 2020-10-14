@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_FOLLOWLOCATION 3 "January 28, 2020" "libcurl 7.72.0" "curl_easy_setopt options"
+.TH CURLOPT_FOLLOWLOCATION 3 "September 16, 2020" "libcurl 7.73.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_FOLLOWLOCATION \- follow HTTP 3xx redirects
@@ -64,7 +64,7 @@ HTTP(S)
 .nf
 CURL *curl = curl_easy_init();
 if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "http://example.com");
+  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
 
   /* example.com is redirected, so we tell libcurl to follow redirection */
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);

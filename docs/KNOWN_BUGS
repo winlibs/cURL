@@ -25,6 +25,7 @@ problems may have been fixed or changed somewhat since this was written!
  2. TLS
  2.1 CURLINFO_SSL_VERIFYRESULT has limited support
  2.2 DER in keychain
+ 2.3 Unable to use PKCS12 certificate with Secure Transport
  2.4 Secure Transport won't import PKCS#12 client certificates without a password
  2.5 Client cert handling with Issuer DN differs between backends
  2.6 CURL_GLOBAL_SSL
@@ -104,6 +105,7 @@ problems may have been fixed or changed somewhat since this was written!
  11.9 DoH doesn't inherit all transfer options
  11.10 Blocking socket operations in non-blocking API
  11.11 A shared connection cache is not thread-safe
+ 11.12 'no_proxy' string-matches IPv6 numerical addreses
 
  12. LDAP and OpenLDAP
  12.1 OpenLDAP hangs after returning results
@@ -210,6 +212,10 @@ problems may have been fixed or changed somewhat since this was written!
 
  Curl doesn't recognize certificates in DER format in keychain, but it works
  with PEM.  https://curl.haxx.se/bug/view.cgi?id=1065
+
+2.3 Unable to use PKCS12 certificate with Secure Transport
+
+ See https://github.com/curl/curl/issues/5403
 
 2.4 Secure Transport won't import PKCS#12 client certificates without a password
 
@@ -760,7 +766,14 @@ problems may have been fixed or changed somewhat since this was written!
  handle share a connection cache, but due to how connections are used they are
  still not thread-safe when used shared.
 
- See https://github.com/curl/curl/issues/4915
+ See https://github.com/curl/curl/issues/4915 and lib1541.c
+
+11.12 'no_proxy' string-matches IPv6 numerical addreses
+
+ This has the downside that "::1" for example doesn't match "::0:1" even
+ though they are in fact the same address.
+
+ See https://github.com/curl/curl/issues/5745
 
 12. LDAP and OpenLDAP
 

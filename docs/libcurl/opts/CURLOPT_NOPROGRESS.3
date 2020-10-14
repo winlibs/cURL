@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_NOPROGRESS 3 "October 09, 2017" "libcurl 7.72.0" "curl_easy_setopt options"
+.TH CURLOPT_NOPROGRESS 3 "September 16, 2020" "libcurl 7.73.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_NOPROGRESS \- switch off the progress meter
@@ -41,7 +41,7 @@ All
 .nf
 CURL *curl = curl_easy_init();
 if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "http://example.com");
+  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
 
   /* enable progress meter */
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);

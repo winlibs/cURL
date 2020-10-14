@@ -858,6 +858,14 @@ SOURCE=..\..\..\..\lib\easy.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\easygetopt.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\easyoptions.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\escape.c
 # End Source File
 # Begin Source File
@@ -1059,10 +1067,6 @@ SOURCE=..\..\..\..\lib\rename.c
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\rtsp.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\..\lib\security.c
 # End Source File
 # Begin Source File
 
@@ -1398,6 +1402,10 @@ SOURCE=..\..\..\..\lib\curl_hmac.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\curl_krb5.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\curl_ldap.h
 # End Source File
 # Begin Source File
@@ -1450,10 +1458,6 @@ SOURCE=..\..\..\..\lib\curl_sasl.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\..\lib\curl_sec.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\..\lib\curl_setup.h
 # End Source File
 # Begin Source File
@@ -1495,6 +1499,10 @@ SOURCE=..\..\..\..\lib\dynbuf.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\easyif.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\easyoptions.h
 # End Source File
 # Begin Source File
 

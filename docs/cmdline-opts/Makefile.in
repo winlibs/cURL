@@ -213,6 +213,7 @@ CURL_DISABLE_HTTP = @CURL_DISABLE_HTTP@
 CURL_DISABLE_IMAP = @CURL_DISABLE_IMAP@
 CURL_DISABLE_LDAP = @CURL_DISABLE_LDAP@
 CURL_DISABLE_LDAPS = @CURL_DISABLE_LDAPS@
+CURL_DISABLE_MQTT = @CURL_DISABLE_MQTT@
 CURL_DISABLE_POP3 = @CURL_DISABLE_POP3@
 CURL_DISABLE_PROXY = @CURL_DISABLE_PROXY@
 CURL_DISABLE_RTSP = @CURL_DISABLE_RTSP@
@@ -220,7 +221,6 @@ CURL_DISABLE_SMB = @CURL_DISABLE_SMB@
 CURL_DISABLE_SMTP = @CURL_DISABLE_SMTP@
 CURL_DISABLE_TELNET = @CURL_DISABLE_TELNET@
 CURL_DISABLE_TFTP = @CURL_DISABLE_TFTP@
-CURL_ENABLE_MQTT = @CURL_ENABLE_MQTT@
 CURL_LT_SHLIB_VERSIONED_FLAVOUR = @CURL_LT_SHLIB_VERSIONED_FLAVOUR@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
 CURL_NETWORK_LIBS = @CURL_NETWORK_LIBS@
@@ -414,6 +414,7 @@ DPAGES = \
   cookie.d					\
   create-dirs.d					\
   crlf.d crlfile.d				\
+  curves.d					\
   data-ascii.d					\
   data-binary.d					\
   data-urlencode.d				\
@@ -500,6 +501,7 @@ DPAGES = \
   ntlm.d ntlm-wb.d				\
   oauth2-bearer.d				\
   output.d                                      \
+  output-dir.d                                  \
   parallel-immediate.d                          \
   parallel-max.d                                \
   parallel.d                                    \

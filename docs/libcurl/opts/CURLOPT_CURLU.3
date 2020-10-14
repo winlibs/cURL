@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_CURLU 3 "October 31, 2019" "libcurl 7.72.0" "curl_easy_setopt options"
+.TH CURLOPT_CURLU 3 "September 16, 2020" "libcurl 7.73.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_CURLU \- set URL with CURLU *
@@ -51,7 +51,7 @@ CURLU *urlp = curl_url();
 int res = 0;
 if(curl) {
 
-  res = curl_url_set(urlp, CURLUPART_URL, "http://example.com", 0);
+  res = curl_url_set(urlp, CURLUPART_URL, "https://example.com", 0);
 
   curl_easy_setopt(handle, CURLOPT_CURLU, urlp);
 

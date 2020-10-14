@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_OS_ERRNO 3 "March 23, 2020" "libcurl 7.72.0" "curl_easy_getinfo options"
+.TH CURLINFO_OS_ERRNO 3 "September 16, 2020" "libcurl 7.73.0" "curl_easy_getinfo options"
 
 .SH NAME
 CURLINFO_OS_ERRNO \- get errno number from last connect failure
@@ -39,7 +39,7 @@ All
 CURL *curl = curl_easy_init();
 if(curl) {
   CURLcode res;
-  curl_easy_setopt(curl, CURLOPT_URL, "http://example.com");
+  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
   res = curl_easy_perform(curl);
   if(res != CURLE_OK) {
     long error;

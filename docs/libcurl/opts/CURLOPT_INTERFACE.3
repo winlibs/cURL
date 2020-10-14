@@ -20,7 +20,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_INTERFACE 3 "June 18, 2018" "libcurl 7.72.0" "curl_easy_setopt options"
+.TH CURLOPT_INTERFACE 3 "September 16, 2020" "libcurl 7.73.0" "curl_easy_setopt options"
 
 .SH NAME
 CURLOPT_INTERFACE \- source interface for outgoing traffic
@@ -55,7 +55,7 @@ All
 .nf
 CURL *curl = curl_easy_init();
 if(curl) {
-  curl_easy_setopt(curl, CURLOPT_URL, "http://example.com/foo.bin");
+  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/foo.bin");
 
   curl_easy_setopt(curl, CURLOPT_INTERFACE, "eth0");
 
