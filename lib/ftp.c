@@ -3763,20 +3763,20 @@ static CURLcode init_wc_data(struct connectdata *conn)
   return result;
 }
 
-/* This is called recursively */
 static CURLcode wc_statemach(struct connectdata *conn)
 {
   struct WildcardData * const wildcard = &(conn->data->wildcard);
   CURLcode result = CURLE_OK;
 
+  for(;;) {
   switch(wildcard->state) {
   case CURLWC_INIT:
     result = init_wc_data(conn);
     if(wildcard->state == CURLWC_CLEAN)
       /* only listing! */
-      break;
+        return result;
     wildcard->state = result ? CURLWC_ERROR : CURLWC_MATCHING;
-    break;
+      return result;
 
   case CURLWC_MATCHING: {
     /* In this state is LIST response successfully parsed, so lets restore
@@ -3791,14 +3791,14 @@ static CURLcode wc_statemach(struct connectdata *conn)
     if(Curl_ftp_parselist_geterror(ftpwc->parser)) {
       /* error found in LIST parsing */
       wildcard->state = CURLWC_CLEAN;
-      return wc_statemach(conn);
+        continue;
     }
     if(wildcard->filelist.size == 0) {
       /* no corresponding file */
       wildcard->state = CURLWC_CLEAN;
       return CURLE_REMOTE_FILE_NOT_FOUND;
     }
-    return wc_statemach(conn);
+      continue;
   }
 
   case CURLWC_DOWNLOADING: {
@@ -3827,7 +3827,7 @@ static CURLcode wc_statemach(struct connectdata *conn)
         infof(conn->data, "Wildcard - \"%s\" skipped by user\n",
               finfo->filename);
         wildcard->state = CURLWC_SKIP;
-        return wc_statemach(conn);
+          continue;
       case CURL_CHUNK_BGN_FUNC_FAIL:
         return CURLE_CHUNK_FAILED;
       }
@@ -3835,7 +3835,7 @@ static CURLcode wc_statemach(struct connectdata *conn)
 
     if(finfo->filetype != CURLFILETYPE_FILE) {
       wildcard->state = CURLWC_SKIP;
-      return wc_statemach(conn);
+        continue;
     }
 
     if(finfo->flags & CURLFINFOFLAG_KNOWN_SIZE)
@@ -3854,7 +3854,8 @@ static CURLcode wc_statemach(struct connectdata *conn)
          will be done because of CURLWC_CLEAN state */
       return CURLE_OK;
     }
-  } break;
+      return result;
+    }
 
   case CURLWC_SKIP: {
     if(conn->data->set.chunk_end) {
@@ -3865,7 +3866,7 @@ static CURLcode wc_statemach(struct connectdata *conn)
     Curl_llist_remove(&wildcard->filelist, wildcard->filelist.head, NULL);
     wildcard->state = (wildcard->filelist.size == 0) ?
                       CURLWC_CLEAN : CURLWC_DOWNLOADING;
-    return wc_statemach(conn);
+      continue;
   }
 
   case CURLWC_CLEAN: {
@@ -3875,17 +3876,18 @@ static CURLcode wc_statemach(struct connectdata *conn)
       result = Curl_ftp_parselist_geterror(ftpwc->parser);
 
     wildcard->state = result ? CURLWC_ERROR : CURLWC_DONE;
-  } break;
+      return result;
+    }
 
   case CURLWC_DONE:
   case CURLWC_ERROR:
   case CURLWC_CLEAR:
     if(wildcard->dtor)
       wildcard->dtor(wildcard->protdata);
-    break;
-  }
-
   return result;
+}
+  }
+  /* UNREACHABLE */
 }
 
 /***********************************************************************
