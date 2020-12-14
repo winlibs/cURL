@@ -9,7 +9,7 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at https://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -59,10 +59,11 @@ EXTRA_DIST =                                    \
  ECH.md                                         \
  EXPERIMENTAL.md                                \
  FAQ                                            \
- FEATURES                                       \
+ FEATURES.md                                    \
  GOVERNANCE.md                                  \
  HELP-US.md                                     \
  HISTORY.md                                     \
+ HSTS.md                                        \
  HTTP-COOKIES.md                                \
  HTTP2.md                                       \
  HTTP3.md                                       \
@@ -73,6 +74,7 @@ EXTRA_DIST =                                    \
  KNOWN_BUGS                                     \
  MAIL-ETIQUETTE                                 \
  MQTT.md                                        \
+ NEW-PROTOCOL.md                                \
  options-in-versions                            \
  PARALLEL-TRANSFERS.md                          \
  README.md                                      \

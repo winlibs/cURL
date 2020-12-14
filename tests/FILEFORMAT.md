@@ -333,6 +333,7 @@ SKIPPED.
 Features testable here are:
 
 - `alt-svc`
+- `c-ares`
 - `cookies`
 - `crypto`
 - `debug`
@@ -340,6 +341,7 @@ Features testable here are:
 - `getrlimit`
 - `GnuTLS`
 - `GSS-API`
+- `HSTS`
 - `HTTP-auth`
 - `http/2`
 - `idn`

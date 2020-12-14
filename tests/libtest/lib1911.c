@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -38,6 +38,7 @@ int test(char *URL)
   int error = 0;
   (void)URL;
 
+  curl_global_init(CURL_GLOBAL_ALL);
   easy = curl_easy_init();
   if(!easy)
     return 1;
@@ -83,5 +84,6 @@ int test(char *URL)
     }
   }
   curl_easy_cleanup(easy);
+  curl_global_cleanup();
   return error;
 }

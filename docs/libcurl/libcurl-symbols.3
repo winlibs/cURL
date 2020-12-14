@@ -9,7 +9,7 @@
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
-.\" * are also available at https://curl.haxx.se/docs/copyright.html.
+.\" * are also available at https://curl.se/docs/copyright.html.
 .\" *
 .\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
 .\" * copies of the Software, and permit persons to whom the Software is
@@ -19,7 +19,7 @@
 .\" * KIND, either express or implied.
 .\" *
 .\" **************************************************************************
-.TH libcurl-symbols 3 "Oct 14, 2020" "libcurl 7.41.0" "libcurl symbols"
+.TH libcurl-symbols 3 "Dec  9, 2020" "libcurl 7.41.0" "libcurl symbols"
 .SH NAME
 libcurl-symbols \- libcurl symbol version information
 .SH "libcurl symbols"
@@ -40,8 +40,6 @@ Introduced in 7.64.1
 .IP CURLALTSVC_H2
 Introduced in 7.64.1
 .IP CURLALTSVC_H3
-Introduced in 7.64.1
-.IP CURLALTSVC_IMMEDIATELY
 Introduced in 7.64.1
 .IP CURLALTSVC_READONLYFILE
 Introduced in 7.64.1
@@ -497,6 +495,10 @@ Introduced in 7.22.0
 Introduced in 7.37.0
 .IP CURLHEADER_UNIFIED
 Introduced in 7.37.0
+.IP CURLHSTS_ENABLE
+Introduced in 7.74.0
+.IP CURLHSTS_READONLYFILE
+Introduced in 7.74.0
 .IP CURLINFO_ACTIVESOCKET
 Introduced in 7.45.0
 .IP CURLINFO_APPCONNECT_TIME
@@ -969,6 +971,18 @@ Introduced in 7.10
 Introduced in 7.7.2
 .IP CURLOPT_HEADEROPT
 Introduced in 7.37.0
+.IP CURLOPT_HSTS
+Introduced in 7.74.0
+.IP CURLOPT_HSTS_CTRL
+Introduced in 7.74.0
+.IP CURLOPT_HSTSREADDATA
+Introduced in 7.74.0
+.IP CURLOPT_HSTSREADFUNCTION
+Introduced in 7.74.0
+.IP CURLOPT_HSTSWRITEDATA
+Introduced in 7.74.0
+.IP CURLOPT_HSTSWRITEFUNCTION
+Introduced in 7.74.0
 .IP CURLOPT_HTTP09_ALLOWED
 Introduced in 7.64.0
 .IP CURLOPT_HTTP200ALIASES
@@ -1720,6 +1734,12 @@ Introduced in 7.56.0
 Introduced in 7.56.0
 .IP CURLSSLSET_UNKNOWN_BACKEND
 Introduced in 7.56.0
+.IP CURLSTS_DONE
+Introduced in 7.74.0
+.IP CURLSTS_FAIL
+Introduced in 7.74.0
+.IP CURLSTS_OK
+Introduced in 7.74.0
 .IP CURLUE_BAD_HANDLE
 Introduced in 7.62.0
 .IP CURLUE_BAD_PARTPOINTER
@@ -2115,6 +2135,8 @@ Introduced in 7.38.0
 .IP CURL_VERSION_GSSNEGOTIATE
 Introduced in 7.10.6
 Deprecated since 7.38.0
+.IP CURL_VERSION_HSTS
+Introduced in 7.74.0
 .IP CURL_VERSION_HTTP2
 Introduced in 7.33.0
 .IP CURL_VERSION_HTTP3

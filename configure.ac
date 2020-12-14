@@ -9,7 +9,7 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at https://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -24,7 +24,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
 
 dnl We don't know the version number "statically" so we use a dash here
-AC_INIT([curl], [-], [a suitable curl mailing list: https://curl.haxx.se/mail/])
+AC_INIT([curl], [-], [a suitable curl mailing list: https://curl.se/mail/])
 
 XC_OVR_ZZ50
 XC_OVR_ZZ60
@@ -136,7 +136,7 @@ AC_SUBST(VERSIONNUM)
 dnl Solaris pkgadd support definitions
 PKGADD_PKG="HAXXcurl"
 PKGADD_NAME="curl - a client that groks URLs"
-PKGADD_VENDOR="curl.haxx.se"
+PKGADD_VENDOR="curl.se"
 AC_SUBST(PKGADD_PKG)
 AC_SUBST(PKGADD_NAME)
 AC_SUBST(PKGADD_VENDOR)
@@ -164,8 +164,11 @@ curl_verbose_msg="enabled (--disable-verbose)"
    curl_rtmp_msg="no      (--with-librtmp)"
   curl_mtlnk_msg="no      (--with-libmetalink)"
     curl_psl_msg="no      (--with-libpsl)"
-
+ curl_altsvc_msg="enabled";
     ssl_backends=
+
+
+enable_altsvc="yes"
 
 dnl
 dnl Save some initial values the user might have provided
@@ -384,6 +387,10 @@ AC_HELP_STRING([--disable-http],[Disable HTTP support]),
        AC_SUBST(CURL_DISABLE_HTTP, [1])
        AC_DEFINE(CURL_DISABLE_RTSP, 1, [to disable RTSP])
        AC_SUBST(CURL_DISABLE_RTSP, [1])
+       dnl toggle off alt-svc too when HTTP is disabled
+       AC_DEFINE(CURL_DISABLE_ALTSVC, 1, [disable alt-svc])
+       curl_altsvc_msg="no";
+       enable_altsvc="no"
        ;;
   *)   AC_MSG_RESULT(yes)
        ;;
@@ -856,14 +863,14 @@ then
   ])
 fi
 
-if test "$HAVE_GETHOSTBYNAME" != "1"
+if test "$HAVE_GETHOSTBYNAME" != "1" -o "${with_amissl+set}" = set
 then
   dnl This is for AmigaOS with bsdsocket.library - needs testing before -lnet
   AC_MSG_CHECKING([for gethostbyname for AmigaOS bsdsocket.library])
   AC_LINK_IFELSE([
     AC_LANG_PROGRAM([[
-#include <proto/bsdsocket.h>
-struct Library *SocketBase = NULL;
+  #include <proto/bsdsocket.h>
+  struct Library *SocketBase = NULL;
     ]],[[
       gethostbyname("www.dummysite.com");
     ]])
@@ -1748,19 +1755,13 @@ if test -z "$ssl_backends" -o "x$OPT_SSL" != xno &&
   case "$OPT_SSL" in
   yes)
     dnl --with-ssl (without path) used
-    if test x$cross_compiling != xyes; then
-      dnl only do pkg-config magic when not cross-compiling
-      PKGTEST="yes"
-    fi
+    PKGTEST="yes"
     PREFIX_OPENSSL=/usr/local/ssl
     LIB_OPENSSL="$PREFIX_OPENSSL/lib$libsuff"
     ;;
   off)
     dnl no --with-ssl option given, just check default places
-    if test x$cross_compiling != xyes; then
-      dnl only do pkg-config magic when not cross-compiling
-      PKGTEST="yes"
-    fi
+    PKGTEST="yes"
     PREFIX_OPENSSL=
     ;;
   *)
@@ -3050,7 +3051,8 @@ if test X"$OPT_LIBSSH2" != Xno; then
   CPPFLAGS="$CPPFLAGS $CPP_SSH2"
   LIBS="$LIB_SSH2 $LIBS"
 
-  AC_CHECK_LIB(ssh2, libssh2_channel_open_ex)
+  dnl check for function added in libssh2 version 1.0
+  AC_CHECK_LIB(ssh2, libssh2_session_block_directions)
 
   AC_CHECK_HEADERS(libssh2.h,
     curl_ssh_msg="enabled (libSSH2)"
@@ -4501,6 +4503,8 @@ if test "$want_pthreads" != "no"; then
       if test "$USE_THREADS_POSIX" != "1"
       then
         CFLAGS="$CFLAGS -pthread"
+        # assign PTHREAD for pkg-config use
+        PTHREAD=" -pthread"
         AC_CHECK_LIB(pthread, pthread_create,
                      [USE_THREADS_POSIX=1],
                      [ CFLAGS="$save_CFLAGS"])
@@ -4851,7 +4855,6 @@ AC_HELP_STRING([--disable-get-easy-options],[Disable curl_easy_options]),
 dnl ************************************************************
 dnl switch on/off alt-svc
 dnl
-curl_altsvc_msg="no      (--enable-alt-svc)";
 AC_MSG_CHECKING([whether to support alt-svc])
 AC_ARG_ENABLE(alt-svc,
 AC_HELP_STRING([--enable-alt-svc],[Enable alt-svc support])
@@ -4859,18 +4862,39 @@ AC_HELP_STRING([--disable-alt-svc],[Disable alt-svc support]),
 [ case "$enableval" in
   no)
        AC_MSG_RESULT(no)
+       AC_DEFINE(CURL_DISABLE_ALTSVC, 1, [disable alt-svc])
+       curl_altsvc_msg="no";
+       enable_altsvc="no"
        ;;
   *) AC_MSG_RESULT(yes)
-       curl_altsvc_msg="enabled";
-       enable_altsvc="yes"
        ;;
   esac ],
        AC_MSG_RESULT(no)
 )
 
-if test "$enable_altsvc" = "yes"; then
-  AC_DEFINE(USE_ALTSVC, 1, [to enable alt-svc])
-  experimental="$experimental alt-svc"
+dnl ************************************************************
+dnl switch on/off hsts
+dnl
+curl_hsts_msg="no      (--enable-hsts)";
+AC_MSG_CHECKING([whether to support HSTS])
+AC_ARG_ENABLE(hsts,
+AC_HELP_STRING([--enable-hsts],[Enable HSTS support])
+AC_HELP_STRING([--disable-hsts],[Disable HSTS support]),
+[ case "$enableval" in
+  no)
+       AC_MSG_RESULT(no)
+       ;;
+  *) AC_MSG_RESULT(yes)
+       curl_hsts_msg="enabled";
+       enable_hsts="yes"
+       ;;
+  esac ],
+       AC_MSG_RESULT(no)
+)
+
+if test "$enable_hsts" = "yes"; then
+  AC_DEFINE(USE_HSTS, 1, [to enable HSTS])
+  experimental="$experimental HSTS"
 fi
 
 dnl *************************************************************
@@ -4911,7 +4935,7 @@ CURL_CONFIGURE_SYMBOL_HIDING
 dnl
 dnl All the library dependencies put into $LIB apply to libcurl only.
 dnl
-LIBCURL_LIBS=$LIBS
+LIBCURL_LIBS="$LIBS$PTHREAD"
 
 AC_SUBST(LIBCURL_LIBS)
 AC_SUBST(CURL_NETWORK_LIBS)
@@ -4988,6 +5012,9 @@ fi
 
 if test "x$enable_altsvc" = "xyes"; then
   SUPPORT_FEATURES="$SUPPORT_FEATURES alt-svc"
+fi
+if test "x$enable_hsts" = "xyes"; then
+  SUPPORT_FEATURES="$SUPPORT_FEATURES HSTS"
 fi
 
 if test "x$CURL_DISABLE_CRYPTO_AUTH" != "x1" -a \

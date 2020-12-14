@@ -934,6 +934,10 @@ SOURCE=..\..\..\..\lib\hostsyn.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\lib\hsts.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\lib\http2.c
 # End Source File
 # Begin Source File
@@ -1547,6 +1551,10 @@ SOURCE=..\..\..\..\lib\hostcheck.h
 # Begin Source File
 
 SOURCE=..\..\..\..\lib\hostip.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\lib\hsts.h
 # End Source File
 # Begin Source File
 

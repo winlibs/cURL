@@ -9,7 +9,7 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at https://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -68,7 +68,7 @@ test409 \
 \
 test430 test431 test432 test433 test434 \
 \
-test490 test491 test492 \
+test490 test491 test492 test493 \
 \
 test500 test501 test502 test503 test504 test505 test506 test507 test508 \
 test509 test510 test511 test512 test513 test514 test515 test516 test517 \
@@ -143,7 +143,7 @@ test1190 test1191 test1192 test1193 test1194 test1195 test1196 test1197 \
 \
 test1200 test1201 test1202 test1203 test1204 test1205 test1206 test1207 \
 test1208 test1209 test1210 test1211 test1212 test1213 test1214 test1215 \
-test1216 test1217 test1218 test1219 test1220 test1221 test1222 test1223 \
+test1216 test1217 test1218 test1219 test1220                   test1223 \
 test1224 test1225 test1226 test1227 test1228 test1229 test1230 test1231 \
 test1232 test1233 test1234 test1235 test1236 test1237 test1238 test1239 \
 test1240 test1241 test1242 test1243 test1244 test1245 test1246 test1247 \
@@ -197,13 +197,14 @@ test1620 test1621 \
 test1630 test1631 test1632 test1633 \
 \
 test1650 test1651 test1652 test1653 test1654 test1655 \
+test1660 \
 \
 test1700 test1701 test1702 \
 \
 test1800 test1801 \
 \
                                     test1904 test1905 test1906 test1907 \
-test1908 test1909 test1910 test1911 test1912 test1913 test1914 \
+test1908 test1909 test1910 test1911 test1912 test1913 test1914 test1915 \
 \
 test2000 test2001 test2002 test2003 test2004 test2005 test2006 test2007 \
 test2008 test2009 test2010 test2011 test2012 test2013 test2014 test2015 \

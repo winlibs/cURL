@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -99,7 +99,7 @@ CURLcode curl_easy_perform_ev(CURL *easy);
 #endif
 
 #define CURL_CA_CERT_ERRORMSG                                               \
-  "More details here: https://curl.haxx.se/docs/sslcerts.html\n\n"          \
+  "More details here: https://curl.se/docs/sslcerts.html\n\n"          \
   "curl failed to verify the legitimacy of the server and therefore "       \
   "could not\nestablish a secure connection to it. To learn more about "    \
   "this situation and\nhow to fix it, please visit the web page mentioned " \
@@ -322,6 +322,9 @@ static CURLcode pre_transfer(struct GlobalConfig *global,
 
     if(uploadfilesize != -1) {
       struct OperationConfig *config = per->config; /* for the macro below */
+#ifdef CURL_DISABLE_LIBCURL_OPTION
+      (void)config;
+#endif
       my_setopt(per->curl, CURLOPT_INFILESIZE_LARGE, uploadfilesize);
     }
     per->input.fd = per->infd;
@@ -471,6 +474,7 @@ static CURLcode post_per_transfer(struct GlobalConfig *global,
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response);
 
         switch(response) {
+        case 408: /* Request Timeout */
         case 429: /* Too Many Requests (RFC6585) */
         case 500: /* Internal Server Error */
         case 502: /* Bad Gateway */
@@ -1707,30 +1711,25 @@ static CURLcode single_transfer(struct GlobalConfig *global,
         if(config->path_as_is)
           my_setopt(curl, CURLOPT_PATH_AS_IS, 1L);
 
-        if(built_in_protos & (CURLPROTO_SCP|CURLPROTO_SFTP)) {
-          if(!config->insecure_ok) {
-            char *home;
-            char *file;
-            result = CURLE_FAILED_INIT;
-            home = homedir(NULL);
-            if(home) {
-              file = aprintf("%s/.ssh/known_hosts", home);
-              if(file) {
-                /* new in curl 7.19.6 */
-                result = res_setopt_str(curl, CURLOPT_SSH_KNOWNHOSTS, file);
-                curl_free(file);
-                if(result == CURLE_UNKNOWN_OPTION)
-                  /* libssh2 version older than 1.1.1 */
-                  result = CURLE_OK;
-              }
-              Curl_safefree(home);
+        if((built_in_protos & (CURLPROTO_SCP|CURLPROTO_SFTP)) &&
+           !config->insecure_ok) {
+          char *home = homedir(NULL);
+          if(home) {
+            char *file = aprintf("%s/.ssh/known_hosts", home);
+            if(file) {
+              /* new in curl 7.19.6 */
+              result = res_setopt_str(curl, CURLOPT_SSH_KNOWNHOSTS, file);
+              curl_free(file);
+              if(result == CURLE_UNKNOWN_OPTION)
+                /* libssh2 version older than 1.1.1 */
+                result = CURLE_OK;
             }
-            else {
-              errorf(global, "Failed to figure out user's home dir!");
-            }
+            Curl_safefree(home);
             if(result)
               break;
           }
+          else
+            warnf(global, "No home dir, couldn't find known_hosts file!");
         }
 
         if(config->no_body || config->remote_time) {
@@ -2068,6 +2067,9 @@ static CURLcode single_transfer(struct GlobalConfig *global,
         if(config->altsvc)
           my_setopt_str(curl, CURLOPT_ALTSVC, config->altsvc);
 
+        if(config->hsts)
+          my_setopt_str(curl, CURLOPT_HSTS, config->hsts);
+
 #ifdef USE_METALINK
         if(!metalink && config->use_metalink) {
           outs->metalink_parser = metalink_parser_context_new();
@@ -2171,7 +2173,7 @@ static CURLcode add_parallel_transfers(struct GlobalConfig *global,
 
     result = pre_transfer(global, per);
     if(result)
-      break;
+      return result;
 
     /* parallel connect means that we don't set PIPEWAIT since pipewait
        will make libcurl prefer multiplexing */

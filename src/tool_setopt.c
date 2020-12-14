@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -59,6 +59,11 @@ const struct NameValue setopt_nv_CURL_SOCKS_PROXY[] = {
   NV(CURLPROXY_SOCKS5),
   NV(CURLPROXY_SOCKS4A),
   NV(CURLPROXY_SOCKS5_HOSTNAME),
+  NVEND,
+};
+
+const struct NameValueUnsigned setopt_nv_CURLHSTS[] = {
+  NV(CURLHSTS_ENABLE),
   NVEND,
 };
 

@@ -1409,6 +1409,9 @@
 				RelativePath="..\..\..\..\lib\hostsyn.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\hsts.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\http2.c">
 			</File>
 			<File
@@ -1774,6 +1777,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\hostip.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\hsts.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\http2.h">

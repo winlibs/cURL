@@ -2430,6 +2430,7 @@
     <ClCompile Include="..\..\..\..\lib\hostip6.c" />
     <ClCompile Include="..\..\..\..\lib\hostip.c" />
     <ClCompile Include="..\..\..\..\lib\hostsyn.c" />
+    <ClCompile Include="..\..\..\..\lib\hsts.c" />
     <ClCompile Include="..\..\..\..\lib\http2.c" />
     <ClCompile Include="..\..\..\..\lib\http.c" />
     <ClCompile Include="..\..\..\..\lib\http_chunks.c" />
@@ -2585,6 +2586,7 @@
     <ClInclude Include="..\..\..\..\lib\hash.h" />
     <ClInclude Include="..\..\..\..\lib\hostcheck.h" />
     <ClInclude Include="..\..\..\..\lib\hostip.h" />
+    <ClInclude Include="..\..\..\..\lib\hsts.h" />
     <ClInclude Include="..\..\..\..\lib\http2.h" />
     <ClInclude Include="..\..\..\..\lib\http_chunks.h" />
     <ClInclude Include="..\..\..\..\lib\http_digest.h" />

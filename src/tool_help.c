@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -87,7 +87,7 @@ static const struct category_descriptors categories[] = {
   {"imap", "IMAP protocol options", CURLHELP_IMAP},
   /* important is left out because it is the default help page */
   {"misc", "Options that don't fit into any other category", CURLHELP_MISC},
-  {"output", "The output of curl", CURLHELP_OUTPUT},
+  {"output", "Filesystem output", CURLHELP_OUTPUT},
   {"pop3", "POP3 protocol options", CURLHELP_POP3},
   {"post", "HTTP Post specific options", CURLHELP_POST},
   {"proxy", "All options related to proxies", CURLHELP_PROXY},
@@ -328,6 +328,9 @@ static const struct helptxt helptext[] = {
   {"    --hostpubmd5 <md5>",
    "Acceptable MD5 hash of the host public key",
    CURLHELP_SFTP | CURLHELP_SCP},
+  {"    --hsts <file name>",
+   "Enable HSTS with this cache file",
+   CURLHELP_HTTP},
   {"    --http0.9",
    "Allow HTTP 0.9 responses",
    CURLHELP_HTTP},
@@ -862,6 +865,7 @@ static const struct feat feats[] = {
   {"MultiSSL",       CURL_VERSION_MULTI_SSL},
   {"PSL",            CURL_VERSION_PSL},
   {"alt-svc",        CURL_VERSION_ALTSVC},
+  {"HSTS",           CURL_VERSION_HSTS},
 };
 
 static void print_category(curlhelp_t category)

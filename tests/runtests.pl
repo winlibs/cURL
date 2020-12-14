@@ -10,7 +10,7 @@
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at https://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -167,7 +167,7 @@ my $VERSION;             # curl's reported version number
 
 my $srcdir = $ENV{'srcdir'} || '.';
 my $CURL="../src/curl".exe_ext('TOOL'); # what curl executable to run on the tests
-my $VCURL="curl";   # what curl binary to use to verify the servers with
+my $VCURL=$CURL;   # what curl binary to use to verify the servers with
                    # VCURL is handy to set to the system one when the one you
                    # just built hangs or crashes and thus prevent verification
 my $DBGCURL=$CURL; #"../src/.libs/curl";  # alternative for debugging
@@ -256,6 +256,7 @@ my $has_cares;      # set if built with c-ares
 my $has_threadedres;# set if built with threaded resolver
 my $has_psl;        # set if libcurl is built with PSL support
 my $has_altsvc;     # set if libcurl is built with alt-svc support
+my $has_hsts;       # set if libcurl is built with HSTS support
 my $has_ldpreload;  # set if curl is built for systems supporting LD_PRELOAD
 my $has_multissl;   # set if curl is build with MultiSSL support
 my $has_manual;     # set if curl is built with built-in manual
@@ -2761,7 +2762,9 @@ sub compare {
 }
 
 sub setupfeatures {
+    $feature{"c-ares"} = $has_cares;
     $feature{"alt-svc"} = $has_altsvc;
+    $feature{"HSTS"} = $has_hsts;
     $feature{"brotli"} = $has_brotli;
     $feature{"crypto"} = $has_crypto;
     $feature{"debug"} = $debug_build;
@@ -3034,6 +3037,9 @@ sub checksystem {
             if($feat =~ /alt-svc/i) {
                 # alt-svc enabled
                 $has_altsvc=1;
+            }
+            if($feat =~ /HSTS/i) {
+                $has_hsts=1;
             }
             if($feat =~ /AsynchDNS/i) {
                 if(!$has_cares) {
@@ -5775,11 +5781,18 @@ if($total) {
                    $ok/$total*100);
 
     if($ok != $total) {
-        logmsg "TESTFAIL: These test cases failed: $failed\n";
+        logmsg "\nTESTFAIL: These test cases failed: $failed\n\n";
     }
 }
 else {
-    logmsg "TESTFAIL: No tests were performed\n";
+    logmsg "\nTESTFAIL: No tests were performed\n\n";
+    if(scalar(keys %enabled_keywords)) {
+        logmsg "TESTFAIL: Nothing matched these keywords: ";
+        for(keys %enabled_keywords) {
+            logmsg "$_ ";
+        }
+        logmsg "\n";
+    }
 }
 
 if($all) {
@@ -5816,6 +5829,6 @@ if($skipped && !$short) {
     }
 }
 
-if($total && (($ok+$ign) != $total)) {
+if(($total && (($ok+$ign) != $total)) || !$total) {
     exit 1;
 }
