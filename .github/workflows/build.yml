@@ -22,5 +22,5 @@ jobs:
       - run: ./.github/workflows/build.ps1 -vs ${{matrix.vs}} -arch ${{matrix.arch}} -libssh2 1.9.0 -openssl 1.1.1k -zlib 1.2.11 -nghttp2 1.40.0
       - uses: actions/upload-artifact@v2
         with:
-          name: libcurl-7.77.0-${{matrix.vs}}-${{matrix.arch}}
+          name: libcurl-7.77.0-1-${{matrix.vs}}-${{matrix.arch}}
           path: ./winlib_build/
