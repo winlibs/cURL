@@ -4,15 +4,21 @@ jobs:
   build:
     strategy:
       matrix:
-          vs: [vc15]
+          vs: [vc15, vs16]
           arch: [x64, x86]
     runs-on: windows-2019
     steps:
       - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
+        if: ${{matrix.vs == 'vc15'}}
         with:
           arch: ${{matrix.arch}}
           toolset: 14.16
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: ${{matrix.vs == 'vs16'}}
+        with:
+          arch: ${{matrix.arch}}
+          toolset: 14.29
       - run: ./.github/workflows/build.ps1 -vs ${{matrix.vs}} -arch ${{matrix.arch}} -libssh2 1.9.0 -openssl 1.1.1k -zlib 1.2.11 -nghttp2 1.40.0
       - uses: actions/upload-artifact@v2
         with:
