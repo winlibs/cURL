@@ -135,6 +135,7 @@ Curl_ssl_config_matches(struct ssl_primary_config *data,
      (data->verifyhost == needle->verifyhost) &&
      (data->verifystatus == needle->verifystatus) &&
      blobcmp(data->cert_blob, needle->cert_blob) &&
+     blobcmp(data->ca_info_blob, needle->ca_info_blob) &&
      Curl_safe_strcasecompare(data->CApath, needle->CApath) &&
      Curl_safe_strcasecompare(data->CAfile, needle->CAfile) &&
      Curl_safe_strcasecompare(data->clientcert, needle->clientcert) &&
@@ -161,6 +162,7 @@ Curl_clone_primary_ssl_config(struct ssl_primary_config *source,
   dest->sessionid = source->sessionid;
 
   CLONE_BLOB(cert_blob);
+  CLONE_BLOB(ca_info_blob);
   CLONE_STRING(CApath);
   CLONE_STRING(CAfile);
   CLONE_STRING(clientcert);
@@ -185,6 +187,7 @@ void Curl_free_primary_ssl_config(struct ssl_primary_config *sslc)
   Curl_safefree(sslc->cipher_list13);
   Curl_safefree(sslc->pinned_key);
   Curl_safefree(sslc->cert_blob);
+  Curl_safefree(sslc->ca_info_blob);
   Curl_safefree(sslc->curves);
 }
 
@@ -315,6 +318,8 @@ Curl_ssl_connect(struct Curl_easy *data, struct connectdata *conn,
 
   if(!result)
     Curl_pgrsTime(data, TIMER_APPCONNECT); /* SSL is connected */
+  else
+    conn->ssl[sockindex].use = FALSE;
 
   return result;
 }
@@ -338,7 +343,9 @@ Curl_ssl_connect_nonblocking(struct Curl_easy *data, struct connectdata *conn,
   /* mark this is being ssl requested from here on. */
   conn->ssl[sockindex].use = TRUE;
   result = Curl_ssl->connect_nonblocking(data, conn, sockindex, done);
-  if(!result && *done)
+  if(result)
+    conn->ssl[sockindex].use = FALSE;
+  else if(*done)
     Curl_pgrsTime(data, TIMER_APPCONNECT); /* SSL is connected */
   return result;
 }
@@ -400,9 +407,8 @@ bool Curl_ssl_getsessionid(struct Curl_easy *data,
 
   DEBUGASSERT(SSL_SET_OPTION(primary.sessionid));
 
-  if(!SSL_SET_OPTION(primary.sessionid) || !data->state.session)
-    /* session ID re-use is disabled or the session cache has not been
-       setup */
+  if(!SSL_SET_OPTION(primary.sessionid))
+    /* session ID re-use is disabled */
     return TRUE;
 
   /* Lock if shared */
