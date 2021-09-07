@@ -117,6 +117,8 @@ test945 test946 test947 test948 test949 test950 test951 test952 test953 \
 test954 test955 test956 test957 test958 test959 test960 test961 test962 \
 test963 test964 test965 test966 test967 test968 test969 test970 test971 \
 \
+test980 test981 test982 test983 test984 test985 test986 \
+\
 test1000 test1001 test1002 test1003 test1004 test1005 test1006 test1007 \
 test1008 test1009 test1010 test1011 test1012 test1013 test1014 test1015 \
 test1016 test1017 test1018 test1019 test1020 test1021 test1022 test1023 \
