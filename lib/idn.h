@@ -1,3 +1,5 @@
+#ifndef HEADER_CURL_IDN_H
+#define HEADER_CURL_IDN_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -21,27 +23,16 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "tool_setup.h"
 
-#if defined(NETWARE)
-
-#ifdef NETWARE
-#  ifdef __NOVELL_LIBC__
-#    include <screen.h>
-#  else
-#    include <nwconio.h>
-#  endif
+#ifdef USE_WIN32_IDN
+bool Curl_win32_idn_to_ascii(const char *in, char **out);
+#endif /* USE_WIN32_IDN */
+bool Curl_is_ASCII_name(const char *hostname);
+CURLcode Curl_idnconvert_hostname(struct hostname *host);
+#if defined(USE_LIBIDN2) || defined(USE_WIN32_IDN)
+#define USE_IDN
+void Curl_free_idnconverted_hostname(struct hostname *host);
+#else
+#define Curl_free_idnconverted_hostname(x)
 #endif
-
-#include "tool_panykey.h"
-
-#include "memdebug.h" /* keep this as LAST include */
-
-void tool_pressanykey(void)
-{
-#if defined(NETWARE)
-  pressanykey();
-#endif
-}
-
-#endif /* NETWARE */
+#endif /* HEADER_CURL_IDN_H */

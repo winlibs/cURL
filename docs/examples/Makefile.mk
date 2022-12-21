@@ -22,51 +22,53 @@
 #
 #***************************************************************************
 
-# See usage in lib/Makefile.m32
+# Build libcurl via lib/Makefile.mk first.
 
-PROOT := ..
+PROOT := ../..
 
-RCFLAGS  += -DCURL_EMBED_MANIFEST
-CPPFLAGS += -I$(PROOT)/lib
-LDFLAGS  += -L$(PROOT)/lib
-LIBS     += -lcurl
-
-ifneq ($(findstring -dyn,$(CFG)),)
-  curl_DEPENDENCIES := $(PROOT)/lib/libcurl$(CURL_DLL_SUFFIX).dll
-  curl_DEPENDENCIES += $(PROOT)/lib/libcurl.dll.a
+ifeq ($(findstring -static,$(CFG)),)
   DYN := 1
+endif
+
+### Common
+
+include $(PROOT)/lib/Makefile.mk
+
+### Local
+
+CPPFLAGS += -DCURL_NO_OLDIES
+LDFLAGS  += -L$(PROOT)/lib
+LIBS     := -lcurl $(LIBS)
+
+ifdef DYN
+  curl_DEPENDENCIES += $(PROOT)/lib/libcurl.dll.a
 else
   curl_DEPENDENCIES := $(PROOT)/lib/libcurl.a
-  CPPFLAGS += -DCURL_STATICLIB
-  LDFLAGS += -static
+  ifdef WIN32
+    CPPFLAGS += -DCURL_STATICLIB
+    LDFLAGS += -static
+  endif
+endif
+
+ifdef WIN32
+  LIBS += -lws2_32
 endif
 
 ### Sources and targets
 
-# Provides CURL_CFILES, CURLX_CFILES, CURL_RCFILES
+# Provides check_PROGRAMS
 include Makefile.inc
 
-TARGETS := curl.exe
-
-curl_OBJECTS := $(patsubst %.c,%.o,$(strip $(CURL_CFILES)))
-curl_OBJECTS += $(patsubst %.c,%.o,$(notdir $(strip $(CURLX_CFILES))))
-curl_OBJECTS += $(patsubst %.rc,%.res,$(strip $(CURL_RCFILES)))
-vpath %.c $(PROOT)/lib
-
-TOCLEAN := $(curl_OBJECTS)
-ifneq ($(wildcard tool_hugehelp.c.cvs),)
-TOCLEAN += tool_hugehelp.c
+ifdef WIN32
+check_PROGRAMS += synctime
 endif
 
-### Local rules
+TARGETS := $(patsubst %,%$(BIN_EXT),$(strip $(check_PROGRAMS)))
+TOCLEAN := $(TARGETS)
 
-$(TARGETS): $(curl_OBJECTS) $(curl_DEPENDENCIES)
-	$(CC) $(LDFLAGS) $(CURL_LDFLAGS_BIN) -o $@ $(curl_OBJECTS) $(LIBS)
+### Rules
 
-tool_hugehelp.c:
-	@echo Creating $@
-	@$(call COPY, $@.cvs, $@)
+%$(BIN_EXT): %.c $(curl_DEPENDENCIES)
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(CURL_LDFLAGS_BIN) $< -o $@ $(LIBS)
 
-### Global script
-
-include $(PROOT)/lib/Makefile.m32
+all: $(TARGETS)

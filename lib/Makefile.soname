@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1999 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -20,39 +20,23 @@
 #
 # SPDX-License-Identifier: curl
 #
-#***************************************************************************
+###########################################################################
 
-# Build libcurl via lib/Makefile.m32 first.
+VERSIONCHANGE=12
+VERSIONADD=0
+VERSIONDEL=8
 
-PROOT := ../..
-
-LDFLAGS  += -L$(PROOT)/lib
-LIBS     += -lcurl
-
-ifeq ($(findstring -static,$(CFG)),)
-  curl_DEPENDENCIES += $(PROOT)/lib/libcurl.dll.a
-  DYN := 1
-else
-  curl_DEPENDENCIES := $(PROOT)/lib/libcurl.a
-  CPPFLAGS += -DCURL_STATICLIB
-  LDFLAGS += -static
-endif
-
-LIBS += -lws2_32
-
-### Sources and targets
-
-# Provides check_PROGRAMS
-include Makefile.inc
-
-TARGETS := $(patsubst %,%.exe,$(strip $(check_PROGRAMS) synctime))
-TOCLEAN := $(TARGETS:.exe=.o)
-
-### Local rules
-
-%.exe: %.o $(curl_DEPENDENCIES)
-	$(CC) $(LDFLAGS) $(CURL_LDFLAGS_BIN) -o $@ $< $(LIBS)
-
-### Global script
-
-include $(PROOT)/lib/Makefile.m32
+# libtool version:
+VERSIONINFO=-version-info $(VERSIONCHANGE):$(VERSIONADD):$(VERSIONDEL)
+# This flag accepts an argument of the form current[:revision[:age]]. So,
+# passing -version-info 3:12:1 sets current to 3, revision to 12, and age to
+# 1.
+#
+# Here's the simplified rule guide on how to change -version-info:
+# (current version is C:R:A)
+#
+# 1. if there are only source changes, use C:R+1:A
+# 2. if interfaces were added use C+1:0:A+1
+# 3. if interfaces were removed, then use C+1:0:0
+#
+# For the full guide on libcurl ABI rules, see docs/libcurl/ABI
