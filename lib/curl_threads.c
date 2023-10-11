@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -106,8 +106,6 @@ curl_thread_t Curl_thread_create(unsigned int (CURL_STDCALL *func) (void *),
 {
 #ifdef _WIN32_WCE
   typedef HANDLE curl_win_thread_handle_t;
-#elif defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR)
-  typedef unsigned long curl_win_thread_handle_t;
 #else
   typedef uintptr_t curl_win_thread_handle_t;
 #endif

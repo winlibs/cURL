@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -82,10 +82,15 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 
 #ifdef DEBUGBUILD
   if(size * nmemb > (size_t)CURL_MAX_HTTP_HEADER) {
-    warnf(per->config->global, "Header data exceeds single call write "
-          "limit!\n");
+    warnf(per->config->global, "Header data exceeds single call write limit");
     return CURL_WRITEFUNC_ERROR;
   }
+#endif
+
+#ifdef WIN32
+  /* Discard incomplete UTF-8 sequence buffered from body */
+  if(outs->utf8seq[0])
+    memset(outs->utf8seq, 0, sizeof(outs->utf8seq));
 #endif
 
   /*
@@ -208,7 +213,7 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
       value = memchr(ptr, ':', cb);
     if(value) {
       size_t namelen = value - ptr;
-      fprintf(outs->stream, BOLD "%.*s" BOLDOFF ":", namelen, ptr);
+      fprintf(outs->stream, BOLD "%.*s" BOLDOFF ":", (int)namelen, ptr);
 #ifndef LINK
       fwrite(&value[1], cb - namelen - 1, 1, outs->stream);
 #else
@@ -344,11 +349,22 @@ void write_linked_location(CURL *curl, const char *location, size_t loclen,
   char *copyloc = NULL, *locurl = NULL, *scheme = NULL, *finalurl = NULL;
   const char *loc = location;
   size_t llen = loclen;
+  int space_skipped = 0;
+  char *vver = getenv("VTE_VERSION");
+
+  if(vver) {
+    long vvn = strtol(vver, NULL, 10);
+    /* Skip formatting for old versions of VTE <= 0.48.1 (Mar 2017) since some
+       of those versions have formatting bugs. (#10428) */
+    if(0 < vvn && vvn <= 4801)
+      goto locout;
+  }
 
   /* Strip leading whitespace of the redirect URL */
-  while(llen && *loc == ' ') {
+  while(llen && (*loc == ' ' || *loc == '\t')) {
     ++loc;
     --llen;
+    ++space_skipped;
   }
 
   /* Strip the trailing end-of-line characters, normally "\r\n" */
@@ -387,8 +403,10 @@ void write_linked_location(CURL *curl, const char *location, size_t loclen,
      !strcmp("https", scheme) ||
      !strcmp("ftp", scheme) ||
      !strcmp("ftps", scheme)) {
-    fprintf(stream, LINK "%s" LINKST "%.*s" LINKOFF,
-            finalurl, loclen, location);
+    fprintf(stream, "%.*s" LINK "%s" LINKST "%.*s" LINKOFF,
+            space_skipped, location,
+            finalurl,
+            (int)loclen - space_skipped, loc);
     goto locdone;
   }
 

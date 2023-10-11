@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -21,23 +21,6 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#ifdef TIME_WITH_SYS_TIME
-/* Time with sys/time test */
-
-#include <sys/types.h>
-#include <sys/time.h>
-#include <time.h>
-
-int
-main ()
-{
-if ((struct tm *) 0)
-return 0;
-  ;
-  return 0;
-}
-
-#endif
 
 #ifdef HAVE_FCNTL_O_NONBLOCK
 
@@ -510,7 +493,7 @@ main() {
 int
 main() {
   _Atomic int i = 1;
-  i = 0;  // Force an atomic-write operation.
+  i = 0;  /* Force an atomic-write operation. */
   return i;
 }
 #endif

@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: delegation
 Arg: <LEVEL>
@@ -21,3 +21,4 @@ service ticket, which is a matter of realm policy.
 .IP "always"
 Unconditionally allow the server to delegate.
 .RE
+.IP

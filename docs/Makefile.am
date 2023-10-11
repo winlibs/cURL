@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -86,7 +86,7 @@ EXTRA_DIST =                                    \
  RELEASE-PROCEDURE.md                           \
  RUSTLS.md                                      \
  ROADMAP.md                                     \
- SECURITY-PROCESS.md                            \
+ SECURITY-ADVISORY.md                           \
  SSL-PROBLEMS.md                                \
  SSLCERTS.md                                    \
  THANKS                                         \
@@ -94,6 +94,7 @@ EXTRA_DIST =                                    \
  TheArtOfHttpScripting.md                       \
  URL-SYNTAX.md                                  \
  VERSIONS.md                                    \
+ VULN-DISCLOSURE-POLICY.md                      \
  WEBSOCKET.md
 
 MAN2HTML= roffit $< >$@

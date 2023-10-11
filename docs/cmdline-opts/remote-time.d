@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: remote-time
 Short: R
@@ -9,6 +9,6 @@ Added: 7.9
 See-also: remote-name time-cond
 Multi: boolean
 ---
-When used, this will make curl attempt to figure out the timestamp of the
-remote file, and if that is available make the local file get that same
+Makes curl attempt to figure out the timestamp of the remote file that is
+getting downloaded, and if that is available make the local file get that same
 timestamp.

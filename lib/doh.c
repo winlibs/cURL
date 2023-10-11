@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2018 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -242,6 +242,7 @@ static CURLcode dohprobe(struct Curl_easy *data,
     /* pass in the struct pointer via a local variable to please coverity and
        the gcc typecheck helpers */
     struct dynbuf *resp = &p->serverdoh;
+    doh->internal = true;
     ERROR_CHECK_SETOPT(CURLOPT_URL, url);
     ERROR_CHECK_SETOPT(CURLOPT_DEFAULT_PROTOCOL, "https");
     ERROR_CHECK_SETOPT(CURLOPT_WRITEFUNCTION, doh_write_cb);
@@ -307,6 +308,10 @@ static CURLcode dohprobe(struct Curl_easy *data,
       ERROR_CHECK_SETOPT(CURLOPT_SSL_CTX_FUNCTION, data->set.ssl.fsslctx);
     if(data->set.ssl.fsslctxp)
       ERROR_CHECK_SETOPT(CURLOPT_SSL_CTX_DATA, data->set.ssl.fsslctxp);
+    if(data->set.fdebug)
+      ERROR_CHECK_SETOPT(CURLOPT_DEBUGFUNCTION, data->set.fdebug);
+    if(data->set.debugdata)
+      ERROR_CHECK_SETOPT(CURLOPT_DEBUGDATA, data->set.debugdata);
     if(data->set.str[STRING_SSL_EC_CURVES]) {
       ERROR_CHECK_SETOPT(CURLOPT_SSL_EC_CURVES,
                          data->set.str[STRING_SSL_EC_CURVES]);
@@ -347,7 +352,7 @@ static CURLcode dohprobe(struct Curl_easy *data,
   free(nurl);
   return CURLE_OK;
 
-  error:
+error:
   free(nurl);
   Curl_close(&doh);
   return result;
@@ -396,6 +401,7 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
     goto error;
   dohp->pending++;
 
+#ifdef ENABLE_IPV6
   if((conn->ip_version != CURL_IPRESOLVE_V4) && Curl_ipv6works(data)) {
     /* create IPv6 DoH request */
     result = dohprobe(data, &dohp->probe[DOH_PROBE_SLOT_IPADDR_V6],
@@ -405,9 +411,10 @@ struct Curl_addrinfo *Curl_doh(struct Curl_easy *data,
       goto error;
     dohp->pending++;
   }
+#endif
   return NULL;
 
-  error:
+error:
   curl_slist_free_all(dohp->headers);
   data->req.doh->headers = NULL;
   for(slot = 0; slot < DOH_PROBE_SLOTS; slot++) {
@@ -950,7 +957,7 @@ CURLcode Curl_doh_is_resolved(struct Curl_easy *data,
         Curl_share_lock(data, CURL_LOCK_DATA_DNS, CURL_LOCK_ACCESS_SINGLE);
 
       /* we got a response, store it in the cache */
-      dns = Curl_cache_addr(data, ai, dohp->host, dohp->port);
+      dns = Curl_cache_addr(data, ai, dohp->host, 0, dohp->port);
 
       if(data->share)
         Curl_share_unlock(data, CURL_LOCK_DATA_DNS);

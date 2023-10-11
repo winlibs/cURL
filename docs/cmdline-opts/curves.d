@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: curves
 Arg: <algorithm list>
@@ -19,5 +19,4 @@ in the "openssl s_client/s_server" utilities.
 the (EC) curve requested by the client, avoiding nontransparent client/server
 negotiations.
 
-If this option is set, the default curves list built into openssl will be
-ignored.
+If this option is set, the default curves list built into OpenSSL are ignored.

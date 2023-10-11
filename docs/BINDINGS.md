@@ -41,6 +41,8 @@ Clojure: [clj-curl](https://github.com/lsevero/clj-curl) by Lucas Severo
 
 [Ferite](https://web.archive.org/web/20150102192018/ferite.org/) Written by Paul Querna
 
+[Fortran](https://github.com/interkosmos/fortran-curl) Written by Philipp Engel
+
 [Gambas](https://gambas.sourceforge.net/)
 
 [glib/GTK+](https://web.archive.org/web/20100526203452/atterer.net/glibcurl) Written by Richard Atterer
@@ -109,7 +111,7 @@ Ruby: [curb](https://github.com/taf2/curb) written by Ross Bamford,
 
 [Rust](https://github.com/alexcrichton/curl-rust) curl-rust - by Carl Lerche
 
-[Scheme](http://www.metapaper.net/lisovsky/web/curl/) Bigloo binding by Kirill Lisovsky
+[Scheme](https://www.metapaper.net/lisovsky/web/curl/) Bigloo binding by Kirill Lisovsky
 
 [Scilab](https://help.scilab.org/docs/current/fr_FR/getURL.html) binding by Sylvestre Ledru
 

@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 2016 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -31,15 +31,15 @@ sub showline {
 
 my $root = $ARGV[0];
 
-open(F, "perl $root/lib/optiontable.pl < $root/include/curl/curl.h|");
-binmode F;
-my @gen=<F>;
-close(F);
+open(my $fh, "-|", "perl $root/lib/optiontable.pl < $root/include/curl/curl.h");
+binmode $fh;
+my @gen=<$fh>;
+close($fh);
 
-open(F, "<$root/lib/easyoptions.c");
-binmode F;
-my @file=<F>;
-close(F);
+open($fh, "<", "$root/lib/easyoptions.c");
+binmode $fh;
+my @file=<$fh>;
+close($fh);
 
 if(join("", @gen) ne join("", @file)) {
     print "easyoptions.c need to be regenerated!\n";

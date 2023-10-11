@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -22,8 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_PROTOCOLS_STR 3 "September 13, 2022" "libcurl 7.87.0" "curl_easy_setopt options"
-
+.TH CURLOPT_PROTOCOLS_STR 3 "11 Jun 2022" libcurl libcurl
 .SH NAME
 CURLOPT_PROTOCOLS_STR \- allowed protocols
 .SH SYNOPSIS
@@ -81,5 +80,8 @@ Returns CURLE_UNKNOWN_OPTION if the option is not implemented,
 CURLE_UNSUPPORTED_PROTOCOL if a listed protocol is not supported or disabled,
 CURLE_BAD_FUNCTION_ARGUMENT if no protocol is listed else CURLE_OK.
 .SH "SEE ALSO"
-.BR CURLOPT_REDIR_PROTOCOLS_STR "(3), " CURLOPT_URL "(3), "
-.BR curl_version_info "(3), " CURLINFO_SCHEME "(3), "
+.BR curl_version_info (3),
+.BR CURLINFO_SCHEME (3),
+.BR CURLOPT_DEFAULT_PROTOCOL (3),
+.BR CURLOPT_REDIR_PROTOCOLS_STR (3),
+.BR CURLOPT_URL (3)

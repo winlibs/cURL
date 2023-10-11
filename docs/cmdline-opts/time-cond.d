@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: time-cond
 Short: z
@@ -22,3 +22,6 @@ instead. See the *curl_getdate(3)* man pages for date expression details.
 Start the date expression with a dash (-) to make it request for a document
 that is older than the given date/time, default is a document that is newer
 than the specified date/time.
+
+If provided a non-existing file, curl outputs a warning about that fact and
+proceeds to do the transfer without a time condition.

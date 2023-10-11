@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: hostpubmd5
 Arg: <md5>
@@ -11,5 +11,5 @@ See-also: hostpubsha256
 Multi: single
 ---
 Pass a string containing 32 hexadecimal digits. The string should
-be the 128 bit MD5 checksum of the remote host's public key, curl will refuse
+be the 128 bit MD5 checksum of the remote host's public key, curl refuses
 the connection with the host unless the md5sums match.

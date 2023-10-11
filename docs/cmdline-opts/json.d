@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: json
 Arg: <data>
@@ -30,6 +30,6 @@ from stdin. Posting data from a file named 'foobar' would thus be done with
 --json @foobar and to instead read the data from stdin, use --json @-.
 
 If this option is used more than once on the same command line, the additional
-data pieces will be concatenated to the previous before sending.
+data pieces are concatenated to the previous before sending.
 
 The headers this option sets can be overridden with --header as usual.

@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: output-dir
 Arg: <dir>
@@ -15,5 +15,5 @@ This option specifies the directory in which files should be stored, when
 The given output directory is used for all URLs and output options on the
 command line, up until the first --next.
 
-If the specified target directory does not exist, the operation will fail
-unless --create-dirs is also used.
+If the specified target directory does not exist, the operation fails unless
+--create-dirs is also used.

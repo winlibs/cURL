@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: ntlm
 Help: Use HTTP NTLM authentication
@@ -20,5 +20,3 @@ method instead, such as Digest.
 
 If you want to enable NTLM for your proxy authentication, then use
 --proxy-ntlm.
-
-If this option is used several times, only the first one is used.

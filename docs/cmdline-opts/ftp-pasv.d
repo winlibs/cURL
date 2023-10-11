@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: ftp-pasv
 Help: Use PASV/EPSV instead of PORT
@@ -16,5 +16,5 @@ option.
 Reversing an enforced passive really is not doable but you must then instead
 enforce the correct --ftp-port again.
 
-Passive mode means that curl will try the EPSV command first and then PASV,
+Passive mode means that curl tries the EPSV command first and then PASV,
 unless --disable-epsv is used.

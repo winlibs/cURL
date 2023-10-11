@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: krb
 Arg: <level>
@@ -13,4 +13,4 @@ Multi: single
 ---
 Enable Kerberos authentication and use. The level must be entered and should
 be one of 'clear', 'safe', 'confidential', or 'private'. Should you use a
-level that is not one of these, 'private' will instead be used.
+level that is not one of these, 'private' is used.

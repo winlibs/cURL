@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: local-port
 Arg: <num/range>
@@ -11,5 +11,5 @@ Multi: single
 ---
 Set a preferred single number or range (FROM-TO) of local port numbers to use
 for the connection(s).  Note that port numbers by nature are a scarce resource
-that will be busy at times so setting this range to something too narrow might
-cause unnecessary connection setup failures.
+so setting this range to something too narrow might cause unnecessary
+connection setup failures.

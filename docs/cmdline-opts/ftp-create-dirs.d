@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: ftp-create-dirs
 Protocols: FTP SFTP
@@ -11,4 +11,4 @@ Multi: boolean
 ---
 When an FTP or SFTP URL/operation uses a path that does not currently exist on
 the server, the standard behavior of curl is to fail. Using this option, curl
-will instead attempt to create missing directories.
+instead attempts to create missing directories.

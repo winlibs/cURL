@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -40,17 +40,13 @@
 #define HAVE_NETINET_IN_H 1
 #define HAVE_NET_IF_H 1
 #define HAVE_PWD_H 1
-#define HAVE_RAND_EGD 1
 #define HAVE_SELECT 1
-#define HAVE_SETJMP_H 1
 #define HAVE_SIGNAL 1
-#define HAVE_SIGNAL_H 1
 #define HAVE_SOCKET 1
 #define HAVE_STRCASECMP 1
 #define HAVE_STRDUP 1
 #define HAVE_STRICMP 1
 #define HAVE_STRINGS_H 1
-#define HAVE_STRING_H 1
 #define HAVE_STRUCT_TIMEVAL 1
 #define HAVE_SYS_PARAM_H 1
 #define HAVE_SYS_SOCKET_H 1
@@ -58,7 +54,6 @@
 #define HAVE_SYS_STAT_H 1
 #define HAVE_SYS_TIME_H 1
 #define HAVE_SYS_TYPES_H 1
-#define HAVE_TIME_H 1
 #define HAVE_UNISTD_H 1
 #define HAVE_UTIME 1
 #define HAVE_UTIME_H 1
@@ -87,9 +82,16 @@
 #define PACKAGE_STRING "curl -"
 #define PACKAGE_TARNAME "curl"
 #define PACKAGE_VERSION "-"
+
+#if defined(USE_AMISSL)
+#define CURL_CA_PATH "AmiSSL:Certs"
+#elif defined(__MORPHOS__)
+#define CURL_CA_BUNDLE "MOSSYS:Data/SSL/curl-ca-bundle.crt"
+#else
 #define CURL_CA_BUNDLE "s:curl-ca-bundle.crt"
+#endif
+
 #define STDC_HEADERS 1
-#define TIME_WITH_SYS_TIME 1
 
 #define in_addr_t int
 

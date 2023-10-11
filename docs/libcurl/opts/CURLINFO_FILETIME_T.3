@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -22,8 +22,7 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLINFO_FILETIME 3 "September 20, 2022" "libcurl 7.87.0" "curl_easy_getinfo options"
-
+.TH CURLINFO_FILETIME 3 "25 Jan 2018" libcurl libcurl
 .SH NAME
 CURLINFO_FILETIME_T \- get the remote time of the retrieved document
 .SH SYNOPSIS
@@ -42,7 +41,7 @@ document time etc) and the time of the document is unknown.
 
 You must ask libcurl to collect this information before the transfer is made,
 by using the \fICURLOPT_FILETIME(3)\fP option to \fIcurl_easy_setopt(3)\fP or
-you will unconditionally get a -1 back.
+you unconditionally get a -1 back.
 
 This option is an alternative to \fICURLINFO_FILETIME(3)\fP to allow systems
 with 32 bit long variables to extract dates outside of the 32bit timestamp
@@ -74,4 +73,6 @@ Added in 7.59.0
 .SH RETURN VALUE
 Returns CURLE_OK if the option is supported, and CURLE_UNKNOWN_OPTION if not.
 .SH "SEE ALSO"
-.BR curl_easy_getinfo "(3), " curl_easy_setopt "(3), "
+.BR curl_easy_getinfo (3),
+.BR curl_easy_setopt (3),
+.BR CURLOPT_FILETIME (3)

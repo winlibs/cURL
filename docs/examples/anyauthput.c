@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -60,7 +60,7 @@ static int my_seek(void *userp, curl_off_t offset, int origin)
   FILE *fp = (FILE *) userp;
 
   if(-1 == fseek(fp, (long) offset, origin))
-    /* couldn't seek */
+    /* could not seek */
     return CURL_SEEKFUNC_CANTSEEK;
 
   return CURL_SEEKFUNC_OK; /* success! */

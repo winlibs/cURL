@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: ssl-reqd
 Help: Require SSL/TLS
@@ -12,12 +12,12 @@ Multi: boolean
 Require SSL/TLS for the connection. Terminates the connection if the transfer
 cannot be upgraded to use SSL/TLS.
 
-This option is handled in LDAP since version 7.81.0. It is fully supported
-by the OpenLDAP backend and rejected by the generic ldap backend if explicit
-TLS is required.
+This option is handled in LDAP (added in 7.81.0). It is fully supported by the
+OpenLDAP backend and rejected by the generic ldap backend if explicit TLS is
+required.
 
 This option is unnecessary if you use a URL scheme that in itself implies
 immediate and implicit use of TLS, like for FTPS, IMAPS, POP3S, SMTPS and
-LDAPS. Such transfers will always fail if the TLS handshake does not work.
+LDAPS. Such a transfer always fails if the TLS handshake does not work.
 
 This option was formerly known as --ftp-ssl-reqd.

@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: tftp-blksize
 Arg: <value>
@@ -10,6 +10,6 @@ Example: --tftp-blksize 1024 tftp://example.com/file
 See-also: tftp-no-options
 Multi: single
 ---
-Set TFTP BLKSIZE option (must be >512). This is the block size that curl will
-try to use when transferring data to or from a TFTP server. By default 512
-bytes will be used.
+Set the TFTP **BLKSIZE** option (must be >512). This is the block size that
+curl tries to use when transferring data to or from a TFTP server. By
+default 512 bytes are used.

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -38,18 +38,18 @@ static int ping(CURL *curl, const char *send_payload)
   return (int)result;
 }
 
-static int recv_pong(CURL *curl, const char *exected_payload)
+static int recv_pong(CURL *curl, const char *expected_payload)
 {
   size_t rlen;
-  struct curl_ws_frame *meta;
+  const struct curl_ws_frame *meta;
   char buffer[256];
   CURLcode result = curl_ws_recv(curl, buffer, sizeof(buffer), &rlen, &meta);
   if(!result) {
     if(meta->flags & CURLWS_PONG) {
       int same = 0;
       fprintf(stderr, "ws: got PONG back\n");
-      if(rlen == strlen(exected_payload)) {
-        if(!memcmp(exected_payload, buffer, rlen)) {
+      if(rlen == strlen(expected_payload)) {
+        if(!memcmp(expected_payload, buffer, rlen)) {
           fprintf(stderr, "ws: got the same payload back\n");
           same = 1;
         }
@@ -63,8 +63,22 @@ static int recv_pong(CURL *curl, const char *exected_payload)
     }
   }
   fprintf(stderr, "ws: curl_ws_recv returned %u, received %u\n", (int)result,
-         rlen);
+          (int)rlen);
   return (int)result;
+}
+
+static int recv_any(CURL *curl)
+{
+  size_t rlen;
+  const struct curl_ws_frame *meta;
+  char buffer[256];
+  CURLcode result = curl_ws_recv(curl, buffer, sizeof(buffer), &rlen, &meta);
+  if(result)
+    return result;
+
+  fprintf(stderr, "recv_any: got %u bytes rflags %x\n", (int)rlen,
+          meta->flags);
+  return 0;
 }
 
 /* just close the connection */
@@ -82,6 +96,7 @@ static void websocket(CURL *curl)
   int i = 0;
   fprintf(stderr, "ws: websocket() starts\n");
   do {
+    recv_any(curl);
     fprintf(stderr, "Send ping\n");
     if(ping(curl, "foobar"))
       return;

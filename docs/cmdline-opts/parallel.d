@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Short: Z
 Long: parallel
@@ -8,9 +8,7 @@ Category: connection curl
 Example: --parallel $URL -o file1 $URL -o file2
 See-also: next verbose
 Multi: boolean
+Scope: global
 ---
 Makes curl perform its transfers in parallel as compared to the regular serial
 manner.
-
-This option is global and does not need to be specified for each use of
---next.

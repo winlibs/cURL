@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: data-binary
 Arg: <data>
@@ -21,5 +21,5 @@ application/x-www-form-urlencoded. If you want the data to be treated as
 arbitrary binary data by the server then set the content-type to octet-stream:
 -H "Content-Type: application/octet-stream".
 
-If this option is used several times, the ones following the first will append
+If this option is used several times, the ones following the first append
 data as described in --data.

@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -34,6 +34,10 @@ static const struct dcheck dates[] = {
   {"Sun, 06 Nov 1994 08:49:37 GMT", 784111777 },
   {"Sunday, 06-Nov-94 08:49:37 GMT", 784111777 },
   {"Sun Nov  6 08:49:37 1994", 784111777 },
+  {"Sun Nov  6 8:49:37 1994", 784111777 },
+  {"Sun Nov  6 8:9:37 1994", 784109377 },
+  {"Sun Nov  6 008:09:37 1994", -1 },
+  {"Nov      Sun      6 8:9:7 1994", 784109347 },
   {"06 Nov 1994 08:49:37 GMT", 784111777 },
   {"06-Nov-94 08:49:37 GMT", 784111777 },
   {"Nov  6 08:49:37 1994", 784111777 },
@@ -116,6 +120,9 @@ static const struct dcheck dates[] = {
   {"20111323 12:34:56", -1 },
   {"20110623 12:34:79", -1 },
   {"Wed, 31 Dec 2008 23:59:60 GMT", 1230768000 },
+  {"Wed, 31 Dec 2008 23:59:61 GMT", -1 },
+  {"Wed, 31 Dec 2008 24:00:00 GMT", -1 },
+  {"Wed, 31 Dec 2008 23:60:59 GMT", -1 },
   {"20110623 12:3", 1308830580 },
   {"20110623 1:3", 1308790980 },
   {"20110623 1:30", 1308792600 },

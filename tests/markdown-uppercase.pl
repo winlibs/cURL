@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 2016 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -38,11 +38,11 @@ sub checkfile {
     if($f !~ /\.md\z/) {
         return;
     }
-    open(F, "<$f");
+    open(my $fh, "<", "$f");
     my $l = 1;
     my $prevl;
     my $ignore = 0;
-    while(<F>) {
+    while(<$fh>) {
         my $line = $_;
         chomp $line;
         if($line =~ /^(\`\`\`|\~\~\~)/) {
@@ -86,7 +86,7 @@ sub checkfile {
         $prevl = $line;
         $l++;
     }
-    close(F);
+    close($fh);
 }
 
 

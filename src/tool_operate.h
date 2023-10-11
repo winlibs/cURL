@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -33,6 +33,7 @@ struct per_transfer {
   struct per_transfer *next;
   struct per_transfer *prev;
   struct OperationConfig *config; /* for this transfer */
+  struct curl_certinfo *certinfo;
   CURL *curl;
   long retry_numretries;
   long retry_sleep_default;
@@ -49,7 +50,6 @@ struct per_transfer {
   struct OutStruct outs;
   struct OutStruct heads;
   struct OutStruct etag_save;
-  struct InStruct input;
   struct HdrCbData hdrcbdata;
   long num_headers;
   bool was_last_header_empty;
@@ -67,6 +67,8 @@ struct per_transfer {
   curl_off_t dlnow;
   curl_off_t ultotal;
   curl_off_t ulnow;
+  curl_off_t uploadfilesize; /* expected total amount */
+  curl_off_t uploadedsofar; /* amount delivered from the callback */
   bool dltotal_added; /* if the total has been added from this */
   bool ultotal_added;
 

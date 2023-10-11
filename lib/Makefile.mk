@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1999 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -103,8 +103,8 @@ endif
 ### Optional features
 
 ifneq ($(findstring -debug,$(CFG)),)
+  CFLAGS += -g
   CPPFLAGS += -DDEBUGBUILD
-  LDFLAGS += -g
 else
   CPPFLAGS += -DNDEBUG
 endif
@@ -183,13 +183,6 @@ ifneq ($(findstring -ssl,$(CFG)),)
   OPENSSL_LIBS ?= -lssl -lcrypto
   _LIBS += $(OPENSSL_LIBS)
 
-  ifneq ($(wildcard $(OPENSSL_INCLUDE)/openssl/aead.h),)
-    OPENSSL := boringssl
-  else
-    # including libressl
-    OPENSSL := openssl
-  endif
-
   ifneq ($(findstring -srp,$(CFG)),)
     ifneq ($(wildcard $(OPENSSL_INCLUDE)/openssl/srp.h),)
       # OpenSSL 1.0.1 and later.
@@ -197,18 +190,18 @@ ifneq ($(findstring -ssl,$(CFG)),)
     endif
   endif
   SSLLIBS += 1
-else ifneq ($(findstring -wolfssl,$(CFG)),)
-  WOLFSSL_PATH ?= $(PROOT)/../zlib
+endif
+ifneq ($(findstring -wolfssl,$(CFG)),)
+  WOLFSSL_PATH ?= $(PROOT)/../wolfssl
   CPPFLAGS += -DUSE_WOLFSSL
   CPPFLAGS += -DSIZEOF_LONG_LONG=8
   CPPFLAGS += -I"$(WOLFSSL_PATH)/include"
   _LDFLAGS += -L"$(WOLFSSL_PATH)/lib"
   _LIBS += -lwolfssl
-  OPENSSL := wolfssl
   SSLLIBS += 1
 endif
 ifneq ($(findstring -mbedtls,$(CFG)),)
-  MBEDTLS_PATH ?= $(PROOT)/../zlib
+  MBEDTLS_PATH ?= $(PROOT)/../mbedtls
   CPPFLAGS += -DUSE_MBEDTLS
   CPPFLAGS += -I"$(MBEDTLS_PATH)/include"
   _LDFLAGS += -L"$(MBEDTLS_PATH)/lib"
@@ -239,9 +232,20 @@ ifeq ($(findstring -nghttp3,$(CFG))$(findstring -ngtcp2,$(CFG)),-nghttp3-ngtcp2)
   CPPFLAGS += -DUSE_NGTCP2
   CPPFLAGS += -I"$(NGTCP2_PATH)/include"
   _LDFLAGS += -L"$(NGTCP2_PATH)/lib"
-  ifneq ($(OPENSSL),)
-    NGTCP2_LIBS ?= -lngtcp2_crypto_$(OPENSSL)
+
+  NGTCP2_LIBS ?=
+  ifeq ($(NGTCP2_LIBS),)
+    ifneq ($(findstring -ssl,$(CFG)),)
+      ifneq ($(wildcard $(OPENSSL_INCLUDE)/openssl/aead.h),)
+        NGTCP2_LIBS := -lngtcp2_crypto_boringssl
+      else  # including libressl
+        NGTCP2_LIBS := -lngtcp2_crypto_quictls
+      endif
+    else ifneq ($(findstring -wolfssl,$(CFG)),)
+      NGTCP2_LIBS := -lngtcp2_crypto_wolfssl
+    endif
   endif
+
   _LIBS += -lngtcp2 $(NGTCP2_LIBS)
 endif
 
@@ -305,9 +309,6 @@ ifneq ($(findstring -sspi,$(CFG)),)
 endif
 ifneq ($(findstring -ipv6,$(CFG)),)
   CPPFLAGS += -DENABLE_IPV6
-endif
-ifneq ($(findstring -ldaps,$(CFG)),)
-  CPPFLAGS += -DHAVE_LDAP_SSL
 endif
 
 ifneq ($(findstring -watt,$(CFG))$(MSDOS),)
@@ -374,6 +375,9 @@ distclean vclean: clean
 ifdef LOCAL
 
 CPPFLAGS += -DBUILDING_LIBCURL
+ifdef WIN32
+CPPFLAGS += -DCURL_STATICLIB
+endif
 
 ### Sources and targets
 
@@ -387,6 +391,9 @@ ifdef WIN32
 CURL_DLL_SUFFIX ?=
 libcurl_dll_LIBRARY := libcurl$(CURL_DLL_SUFFIX).dll
 libcurl_dll_a_LIBRARY := libcurl.dll.a
+ifeq ($(findstring -trackmem,$(CFG)),)
+CURL_LDFLAGS_LIB += $(PROOT)/libcurl.def
+endif
 ifdef MAP
 libcurl_map_LIBRARY := libcurl$(CURL_DLL_SUFFIX).map
 CURL_LDFLAGS_LIB += -Wl,-Map,$(libcurl_map_LIBRARY)

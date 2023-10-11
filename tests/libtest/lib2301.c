@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -38,7 +38,7 @@ static int ping(CURL *curl, const char *send_payload)
   return (int)result;
 }
 
-static int recv_pong(CURL *curl, const char *exected_payload)
+static int recv_pong(CURL *curl, const char *expected_payload)
 {
   size_t rlen;
   unsigned int rflags;
@@ -48,8 +48,8 @@ static int recv_pong(CURL *curl, const char *exected_payload)
   if(rflags & CURLWS_PONG) {
     int same = 0;
     fprintf(stderr, "ws: got PONG back\n");
-    if(rlen == strlen(exected_payload)) {
-      if(!memcmp(exected_payload, buffer, rlen)) {
+    if(rlen == strlen(expected_payload)) {
+      if(!memcmp(expected_payload, buffer, rlen)) {
         fprintf(stderr, "ws: got the same payload back\n");
         same = 1;
       }

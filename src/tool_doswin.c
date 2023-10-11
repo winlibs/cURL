@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -347,7 +347,7 @@ SANITIZEcode msdosify(char **const sanitized, const char *file_name,
   if(s[0] >= 'A' && s[0] <= 'z' && s[1] == ':') {
     *d++ = *s++;
     *d = ((flags & (SANITIZE_ALLOW_COLONS|SANITIZE_ALLOW_PATH))) ? ':' : '_';
-    ++d, ++s;
+    ++d; ++s;
   }
 
   for(idx = 0, dot_idx = -1; *s && d < dlimit; s++, d++) {

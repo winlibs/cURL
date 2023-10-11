@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -21,8 +21,7 @@
 .\" * SPDX-License-Identifier: curl
 .\" *
 .\" **************************************************************************
-.TH curl_share_init 3 "September 20, 2022" "libcurl 7.87.0" "libcurl Manual"
-
+.TH curl_share_init 3 "Aug 3, 2003" "libcurl" "libcurl"
 .SH NAME
 curl_share_init - Create a shared object
 .SH SYNOPSIS
@@ -55,4 +54,5 @@ Added in 7.10
 If this function returns NULL, something went wrong (out of memory, etc.)
 and therefore the share object was not created.
 .SH "SEE ALSO"
-.BR curl_share_cleanup "(3), " curl_share_setopt "(3)"
+.BR curl_share_cleanup (3),
+.BR curl_share_setopt (3)

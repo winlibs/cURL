@@ -134,12 +134,31 @@ These options are provided to select the TLS backend to use.
  - BearSSL: `--with-bearssl`
  - GnuTLS: `--with-gnutls`.
  - mbedTLS: `--with-mbedtls`
- - NSS: `--with-nss`
- - OpenSSL: `--with-openssl` (also for BoringSSL and libressl)
+ - OpenSSL: `--with-openssl` (also for BoringSSL, AWS-LC, libressl, and quictls)
  - rustls: `--with-rustls`
  - Schannel: `--with-schannel`
  - Secure Transport: `--with-secure-transport`
  - wolfSSL: `--with-wolfssl`
+
+You can build curl with *multiple* TLS backends at your choice, but some TLS
+backends cannot be combined: if you build with an OpenSSL fork (or wolfSSL),
+you cannot add another OpenSSL fork (or wolfSSL) simply because they have
+conflicting identical symbol names.
+
+When you build with multiple TLS backends, you can select the active one at
+run-time when curl starts up.
+
+## configure finding libs in wrong directory
+
+When the configure script checks for third-party libraries, it adds those
+directories to the `LDFLAGS` variable and then tries linking to see if it
+works. When successful, the found directory is kept in the `LDFLAGS` variable
+when the script continues to execute and do more tests and possibly check for
+more libraries.
+
+This can make subsequent checks for libraries wrongly detect another
+installation in a directory that was previously added to `LDFLAGS` by another
+library check.
 
 # Windows
 
@@ -164,12 +183,12 @@ multi-threaded dynamic C runtime.
 
  If you get linkage errors read section 5.7 of the FAQ document.
 
-## MinGW32
+## mingw-w64
 
-Make sure that MinGW32's bin directory is in the search path, for example:
+Make sure that mingw-w64's bin directory is in the search path, for example:
 
 ```cmd
-set PATH=c:\mingw32\bin;%PATH%
+set PATH=c:\mingw-w64\bin;%PATH%
 ```
 
 then run `mingw32-make mingw32` in the root dir. There are other
@@ -227,7 +246,7 @@ Requires DJGPP in the search path and pointing to the Watt-32 stack via
 
 Run `make -f Makefile.dist djgpp` in the root curl dir.
 
-For build configuration options, please see the MinGW32 section.
+For build configuration options, please see the mingw-w64 section.
 
 Notes:
 
@@ -242,7 +261,7 @@ Notes:
 
 Run `make -f Makefile.dist amiga` in the root curl dir.
 
-For build configuration options, please see the MinGW32 section.
+For build configuration options, please see the mingw-w64 section.
 
 ## Disabling Specific Protocols in Windows builds
 
@@ -403,7 +422,7 @@ OpenSSL, follow the OpenSSL build instructions and then install `libssl.a` and
 OpenSSL like this:
 
 ```bash
-LIBS="-lssl -lcrypto -lc++" # For OpenSSL/BoringSSL. In general, you'll need to the SSL/TLS layer's transtive dependencies if you're linking statically.
+LIBS="-lssl -lcrypto -lc++" # For OpenSSL/BoringSSL. In general, you will need to the SSL/TLS layer's transitive dependencies if you are linking statically.
 ./configure --host aarch64-linux-android --with-pic --disable-shared --with-openssl="$TOOLCHAIN/sysroot/usr"
 ```
 

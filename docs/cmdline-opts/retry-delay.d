@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: retry-delay
 Arg: <seconds>
@@ -12,4 +12,4 @@ Multi: single
 Make curl sleep this amount of time before each retry when a transfer has
 failed with a transient error (it changes the default backoff time algorithm
 between retries). This option is only interesting if --retry is also
-used. Setting this delay to zero will make curl use the default backoff time.
+used. Setting this delay to zero makes curl use the default backoff time.

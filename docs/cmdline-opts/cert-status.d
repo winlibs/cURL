@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: cert-status
 Protocols: TLS
@@ -16,4 +16,4 @@ If this option is enabled and the server sends an invalid (e.g. expired)
 response, if the response suggests that the server certificate has been
 revoked, or no response at all is received, the verification fails.
 
-This is currently only implemented in the OpenSSL, GnuTLS and NSS backends.
+This is currently only implemented in the OpenSSL and GnuTLS backends.

@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -21,8 +21,7 @@
 .\" * SPDX-License-Identifier: curl
 .\" *
 .\" **************************************************************************
-.TH curl_multi_timeout 3 "July 14, 2022" "libcurl 7.87.0" "libcurl Manual"
-
+.TH curl_multi_timeout 3 "2 Jan 2006" "libcurl" "libcurl"
 .SH NAME
 curl_multi_timeout \- how long to wait for action before proceeding
 .SH SYNOPSIS
@@ -44,7 +43,7 @@ the simpler and older multi interface approach.
 
 The timeout value returned in the long \fBtimeout\fP points to, is in number
 of milliseconds at this moment. If 0, it means you should proceed immediately
-without waiting for anything. If it returns -1, there's no timeout at all set.
+without waiting for anything. If it returns -1, there is no timeout at all set.
 
 An application that uses the multi_socket API SHOULD NOT use this function,
 but SHOULD instead use the \fICURLMOPT_TIMERFUNCTION(3)\fP option for proper
@@ -52,7 +51,7 @@ and desired behavior.
 
 Note: if libcurl returns a -1 timeout here, it just means that libcurl
 currently has no stored timeout value. You must not wait too long (more than a
-few seconds perhaps) before you call curl_multi_perform() again.
+few seconds perhaps) before you call \fIcurl_multi_perform(3)\fP again.
 .SH EXAMPLE
 .nf
 struct timeval timeout;
@@ -80,5 +79,7 @@ This function was added in libcurl 7.15.4.
 .SH RETURN VALUE
 The standard CURLMcode for multi interface error codes.
 .SH "SEE ALSO"
-.BR curl_multi_fdset "(3), " curl_multi_info_read "(3), "
-.BR curl_multi_socket "(3), " curl_multi_setopt "(3) "
+.BR curl_multi_fdset (3),
+.BR curl_multi_info_read (3),
+.BR curl_multi_setopt (3),
+.BR curl_multi_socket (3)

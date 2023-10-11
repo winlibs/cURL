@@ -1,4 +1,4 @@
-c: Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: capath
 Arg: <dir>
@@ -18,4 +18,4 @@ c_rehash utility supplied with OpenSSL. Using --capath can allow
 OpenSSL-powered curl to make SSL-connections much more efficiently than using
 --cacert if the --cacert file contains many CA certificates.
 
-If this option is set, the default capath value will be ignored.
+If this option is set, the default capath value is ignored.

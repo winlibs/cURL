@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -61,7 +61,6 @@
 #define HAVE_RECV              1
 #define HAVE_SELECT            1
 #define HAVE_SEND              1
-#define HAVE_SETJMP_H          1
 #define HAVE_SETLOCALE         1
 #define HAVE_SETMODE           1
 #define HAVE_SIGNAL            1
@@ -74,7 +73,6 @@
 #define HAVE_SYS_SOCKET_H      1
 #define HAVE_SYS_STAT_H        1
 #define HAVE_SYS_TYPES_H       1
-#define HAVE_TIME_H            1
 #define HAVE_UNISTD_H          1
 
 #define NEED_MALLOC_H          1
@@ -82,9 +80,8 @@
 #define SIZEOF_INT             4
 #define SIZEOF_LONG            4
 #define SIZEOF_SIZE_T          4
-#define SIZEOF_CURL_OFF_T      4
+#define SIZEOF_CURL_OFF_T      8
 #define STDC_HEADERS           1
-#define TIME_WITH_SYS_TIME     1
 
 /* Qualifiers for send() and recv() */
 

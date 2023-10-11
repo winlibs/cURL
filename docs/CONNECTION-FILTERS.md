@@ -1,6 +1,6 @@
 # curl connection filters
 
-Connection filters is a design in the internals of curl, not visible in its public API. They were added 
+Connection filters is a design in the internals of curl, not visible in its public API. They were added
 in curl v7.xx.x. This document describes the concepts, its high level implementation and the motivations.
 
 ## Filters
@@ -25,7 +25,7 @@ Curl_easy *data         connectdata *conn        cf-ssl        cf-socket
 
 While connection filters all do different things, they look the same from the "outside". The code in `data` and `conn` does not really know **which** filters are installed. `conn` just writes into the first filter, whatever that is.
 
-Same is true for filters. Each filter has a pointer to the `next` filter. When SSL has encrypted the data, it does not write to a socket, it writes to the next filter. If that is indeed a socket, or a file, or a HTTP/2 connection is of no concern to the SSL filter.
+Same is true for filters. Each filter has a pointer to the `next` filter. When SSL has encrypted the data, it does not write to a socket, it writes to the next filter. If that is indeed a socket, or a file, or an HTTP/2 connection is of no concern to the SSL filter.
 
 And this allows the stacking, as in:
 
@@ -34,13 +34,13 @@ Direct:
   http://localhost/      conn -> cf-socket
   https://curl.se/       conn -> cf-ssl -> cf-socket
 Via http proxy tunnel:
-  http://localhost/      conn -> cf-http-proxy -> cf-socket 
+  http://localhost/      conn -> cf-http-proxy -> cf-socket
   https://curl.se/       conn -> cf-ssl -> cf-http-proxy -> cf-socket
 Via https proxy tunnel:
-  http://localhost/      conn -> cf-http-proxy -> cf-ssl -> cf-socket 
+  http://localhost/      conn -> cf-http-proxy -> cf-ssl -> cf-socket
   https://curl.se/       conn -> cf-ssl -> cf-http-proxy -> cf-ssl -> cf-socket
 Via http proxy tunnel via SOCKS proxy:
-  http://localhost/      conn -> cf-http-proxy -> cf-socks -> cf-socket 
+  http://localhost/      conn -> cf-http-proxy -> cf-socks -> cf-socket
 ```
 
 ### Connecting/Closing
@@ -50,7 +50,7 @@ Before `Curl_easy` can send the request, the connection needs to be established.
 Each filter does in principle the following:
 
 ```
-static CURLcode 
+static CURLcode
 myfilter_cf_connect(struct Curl_cfilter *cf,
                     struct Curl_easy *data,
                     bool *done)
@@ -63,7 +63,7 @@ myfilter_cf_connect(struct Curl_cfilter *cf,
   }
                                  /* Let the filters below connect */
   result = cf->next->cft->connect(cf->next, data, blocking, done);
-  if(result || !*done)    
+  if(result || !*done)
     return result;               /* below errored/not finished yet */
 
   /* MYFILTER CONNECT THINGS */  /* below connected, do out thing */
@@ -91,13 +91,13 @@ struct Curl_cfilter {
   BIT(connected);                /* != 0 iff this filter is connected */
 };
 ```
-The filter type `cft` is a singleton, one static struct for each type of filter. The `ctx` is where a filter will hold its specific data. That varies by filter type. A http-proxy filter will keep the ongoing state of the CONNECT here, but free it after its has been established. The SSL filter will keep the `SSL*` (if OpenSSL is used) here until the connection is closed. So, this varies.
+The filter type `cft` is a singleton, one static struct for each type of filter. The `ctx` is where a filter will hold its specific data. That varies by filter type. An http-proxy filter will keep the ongoing state of the CONNECT here, but free it after its has been established. The SSL filter will keep the `SSL*` (if OpenSSL is used) here until the connection is closed. So, this varies.
 
 `conn` is a reference to the connection this filter belongs to, so nothing extra besides the pointer itself.
 
-Several things, that before were kept in `struct connectdata`, will now go into the `filter->ctx` *when needed*. So, the memory footprint for connections that do *not* use a http proxy, or socks, or https will be lower.
+Several things, that before were kept in `struct connectdata`, will now go into the `filter->ctx` *when needed*. So, the memory footprint for connections that do *not* use an http proxy, or socks, or https will be lower.
 
-As to transfer efficiency, writing and reading through a filter comes at near zero cost *if the filter does not transform the data*. A http proxy or socks filter, once it is connected, will just pass the calls through. Those filters implementations will look like this:
+As to transfer efficiency, writing and reading through a filter comes at near zero cost *if the filter does not transform the data*. An http proxy or socks filter, once it is connected, will just pass the calls through. Those filters implementations will look like this:
 
 ```
 ssize_t  Curl_cf_def_send(struct Curl_cfilter *cf, struct Curl_easy *data,
