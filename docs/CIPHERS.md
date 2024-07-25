@@ -1,3 +1,9 @@
+<!--
+Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+
+SPDX-License-Identifier: curl
+-->
+
 # Ciphers
 
 With curl's options
@@ -165,7 +171,7 @@ When specifying multiple cipher names, separate them with colon (`:`).
 `TLS_AES_128_CCM_8_SHA256`
 `TLS_AES_128_CCM_SHA256`
 
-## WolfSSL
+## wolfSSL
 
 `RC4-SHA`,
 `RC4-MD5`,

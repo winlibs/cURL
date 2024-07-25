@@ -54,7 +54,7 @@ static void copy_header_external(struct Curl_header_store *hs,
      impossible for applications to do == comparisons, as that would otherwise
      be very tempting and then lead to the reserved bits not being reserved
      anymore. */
-  h->origin = hs->type | (1<<27);
+  h->origin = (unsigned int)(hs->type | (1<<27));
   h->anchor = e;
 }
 
@@ -114,7 +114,7 @@ CURLHcode curl_easy_header(CURL *easy,
         break;
       }
     }
-    if(!e) /* this shouldn't happen */
+    if(!e) /* this should not happen */
       return CURLHE_MISSING;
   }
   /* this is the name we want */
@@ -253,7 +253,7 @@ static CURLcode unfold_value(struct Curl_easy *data, const char *value,
   newhs = Curl_saferealloc(hs, sizeof(*hs) + vlen + oalloc + 1);
   if(!newhs)
     return CURLE_OUT_OF_MEMORY;
-  /* ->name' and ->value point into ->buffer (to keep the header allocation
+  /* ->name and ->value point into ->buffer (to keep the header allocation
      in a single memory block), which now potentially have moved. Adjust
      them. */
   newhs->name = newhs->buffer;
@@ -264,8 +264,7 @@ static CURLcode unfold_value(struct Curl_easy *data, const char *value,
   newhs->value[olen + vlen] = 0; /* null-terminate at newline */
 
   /* insert this node into the list of headers */
-  Curl_llist_insert_next(&data->state.httphdrs, data->state.httphdrs.tail,
-                         newhs, &newhs->node);
+  Curl_llist_append(&data->state.httphdrs, newhs, &newhs->node);
   data->state.prevhead = newhs;
   return CURLE_OK;
 }
@@ -303,7 +302,7 @@ CURLcode Curl_headers_push(struct Curl_easy *data, const char *header,
       /* line folding, append value to the previous header's value */
       return unfold_value(data, header, hlen);
     else {
-      /* Can't unfold without a previous header. Instead of erroring, just
+      /* cannot unfold without a previous header. Instead of erroring, just
          pass the leading blanks. */
       while(hlen && ISBLANK(*header)) {
         header++;
@@ -328,8 +327,7 @@ CURLcode Curl_headers_push(struct Curl_easy *data, const char *header,
     hs->request = data->state.requests;
 
     /* insert this node into the list of headers */
-    Curl_llist_insert_next(&data->state.httphdrs, data->state.httphdrs.tail,
-                           hs, &hs->node);
+    Curl_llist_append(&data->state.httphdrs, hs, &hs->node);
     data->state.prevhead = hs;
   }
   else
@@ -361,6 +359,8 @@ static CURLcode hds_cw_collect_write(struct Curl_easy *data,
         (type & CLIENTWRITE_TRAILER ? CURLH_TRAILER :
          CURLH_HEADER)));
     CURLcode result = Curl_headers_push(data, buf, htype);
+    CURL_TRC_WRITE(data, "header_collect pushed(type=%x, len=%zu) -> %d",
+                   htype, blen, result);
     if(result)
       return result;
   }

@@ -57,7 +57,7 @@
 #undef NEED_REENTRANT
 
 /* Define if you want to enable IPv6 support */
-#define ENABLE_IPV6
+#define USE_IPV6
 
 /* Define if struct sockaddr_in6 has the sin6_scope_id member */
 #define HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID 1
@@ -106,9 +106,6 @@
 
 /* Define if you have the <io.h> header file. */
 #undef HAVE_IO_H
-
-/* Define if you have the `socket' library (-lsocket). */
-#undef HAVE_LIBSOCKET
 
 /* Define if you have GSS API. */
 #define HAVE_GSSAPI
@@ -237,7 +234,7 @@
 
 /* Define to enable HTTP3 support (experimental, requires NGTCP2, QUICHE or
    MSH3) */
-#undef ENABLE_QUIC
+#undef USE_HTTP3
 
 /* Version number of package */
 #undef VERSION

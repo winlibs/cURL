@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
@@ -50,6 +51,7 @@ class Httpd:
         'alias', 'env', 'filter', 'headers', 'mime', 'setenvif',
         'socache_shmcb',
         'rewrite', 'http2', 'ssl', 'proxy', 'proxy_http', 'proxy_connect',
+        'brotli',
         'mpm_event',
     ]
     COMMON_MODULES_DIRS = [
@@ -203,6 +205,7 @@ class Httpd:
 
     def _write_config(self):
         domain1 = self.env.domain1
+        domain1brotli = self.env.domain1brotli
         creds1 = self.env.get_credentials(domain1)
         domain2 = self.env.domain2
         creds2 = self.env.get_credentials(domain2)
@@ -244,6 +247,7 @@ class Httpd:
                 f'ErrorLog {self._error_log}',
                 f'LogLevel {self._get_log_level()}',
                 f'StartServers 4',
+                f'ReadBufferSize 16000',
                 f'H2MinWorkers 16',
                 f'H2MaxWorkers 256',
                 f'H2Direct on',
@@ -253,6 +257,13 @@ class Httpd:
                 f'Listen {self.env.proxys_port}',
                 f'TypesConfig "{self._conf_dir}/mime.types',
                 f'SSLSessionCache "shmcb:ssl_gcache_data(32000)"',
+                (f'SSLCipherSuite SSL'
+                 f' ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256'
+                 f':ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305'
+                ),
+                (f'SSLCipherSuite TLSv1.3'
+                 f' TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256'
+                ),
             ]
             if 'base' in self._extra_configs:
                 conf.extend(self._extra_configs['base'])
@@ -281,6 +292,36 @@ class Httpd:
             conf.extend(self._curltest_conf(domain1))
             if domain1 in self._extra_configs:
                 conf.extend(self._extra_configs[domain1])
+            conf.extend([
+                f'</VirtualHost>',
+                f'',
+            ])
+            # Alternate to domain1 with BROTLI compression
+            conf.extend([  # https host for domain1, h1 + h2
+                f'<VirtualHost *:{self.env.https_port}>',
+                f'    ServerName {domain1brotli}',
+                f'    Protocols h2 http/1.1',
+                f'    SSLEngine on',
+                f'    SSLCertificateFile {creds1.cert_file}',
+                f'    SSLCertificateKeyFile {creds1.pkey_file}',
+                f'    DocumentRoot "{self._docs_dir}"',
+                f'    SetOutputFilter BROTLI_COMPRESS',
+            ])
+            conf.extend(self._curltest_conf(domain1))
+            if domain1 in self._extra_configs:
+                conf.extend(self._extra_configs[domain1])
+            conf.extend([
+                f'</VirtualHost>',
+                f'',
+            ])
+            conf.extend([  # plain http host for domain2
+                f'<VirtualHost *:{self.env.http_port}>',
+                f'    ServerName {domain2}',
+                f'    ServerAlias localhost',
+                f'    DocumentRoot "{self._docs_dir}"',
+                f'    Protocols h2c http/1.1',
+            ])
+            conf.extend(self._curltest_conf(domain2))
             conf.extend([
                 f'</VirtualHost>',
                 f'',
@@ -372,10 +413,15 @@ class Httpd:
         lines = []
         if Httpd.MOD_CURLTEST is not None:
             lines.extend([
+                f'    Redirect 302 /data.json.302 /data.json',
                 f'    Redirect 301 /curltest/echo301 /curltest/echo',
                 f'    Redirect 302 /curltest/echo302 /curltest/echo',
                 f'    Redirect 303 /curltest/echo303 /curltest/echo',
                 f'    Redirect 307 /curltest/echo307 /curltest/echo',
+                f'    <Location /curltest/sslinfo>',
+                f'      SSLOptions StdEnvVars',
+                f'      SetHandler curltest-sslinfo',
+                f'    </Location>',
                 f'    <Location /curltest/echo>',
                 f'      SetHandler curltest-echo',
                 f'    </Location>',

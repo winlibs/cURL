@@ -259,7 +259,7 @@ static CURLcode smb_parse_url_path(struct Curl_easy *data,
  * SMB handler interface
  */
 const struct Curl_handler Curl_handler_smb = {
-  "SMB",                                /* scheme */
+  "smb",                                /* scheme */
   smb_setup_connection,                 /* setup_connection */
   smb_do,                               /* do_it */
   ZERO_NULL,                            /* done */
@@ -273,6 +273,7 @@ const struct Curl_handler Curl_handler_smb = {
   ZERO_NULL,                            /* perform_getsock */
   smb_disconnect,                       /* disconnect */
   ZERO_NULL,                            /* write_resp */
+  ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
   PORT_SMB,                             /* defport */
@@ -286,7 +287,7 @@ const struct Curl_handler Curl_handler_smb = {
  * SMBS handler interface
  */
 const struct Curl_handler Curl_handler_smbs = {
-  "SMBS",                               /* scheme */
+  "smbs",                               /* scheme */
   smb_setup_connection,                 /* setup_connection */
   smb_do,                               /* do_it */
   ZERO_NULL,                            /* done */
@@ -300,6 +301,7 @@ const struct Curl_handler Curl_handler_smbs = {
   ZERO_NULL,                            /* perform_getsock */
   smb_disconnect,                       /* disconnect */
   ZERO_NULL,                            /* write_resp */
+  ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
   PORT_SMBS,                            /* defport */
@@ -557,7 +559,7 @@ static void smb_format_message(struct Curl_easy *data, struct smb_header *h,
   h->flags2 = smb_swap16(SMB_FLAGS2_IS_LONG_NAME | SMB_FLAGS2_KNOWS_LONG_NAME);
   h->uid = smb_swap16(smbc->uid);
   h->tid = smb_swap16(req->tid);
-  pid = getpid();
+  pid = (unsigned int)getpid();
   h->pid_high = smb_swap16((unsigned short)(pid >> 16));
   h->pid = smb_swap16((unsigned short) pid);
 }
@@ -1069,7 +1071,7 @@ static CURLcode smb_request_state(struct Curl_easy *data, bool *done)
     break;
 
   case SMB_CLOSE:
-    /* We don't care if the close failed, proceed to tree disconnect anyway */
+    /* We do not care if the close failed, proceed to tree disconnect anyway */
     next_state = SMB_TREE_DISCONNECT;
     break;
 
