@@ -1,3 +1,9 @@
+<!--
+Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+
+SPDX-License-Identifier: curl
+-->
+
 # curl client readers
 
 Client readers is a design in the internals of libcurl, not visible in its public API. They were started
@@ -117,7 +123,7 @@ Readers operating on callbacks to the application need to "rewind" the underlyin
 
 ## Summary and Outlook
 
-By adding the client reader interface, any protocol can control how/if it wants the curl transfer to send bytes for a request. The transfer loop becomes then blissfully ignorant of the specifics. 
+By adding the client reader interface, any protocol can control how/if it wants the curl transfer to send bytes for a request. The transfer loop becomes then blissfully ignorant of the specifics.
 
 The protocols on the other hand no longer have to care to package data most efficiently. At any time, should more data be needed, it can be read from the client. This is used when sending HTTP requests headers to add as much request body data to the initial sending as there is room for.
 

@@ -19,6 +19,8 @@ TLS-backend:
   - Secure Transport
   - wolfSSL
   - GnuTLS
+  - mbedTLS
+Added-in: 7.52.0
 ---
 
 # NAME
@@ -46,15 +48,16 @@ For OpenSSL and GnuTLS valid examples of cipher lists include **RC4-SHA**,
 **SHA1+DES**, **TLSv1** and **DEFAULT**. The default list is normally
 set when you compile OpenSSL.
 
-For WolfSSL, valid examples of cipher lists include **ECDHE-RSA-RC4-SHA**,
+For wolfSSL, valid examples of cipher lists include **ECDHE-RSA-RC4-SHA**,
 **AES256-SHA:AES256-SHA256**, etc.
 
-For BearSSL, valid examples of cipher lists include
-**ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256**, or when using IANA names
+For mbedTLS and BearSSL, valid examples of cipher lists include
+**ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256**, or when using
+IANA names
 **TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256**,
-etc.
-With BearSSL you do not add/remove ciphers. If one uses this option then all
-known ciphers are disabled and only those passed in are enabled.
+etc. With mbedTLS and BearSSL you do not add/remove ciphers. If one uses this
+option then all known ciphers are disabled and only those passed in are
+enabled.
 
 Find more details about cipher lists on this URL:
 
@@ -65,7 +68,9 @@ option.
 
 # DEFAULT
 
-NULL, use internal default
+NULL, use internal built-in list.
+
+# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -84,11 +89,7 @@ int main(void)
 }
 ~~~
 
-# AVAILABILITY
-
-Added in 7.52.0, in 7.83.0 for BearSSL
-
-If built TLS enabled.
+# %AVAILABILITY%
 
 # RETURN VALUE
 

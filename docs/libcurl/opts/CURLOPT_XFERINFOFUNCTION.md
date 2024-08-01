@@ -9,6 +9,7 @@ See-also:
   - CURLOPT_XFERINFODATA (3)
 Protocol:
   - All
+Added-in: 7.32.0
 ---
 
 # NAME
@@ -70,8 +71,9 @@ get called.
 
 # DEFAULT
 
-By default, libcurl has an internal progress meter. That is rarely wanted by
-users.
+NULL - use the internal progress meter. That is rarely wanted by users.
+
+# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -104,14 +106,15 @@ int main(void)
     /* pass struct to callback  */
     curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &data);
 
+    /* enable progress callback getting called */
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
   }
 }
 ~~~
 
-# AVAILABILITY
-
-Added in 7.32.0. This callback replaces CURLOPT_PROGRESSFUNCTION(3)
+# %AVAILABILITY%
 
 # RETURN VALUE
 

@@ -25,8 +25,22 @@ include(CheckCCompilerFlag)
 
 unset(WPICKY)
 
-if(CURL_WERROR AND CMAKE_COMPILER_IS_GNUCC AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0)
+if(CURL_WERROR AND
+   ((CMAKE_COMPILER_IS_GNUCC AND
+     NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0 AND
+     NOT CMAKE_VERSION VERSION_LESS 3.23.0) OR  # check_symbol_exists() incompatible with GCC -pedantic-errors in earlier CMake versions
+   CMAKE_C_COMPILER_ID MATCHES "Clang"))
   set(WPICKY "${WPICKY} -pedantic-errors")
+endif()
+
+if(APPLE AND
+   (CMAKE_C_COMPILER_ID STREQUAL "Clang"      AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 3.6) OR
+   (CMAKE_C_COMPILER_ID STREQUAL "AppleClang" AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 6.3))
+  set(WPICKY "${WPICKY} -Werror=partial-availability")  # clang 3.6  appleclang 6.3
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+  set(WPICKY "${WPICKY} -Werror-implicit-function-declaration")  # clang 1.0  gcc 2.95
 endif()
 
 if(PICKY_COMPILER)

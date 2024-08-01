@@ -228,7 +228,7 @@ int main(void)
 #endif
 int main(void)
 {
-  int flags = 0;
+  unsigned long flags = 0;
   if(0 != ioctlsocket(0, FIONBIO, &flags))
     return 1;
   ;
@@ -380,7 +380,7 @@ int main(void)
 #ifdef HAVE_BUILTIN_AVAILABLE
 int main(void)
 {
-  if(__builtin_available(macOS 10.12, *)) {}
+  if(__builtin_available(macOS 10.12, iOS 5.0, *)) {}
   return 0;
 }
 #endif

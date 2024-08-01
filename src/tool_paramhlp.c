@@ -80,7 +80,7 @@ static size_t memcrlf(char *orig,
                                          if we count non-CRLF */
                       size_t max)
 {
-  char *ptr = orig;
+  char *ptr;
   size_t total = max;
   for(ptr = orig; max; max--, ptr++) {
     bool crlf = ISCRLF(*ptr);
@@ -399,7 +399,7 @@ ParameterError proto2num(struct OperationConfig *config,
       protoset_set(protoset, p);
   }
 
-  /* Allow strtok() here since this isn't used threaded */
+  /* Allow strtok() here since this is not used threaded */
   /* !checksrc! disable BANNEDFUNC 2 */
   for(token = strtok(buffer, sep);
       token;
@@ -508,7 +508,7 @@ ParameterError str2offset(curl_off_t *val, const char *str)
 {
   char *endptr;
   if(str[0] == '-')
-    /* offsets aren't negative, this indicates weird input */
+    /* offsets are not negative, this indicates weird input */
     return PARAM_NEGATIVE_NUMERIC;
 
 #if(SIZEOF_CURL_OFF_T > SIZEOF_LONG)
