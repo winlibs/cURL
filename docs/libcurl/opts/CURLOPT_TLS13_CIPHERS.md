@@ -15,8 +15,8 @@ Protocol:
   - TLS
 TLS-backend:
   - OpenSSL
-  - rustls
   - Schannel
+Added-in: 7.61.0
 ---
 
 # NAME
@@ -52,7 +52,9 @@ option.
 
 # DEFAULT
 
-NULL, use internal default
+NULL, use internal built-in
+
+# %PROTOCOLS%
 
 # EXAMPLE
 
@@ -71,11 +73,13 @@ int main(void)
 }
 ~~~
 
-# AVAILABILITY
+# HISTORY
 
 Added in 7.61.0 for OpenSSL. Available when built with OpenSSL \>= 1.1.1.
 
 Added in 7.85.0 for Schannel.
+
+# %AVAILABILITY%
 
 # RETURN VALUE
 

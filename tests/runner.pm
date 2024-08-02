@@ -662,7 +662,7 @@ sub singletest_setenv {
                         logmsg "Skipping LD_PRELOAD due to lack of OS support\n" if($verbose);
                         next;
                     }
-                    if($feature{"debug"} || !$has_shared) {
+                    if($feature{"Debug"} || !$has_shared) {
                         logmsg "Skipping LD_PRELOAD due to no release shared build\n" if($verbose);
                         next;
                     }
@@ -857,6 +857,7 @@ sub singletest_run {
         else {
             $cmdargs .= "--trace-ascii $LOGDIR/trace$testnum ";
         }
+        $cmdargs .= "--trace-config all ";
         $cmdargs .= "--trace-time ";
         if($run_event_based) {
             $cmdargs .= "--test-event ";
@@ -920,6 +921,9 @@ sub singletest_run {
 
     if(!$tool) {
         $CMDLINE=shell_quote($CURL);
+        if((!$cmdhash{'option'}) || ($cmdhash{'option'} !~ /no-q/)) {
+            $CMDLINE .= " -q";
+        }
     }
 
     if(use_valgrind() && !$disablevalgrind) {

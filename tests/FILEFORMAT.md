@@ -124,6 +124,7 @@ Available substitute variables include:
 - `%CLIENT6IP` - IPv6 address of the client running curl
 - `%CLIENTIP` - IPv4 address of the client running curl
 - `%CURL` - Path to the curl executable
+- `%DATE` - current YYYY-MM-DD date
 - `%FILE_PWD` - Current directory, on Windows prefixed with a slash
 - `%FTP6PORT` - IPv6 port number of the FTP server
 - `%FTPPORT` - Port number of the FTP server
@@ -136,20 +137,18 @@ Available substitute variables include:
 - `%GOPHERSPORT` - Port number of the Gophers server
 - `%HOST6IP` - IPv6 address of the host running this test
 - `%HOSTIP` - IPv4 address of the host running this test
+- `%HTTP2PORT` - Port number of the HTTP/2 server
 - `%HTTP6PORT` - IPv6 port number of the HTTP server
 - `%HTTPPORT` - Port number of the HTTP server
-- `%HTTP2PORT` - Port number of the HTTP/2 server
 - `%HTTPSPORT` - Port number of the HTTPS server
 - `%HTTPSPROXYPORT` - Port number of the HTTPS-proxy
 - `%HTTPTLS6PORT` - IPv6 port number of the HTTP TLS server
 - `%HTTPTLSPORT` - Port number of the HTTP TLS server
 - `%HTTPUNIXPATH` - Path to the Unix socket of the HTTP server
-- `%SOCKSUNIXPATH` - Path to the Unix socket of the SOCKS server
 - `%IMAP6PORT` - IPv6 port number of the IMAP server
 - `%IMAPPORT` - Port number of the IMAP server
 - `%LOGDIR` - Log directory relative to %PWD
 - `%MQTTPORT` - Port number of the MQTT server
-- `%TELNETPORT` - Port number of the telnet server
 - `%NOLISTENPORT` - Port number where no service is listening
 - `%POP36PORT` - IPv6 port number of the POP3 server
 - `%POP3PORT` - Port number of the POP3 server
@@ -163,15 +162,18 @@ Available substitute variables include:
 - `%SMTP6PORT` - IPv6 port number of the SMTP server
 - `%SMTPPORT` - Port number of the SMTP server
 - `%SOCKSPORT` - Port number of the SOCKS4/5 server
+- `%SOCKSUNIXPATH` - Path to the Unix socket of the SOCKS server
 - `%SRCDIR` - Full path to the source dir
+- `%SSH_PWD` - Current directory friendly for the SSH server
 - `%SSHPORT` - Port number of the SCP/SFTP server
 - `%SSHSRVMD5` - MD5 of SSH server's public key
 - `%SSHSRVSHA256` - SHA256 of SSH server's public key
-- `%SSH_PWD` - Current directory friendly for the SSH server
+- `%TELNETPORT` - Port number of the telnet server
 - `%TESTNUMBER` - Number of the test case
 - `%TFTP6PORT` - IPv6 port number of the TFTP server
 - `%TFTPPORT` - Port number of the TFTP server
 - `%USER` - Login ID of the user running the test
+- `%VERNUM` - the version number of the tested curl (without -DEV)
 - `%VERSION` - the full version number of the tested curl
 
 # `<testcase>`
@@ -430,7 +432,7 @@ Features testable here are:
 - `CharConv`
 - `cookies`
 - `crypto`
-- `debug`
+- `Debug`
 - `DoH`
 - `getrlimit`
 - `GnuTLS`
@@ -441,12 +443,12 @@ Features testable here are:
 - `HTTP-auth`
 - `http/2`
 - `http/3`
-- `https-proxy`
+- `HTTPS-proxy`
 - `hyper`
-- `idn`
-- `ipv6`
+- `IDN`
+- `IPv6`
 - `Kerberos`
-- `large_file`
+- `Largefile`
 - `large-time` (time_t is larger than 32 bit)
 - `ld_preload`
 - `libssh2`
@@ -481,7 +483,7 @@ Features testable here are:
 - `threadsafe`
 - `Unicode`
 - `unittest`
-- `unix-sockets`
+- `UnixSockets`
 - `verbose-strings`
 - `wakeup`
 - `win32`
@@ -531,7 +533,7 @@ command has been run.
 If the variable name has no assignment, no `=`, then that variable is just
 deleted.
 
-### `<command [option="no-output/no-include/force-output/binary-trace"] [timeout="secs"][delay="secs"][type="perl/shell"]>`
+### `<command [option="no-q/no-output/no-include/force-output/binary-trace"] [timeout="secs"][delay="secs"][type="perl/shell"]>`
 Command line to run.
 
 Note that the URL that gets passed to the server actually controls what data
@@ -562,6 +564,9 @@ otherwise written to verify stdout.
 Set `option="no-include"` to prevent the test script to slap on the
 `--include` argument.
 
+Set `option="no-q"` avoid using `-q` as the first argument in the curl command
+line.
+
 Set `option="binary-trace"` to use `--trace` instead of `--trace-ascii` for
 tracing. Suitable for binary-oriented protocols such as MQTT.
 
@@ -585,6 +590,15 @@ which is useful if the test case needs a file to act on.
 
 If `nonewline="yes"` is used, the created file will have the final newline
 stripped off.
+
+### `<file1>`
+1 to 4 can be appended to 'file' to create more files.
+
+### `<file2>`
+
+### `<file3>`
+
+### `<file4>`
 
 ### `<stdin [nonewline="yes"]>`
 Pass this given data on stdin to the tool.
@@ -624,11 +638,14 @@ server is used), if `nonewline` is set, we will cut off the trailing newline
 of this given data before comparing with the one actually sent by the client
 The `<strip>` and `<strippart>` rules are applied before comparisons are made.
 
-### `<stderr [mode="text"] [nonewline="yes"]>`
+### `<stderr [mode="text"] [nonewline="yes"] [crlf="yes"]>`
 This verifies that this data was passed to stderr.
 
 Use the mode="text" attribute if the output is in text mode on platforms that
 have a text/binary difference.
+
+`crlf=yes` forces the newlines to become CRLF even if not written so in the
+test.
 
 If `nonewline` is set, we will cut off the trailing newline of this given data
 before comparing with the one actually received by the client

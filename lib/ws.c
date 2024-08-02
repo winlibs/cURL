@@ -102,7 +102,7 @@ static unsigned char ws_frame_flags2op(int flags)
   size_t i;
   for(i = 0; i < sizeof(WS_FRAMES)/sizeof(WS_FRAMES[0]); ++i) {
     if(WS_FRAMES[i].flags & flags)
-      return WS_FRAMES[i].proto_opcode;
+      return (unsigned char)WS_FRAMES[i].proto_opcode;
   }
   return 0;
 }
@@ -114,23 +114,23 @@ static void ws_dec_info(struct ws_decoder *dec, struct Curl_easy *data,
   case 0:
     break;
   case 1:
-    infof(data, "WS-DEC: %s [%s%s]", msg,
-          ws_frame_name_of_op(dec->head[0]),
-          (dec->head[0] & WSBIT_FIN)? "" : " NON-FINAL");
+    CURL_TRC_WRITE(data, "websocket, decoded %s [%s%s]", msg,
+                   ws_frame_name_of_op(dec->head[0]),
+                   (dec->head[0] & WSBIT_FIN)? "" : " NON-FINAL");
     break;
   default:
     if(dec->head_len < dec->head_total) {
-      infof(data, "WS-DEC: %s [%s%s](%d/%d)", msg,
-            ws_frame_name_of_op(dec->head[0]),
-            (dec->head[0] & WSBIT_FIN)? "" : " NON-FINAL",
-            dec->head_len, dec->head_total);
+      CURL_TRC_WRITE(data, "websocket, decoded %s [%s%s](%d/%d)", msg,
+                     ws_frame_name_of_op(dec->head[0]),
+                     (dec->head[0] & WSBIT_FIN)? "" : " NON-FINAL",
+                     dec->head_len, dec->head_total);
     }
     else {
-      infof(data, "WS-DEC: %s [%s%s payload=%" CURL_FORMAT_CURL_OFF_T
-                  "/%" CURL_FORMAT_CURL_OFF_T "]",
-            msg, ws_frame_name_of_op(dec->head[0]),
-            (dec->head[0] & WSBIT_FIN)? "" : " NON-FINAL",
-            dec->payload_offset, dec->payload_len);
+      CURL_TRC_WRITE(data, "websocket, decoded %s [%s%s payload=%"
+                     CURL_FORMAT_CURL_OFF_T "/%" CURL_FORMAT_CURL_OFF_T "]",
+                     msg, ws_frame_name_of_op(dec->head[0]),
+                     (dec->head[0] & WSBIT_FIN)? "" : " NON-FINAL",
+                     dec->payload_offset, dec->payload_len);
     }
     break;
   }
@@ -171,7 +171,7 @@ static CURLcode ws_dec_read_head(struct ws_decoder *dec,
       dec->head[0] = *inbuf;
       Curl_bufq_skip(inraw, 1);
 
-      dec->frame_flags  = ws_frame_op2flags(dec->head[0]);
+      dec->frame_flags = ws_frame_op2flags(dec->head[0]);
       if(!dec->frame_flags) {
         failf(data, "WS: unknown opcode: %x", dec->head[0]);
         ws_dec_reset(dec);
@@ -277,9 +277,8 @@ static CURLcode ws_dec_pass_payload(struct ws_decoder *dec,
     Curl_bufq_skip(inraw, (size_t)nwritten);
     dec->payload_offset += (curl_off_t)nwritten;
     remain = dec->payload_len - dec->payload_offset;
-    /* infof(data, "WS-DEC: passed  %zd bytes payload, %"
-             CURL_FORMAT_CURL_OFF_T " remain",
-             nwritten, remain); */
+    CURL_TRC_WRITE(data, "websocket, passed %zd bytes payload, %"
+                   CURL_FORMAT_CURL_OFF_T " remain", nwritten, remain);
   }
 
   return remain? CURLE_AGAIN : CURLE_OK;
@@ -454,10 +453,12 @@ static CURLcode ws_cw_write(struct Curl_easy *data,
     pass_ctx.cw_type = type;
     result = ws_dec_pass(&ws->dec, data, &ctx->buf,
                          ws_cw_dec_next, &pass_ctx);
-    if(result == CURLE_AGAIN)
+    if(result == CURLE_AGAIN) {
       /* insufficient amount of data, keep it for later.
        * we pretend to have written all since we have a copy */
+      CURL_TRC_WRITE(data, "websocket, buffered incomplete frame head");
       return CURLE_OK;
+    }
     else if(result) {
       infof(data, "WS: decode error %d", (int)result);
       return result;
@@ -559,7 +560,7 @@ static ssize_t ws_enc_write_head(struct Curl_easy *data,
     return -1;
   }
 
-  opcode = ws_frame_flags2op(flags);
+  opcode = ws_frame_flags2op((int)flags);
   if(!opcode) {
     failf(data, "WS: provided flags not recognized '%x'", flags);
     *err = CURLE_SEND_ERROR;
@@ -578,7 +579,7 @@ static ssize_t ws_enc_write_head(struct Curl_easy *data,
     enc->contfragment = FALSE;
   }
   else if(enc->contfragment) {
-    /* the previous fragment was not a final one and this isn't either, keep a
+    /* the previous fragment was not a final one and this is not either, keep a
        CONT opcode and no FIN bit */
     firstbyte |= WSBIT_OPCODE_CONT;
   }
@@ -717,8 +718,10 @@ CURLcode Curl_ws_request(struct Curl_easy *data, REQTYPE *req)
   if(result)
     return result;
   DEBUGASSERT(randlen < sizeof(keyval));
-  if(randlen >= sizeof(keyval))
+  if(randlen >= sizeof(keyval)) {
+    free(randstr);
     return CURLE_FAILED_INIT;
+  }
   strcpy(keyval, randstr);
   free(randstr);
   for(i = 0; !result && (i < sizeof(heads)/sizeof(heads[0])); i++) {
@@ -949,10 +952,6 @@ CURL_EXTERN CURLcode curl_ws_recv(struct Curl_easy *data, void *buffer,
 
   *nread = 0;
   *metap = NULL;
-  /* get a download buffer */
-  result = Curl_preconnect(data);
-  if(result)
-    return result;
 
   memset(&ctx, 0, sizeof(ctx));
   ctx.data = data;
@@ -1198,6 +1197,7 @@ const struct Curl_handler Curl_handler_ws = {
   ZERO_NULL,                            /* perform_getsock */
   ws_disconnect,                        /* disconnect */
   Curl_http_write_resp,                 /* write_resp */
+  Curl_http_write_resp_hd,              /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
   PORT_HTTP,                            /* defport */
@@ -1223,6 +1223,7 @@ const struct Curl_handler Curl_handler_wss = {
   ZERO_NULL,                            /* perform_getsock */
   ws_disconnect,                        /* disconnect */
   Curl_http_write_resp,                 /* write_resp */
+  Curl_http_write_resp_hd,              /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
   PORT_HTTPS,                           /* defport */

@@ -40,17 +40,54 @@ TESTSCRIPTS = \
  test1275.pl  \
  test1276.pl  \
  test1477.pl  \
+ test1486.pl  \
+ test1488.pl  \
  test1544.pl  \
  test971.pl
 
-EXTRA_DIST = appveyor.pm azure.pm CMakeLists.txt devtest.pl             \
- dictserver.py directories.pm FILEFORMAT.md processhelp.pm ftpserver.pl \
- getpart.pm globalconfig.pm http-server.pl http2-server.pl              \
- http3-server.pl memanalyze.pl negtelnetserver.py pathhelp.pm README.md \
- rtspserver.pl runner.pm runtests.1 runtests.pl secureserver.pl         \
- serverhelp.pm servers.pm smbserver.py sshhelp.pm sshserver.pl          \
- stunnel.pem testcurl.1 testcurl.pl testutil.pm tftpserver.pl util.py   \
- valgrind.pm valgrind.supp $(TESTSCRIPTS)
+EXTRA_DIST =        \
+ CMakeLists.txt     \
+ FILEFORMAT.md      \
+ README.md          \
+ appveyor.pm        \
+ azure.pm           \
+ conftest.py        \
+ devtest.pl         \
+ dictserver.py      \
+ directories.pm     \
+ ech_combos.py      \
+ ech_tests.sh       \
+ ftpserver.pl       \
+ getpart.pm         \
+ globalconfig.pm    \
+ http-server.pl     \
+ http2-server.pl    \
+ http3-server.pl    \
+ memanalyze.pl      \
+ negtelnetserver.py \
+ nghttpx.conf       \
+ pathhelp.pm        \
+ processhelp.pm     \
+ requirements.txt   \
+ rtspserver.pl      \
+ runner.pm          \
+ runtests.1         \
+ runtests.pl        \
+ secureserver.pl    \
+ serverhelp.pm      \
+ servers.pm         \
+ smbserver.py       \
+ sshhelp.pm         \
+ sshserver.pl       \
+ stunnel.pem        \
+ testcurl.1         \
+ testcurl.pl        \
+ testutil.pm        \
+ tftpserver.pl      \
+ util.py            \
+ valgrind.pm        \
+ valgrind.supp      \
+ $(TESTSCRIPTS)
 
 DISTCLEANFILES = configurehelp.pm
 
@@ -90,7 +127,7 @@ TEST_E = -a -e
 TEST_NF = -a -p ~flaky ~timing-dependent
 
 # special CI target derived from nonflaky with CI-specific flags
-TEST_CI = $(TEST_NF) -rm
+TEST_CI = $(TEST_NF) -r -rm
 endif
 
 # make sure that PERL is pointing to an executable
@@ -127,7 +164,7 @@ checksrc:
 	(cd server && $(MAKE) checksrc)
 	(cd http && $(MAKE) checksrc)
 
-if CURLDEBUG
+if DEBUGBUILD
 # for debug builds, we scan the sources on all regular make invokes
 all-local: checksrc
 endif

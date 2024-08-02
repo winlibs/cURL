@@ -40,10 +40,9 @@
 #include "curl_memory.h"
 #include "memdebug.h"
 
-CURLcode Curl_req_init(struct SingleRequest *req)
+void Curl_req_init(struct SingleRequest *req)
 {
   memset(req, 0, sizeof(*req));
-  return CURLE_OK;
 }
 
 CURLcode Curl_req_soft_reset(struct SingleRequest *req,
@@ -55,6 +54,7 @@ CURLcode Curl_req_soft_reset(struct SingleRequest *req,
   req->upload_done = FALSE;
   req->download_done = FALSE;
   req->ignorebody = FALSE;
+  req->shutdown = FALSE;
   req->bytecount = 0;
   req->writebytecount = 0;
   req->header = TRUE; /* assume header */
@@ -109,17 +109,14 @@ void Curl_req_hard_reset(struct SingleRequest *req, struct Curl_easy *data)
 
   /* This is a bit ugly. `req->p` is a union and we assume we can
    * free this safely without leaks. */
-  Curl_safefree(req->p.http);
+  Curl_safefree(req->p.ftp);
   Curl_safefree(req->newurl);
   Curl_client_reset(data);
   if(req->sendbuf_init)
     Curl_bufq_reset(&req->sendbuf);
 
 #ifndef CURL_DISABLE_DOH
-  if(req->doh) {
-    Curl_close(&req->doh->probe[0].easy);
-    Curl_close(&req->doh->probe[1].easy);
-  }
+  Curl_doh_close(data);
 #endif
   /* Can no longer memset() this struct as we need to keep some state */
   req->size = -1;
@@ -136,7 +133,6 @@ void Curl_req_hard_reset(struct SingleRequest *req, struct Curl_easy *data)
   req->keepon = 0;
   req->upgr101 = UPGR101_INIT;
   req->timeofdoc = 0;
-  req->bodywrites = 0;
   req->location = NULL;
   req->newurl = NULL;
 #ifndef CURL_DISABLE_COOKIES
@@ -157,27 +153,24 @@ void Curl_req_hard_reset(struct SingleRequest *req, struct Curl_easy *data)
   req->getheader = FALSE;
   req->no_body = data->set.opt_no_body;
   req->authneg = FALSE;
+  req->shutdown = FALSE;
+#ifdef USE_HYPER
+  req->bodywritten = FALSE;
+#endif
 }
 
 void Curl_req_free(struct SingleRequest *req, struct Curl_easy *data)
 {
   /* This is a bit ugly. `req->p` is a union and we assume we can
    * free this safely without leaks. */
-  Curl_safefree(req->p.http);
+  Curl_safefree(req->p.ftp);
   Curl_safefree(req->newurl);
   if(req->sendbuf_init)
     Curl_bufq_free(&req->sendbuf);
   Curl_client_cleanup(data);
 
 #ifndef CURL_DISABLE_DOH
-  if(req->doh) {
-    Curl_close(&req->doh->probe[0].easy);
-    Curl_close(&req->doh->probe[1].easy);
-    Curl_dyn_free(&req->doh->probe[0].serverdoh);
-    Curl_dyn_free(&req->doh->probe[1].serverdoh);
-    curl_slist_free_all(req->doh->headers);
-    Curl_safefree(req->doh);
-  }
+  Curl_doh_cleanup(data);
 #endif
 }
 
@@ -188,7 +181,7 @@ static CURLcode xfer_send(struct Curl_easy *data,
   CURLcode result = CURLE_OK;
 
   *pnwritten = 0;
-#ifdef CURLDEBUG
+#ifdef DEBUGBUILD
   {
     /* Allow debug builds to override this logic to force short initial
        sends
@@ -201,7 +194,7 @@ static CURLcode xfer_send(struct Curl_easy *data,
     }
   }
 #endif
-  /* Make sure this doesn't send more body bytes than what the max send
+  /* Make sure this does not send more body bytes than what the max send
      speed says. The headers do not count to the max speed. */
   if(data->set.max_send_speed) {
     size_t body_bytes = blen - hds_len;
@@ -252,7 +245,7 @@ static CURLcode req_set_upload_done(struct Curl_easy *data)
 {
   DEBUGASSERT(!data->req.upload_done);
   data->req.upload_done = TRUE;
-  data->req.keepon &= ~(KEEP_SEND|KEEP_SEND_TIMED); /* we're done sending */
+  data->req.keepon &= ~(KEEP_SEND|KEEP_SEND_TIMED); /* we are done sending */
 
   Curl_creader_done(data, data->req.upload_aborted);
 
@@ -266,7 +259,7 @@ static CURLcode req_set_upload_done(struct Curl_easy *data)
   else if(data->req.writebytecount)
     infof(data, "upload completely sent off: %" CURL_FORMAT_CURL_OFF_T
           " bytes", data->req.writebytecount);
-  else
+  else if(!data->req.download_done)
     infof(data, Curl_creader_total_length(data)?
                 "We are completely uploaded and fine" :
                 "Request completely sent off");
@@ -292,6 +285,14 @@ static CURLcode req_flush(struct Curl_easy *data)
 
   if(!data->req.upload_done && data->req.eos_read &&
      Curl_bufq_is_empty(&data->req.sendbuf)) {
+    if(data->req.shutdown) {
+      bool done;
+      result = Curl_xfer_send_shutdown(data, &done);
+      if(result)
+        return result;
+      if(!done)
+        return CURLE_AGAIN;
+    }
     return req_set_upload_done(data);
   }
   return CURLE_OK;
@@ -395,6 +396,7 @@ CURLcode Curl_req_send_more(struct Curl_easy *data)
   result = req_flush(data);
   if(result == CURLE_AGAIN)
     result = CURLE_OK;
+
   return result;
 }
 
