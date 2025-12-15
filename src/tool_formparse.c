@@ -23,13 +23,8 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#include "strcase.h"
-
-#include "curlx.h"
-
 #include "tool_cfgable.h"
 #include "tool_msgs.h"
-#include "tool_binmode.h"
 #include "tool_getparam.h"
 #include "tool_paramhlp.h"
 #include "tool_formparse.h"
@@ -125,13 +120,17 @@ static struct tool_mime *tool_mime_new_filedata(struct tool_mime *parent,
     }
   }
   else {        /* Standard input. */
+#ifdef UNDER_CE
+    int fd = STDIN_FILENO;
+#else
     int fd = fileno(stdin);
+#endif
     char *data = NULL;
     curl_off_t size;
     curl_off_t origin;
     struct_stat sbuf;
 
-    CURL_SET_BINMODE(stdin);
+    CURLX_SET_BINMODE(stdin);
     origin = ftell(stdin);
     /* If stdin is a regular file, do not buffer data but read it
        when needed. */
@@ -167,7 +166,7 @@ static struct tool_mime *tool_mime_new_filedata(struct tool_mime *parent,
     }
     m = tool_mime_new(parent, TOOLMIME_STDIN);
     if(!m)
-      Curl_safefree(data);
+      tool_safefree(data);
     else {
       m->data = data;
       m->origin = origin;
@@ -188,11 +187,11 @@ void tool_mime_free(struct tool_mime *mime)
       tool_mime_free(mime->subparts);
     if(mime->prev)
       tool_mime_free(mime->prev);
-    Curl_safefree(mime->name);
-    Curl_safefree(mime->filename);
-    Curl_safefree(mime->type);
-    Curl_safefree(mime->encoder);
-    Curl_safefree(mime->data);
+    tool_safefree(mime->name);
+    tool_safefree(mime->filename);
+    tool_safefree(mime->type);
+    tool_safefree(mime->encoder);
+    tool_safefree(mime->data);
     curl_slist_free_all(mime->headers);
     free(mime);
   }
@@ -224,9 +223,9 @@ size_t tool_mime_stdin_read(char *buffer,
       nitems = fread(buffer, 1, nitems, stdin);
       if(ferror(stdin)) {
         /* Show error only once. */
-        if(sip->config) {
-          warnf(sip->config, "stdin: %s", strerror(errno));
-          sip->config = NULL;
+        if(sip->global) {
+          warnf(sip->global, "stdin: %s", strerror(errno));
+          sip->global = NULL;
         }
         return CURL_READFUNC_ABORT;
       }
@@ -505,23 +504,23 @@ static int get_param_part(struct OperationConfig *config, char endchar,
     *pheaders = NULL;
   if(pencoder)
     *pencoder = NULL;
-  while(ISSPACE(*p))
+  while(ISBLANK(*p))
     p++;
   tp = p;
   *pdata = get_param_word(config, &p, &endpos, endchar);
   /* If not quoted, strip trailing spaces. */
   if(*pdata == tp)
-    while(endpos > *pdata && ISSPACE(endpos[-1]))
+    while(endpos > *pdata && ISBLANK(endpos[-1]))
       endpos--;
   sep = *p;
   *endpos = '\0';
   while(sep == ';') {
-    while(p++ && ISSPACE(*p))
+    while(p++ && ISBLANK(*p))
       ;
 
     if(!endct && checkprefix("type=", p)) {
       size_t tlen;
-      for(p += 5; ISSPACE(*p); p++)
+      for(p += 5; ISBLANK(*p); p++)
         ;
       /* set type pointer */
       type = p;
@@ -537,13 +536,13 @@ static int get_param_part(struct OperationConfig *config, char endchar,
         *endct = '\0';
         endct = NULL;
       }
-      for(p += 9; ISSPACE(*p); p++)
+      for(p += 9; ISBLANK(*p); p++)
         ;
       tp = p;
       filename = get_param_word(config, &p, &endpos, endchar);
       /* If not quoted, strip trailing spaces. */
       if(filename == tp)
-        while(endpos > filename && ISSPACE(endpos[-1]))
+        while(endpos > filename && ISBLANK(endpos[-1]))
           endpos--;
       sep = *p;
       *endpos = '\0';
@@ -558,15 +557,14 @@ static int get_param_part(struct OperationConfig *config, char endchar,
         char *hdrfile;
         FILE *fp;
         /* Read headers from a file. */
-
         do {
           p++;
-        } while(ISSPACE(*p));
+        } while(ISBLANK(*p));
         tp = p;
         hdrfile = get_param_word(config, &p, &endpos, endchar);
         /* If not quoted, strip trailing spaces. */
         if(hdrfile == tp)
-          while(endpos > hdrfile && ISSPACE(endpos[-1]))
+          while(endpos > hdrfile && ISBLANK(endpos[-1]))
             endpos--;
         sep = *p;
         *endpos = '\0';
@@ -587,13 +585,13 @@ static int get_param_part(struct OperationConfig *config, char endchar,
       else {
         char *hdr;
 
-        while(ISSPACE(*p))
+        while(ISBLANK(*p))
           p++;
         tp = p;
         hdr = get_param_word(config, &p, &endpos, endchar);
         /* If not quoted, strip trailing spaces. */
         if(hdr == tp)
-          while(endpos > hdr && ISSPACE(endpos[-1]))
+          while(endpos > hdr && ISBLANK(endpos[-1]))
             endpos--;
         sep = *p;
         *endpos = '\0';
@@ -609,7 +607,7 @@ static int get_param_part(struct OperationConfig *config, char endchar,
         *endct = '\0';
         endct = NULL;
       }
-      for(p += 8; ISSPACE(*p); p++)
+      for(p += 8; ISBLANK(*p); p++)
         ;
       tp = p;
       encoder = get_param_word(config, &p, &endpos, endchar);
@@ -623,7 +621,7 @@ static int get_param_part(struct OperationConfig *config, char endchar,
     else if(endct) {
       /* This is part of content type. */
       for(endct = p; *p && *p != ';' && *p != endchar; p++)
-        if(!ISSPACE(*p))
+        if(!ISBLANK(*p))
           endct = p + 1;
       sep = *p;
     }
@@ -825,7 +823,7 @@ int formparse(struct OperationConfig *config,
           goto fail;
         part->headers = headers;
         headers = NULL;
-        part->config = config->global;
+        part->global = config->global;
         if(res == CURLE_READ_ERROR) {
             /* An error occurred while reading stdin: if read has started,
                issue the error now. Else, delay it until processed by
@@ -835,8 +833,7 @@ int formparse(struct OperationConfig *config,
                   "error while reading standard input");
             goto fail;
           }
-          Curl_safefree(part->data);
-          part->data = NULL;
+          tool_safefree(part->data);
           part->size = -1;
           res = CURLE_OK;
         }
@@ -862,7 +859,7 @@ int formparse(struct OperationConfig *config,
           goto fail;
         part->headers = headers;
         headers = NULL;
-        part->config = config->global;
+        part->global = config->global;
         if(res == CURLE_READ_ERROR) {
             /* An error occurred while reading stdin: if read has started,
                issue the error now. Else, delay it until processed by
@@ -872,8 +869,7 @@ int formparse(struct OperationConfig *config,
                   "error while reading standard input");
             goto fail;
           }
-          Curl_safefree(part->data);
-          part->data = NULL;
+          tool_safefree(part->data);
           part->size = -1;
           res = CURLE_OK;
         }
@@ -915,7 +911,7 @@ int formparse(struct OperationConfig *config,
   }
   err = 0;
 fail:
-  Curl_safefree(contents);
+  tool_safefree(contents);
   curl_slist_free_all(headers);
   return err;
 }

@@ -38,11 +38,11 @@
 #include "cf-h1-proxy.h"
 #include "cf-h2-proxy.h"
 #include "connect.h"
-#include "curlx.h"
 #include "vtls/vtls.h"
 #include "transfer.h"
 #include "multiif.h"
 #include "vauth/vauth.h"
+#include "curlx/strparse.h"
 
 /* The last 3 #include files should be in this order */
 #include "curl_printf.h"
@@ -52,7 +52,7 @@
 static bool hd_name_eq(const char *n1, size_t n1len,
                        const char *n2, size_t n2len)
 {
-  return (n1len == n2len) ? strncasecompare(n1, n2, n1len) : FALSE;
+  return (n1len == n2len) ? curl_strnequal(n1, n2, n1len) : FALSE;
 }
 
 static CURLcode dynhds_add_custom(struct Curl_easy *data,
@@ -60,7 +60,7 @@ static CURLcode dynhds_add_custom(struct Curl_easy *data,
                                   struct dynhds *hds)
 {
   struct connectdata *conn = data->conn;
-  char *ptr;
+  const char *ptr;
   struct curl_slist *h[2];
   struct curl_slist *headers;
   int numlists = 1; /* by default */
@@ -108,8 +108,7 @@ static CURLcode dynhds_add_custom(struct Curl_easy *data,
         name = headers->data;
         namelen = ptr - headers->data;
         ptr++; /* pass the colon */
-        while(*ptr && ISSPACE(*ptr))
-          ptr++;
+        curlx_str_passblanks(&ptr);
         if(*ptr) {
           value = ptr;
           valuelen = strlen(value);
@@ -131,8 +130,7 @@ static CURLcode dynhds_add_custom(struct Curl_easy *data,
         name = headers->data;
         namelen = ptr - headers->data;
         ptr++; /* pass the semicolon */
-        while(*ptr && ISSPACE(*ptr))
-          ptr++;
+        curlx_str_passblanks(&ptr);
         if(!*ptr) {
           /* quirk #2, send an empty header */
           value = "";
@@ -307,7 +305,7 @@ out:
 
 static CURLcode http_proxy_cf_connect(struct Curl_cfilter *cf,
                                       struct Curl_easy *data,
-                                      bool blocking, bool *done)
+                                      bool *done)
 {
   struct cf_proxy_ctx *ctx = cf->ctx;
   CURLcode result;
@@ -319,7 +317,7 @@ static CURLcode http_proxy_cf_connect(struct Curl_cfilter *cf,
 
   CURL_TRC_CF(data, cf, "connect");
 connect_sub:
-  result = cf->next->cft->do_connect(cf->next, data, blocking, done);
+  result = cf->next->cft->do_connect(cf->next, data, done);
   if(result || !*done)
     return result;
 
@@ -384,21 +382,21 @@ out:
   return result;
 }
 
-void Curl_cf_http_proxy_get_host(struct Curl_cfilter *cf,
-                                 struct Curl_easy *data,
-                                 const char **phost,
-                                 const char **pdisplay_host,
-                                 int *pport)
+CURLcode Curl_cf_http_proxy_query(struct Curl_cfilter *cf,
+                                  struct Curl_easy *data,
+                                  int query, int *pres1, void *pres2)
 {
-  (void)data;
-  if(!cf->connected) {
-    *phost = cf->conn->http_proxy.host.name;
-    *pdisplay_host = cf->conn->http_proxy.host.dispname;
-    *pport = (int)cf->conn->http_proxy.port;
+  switch(query) {
+  case CF_QUERY_HOST_PORT:
+    *pres1 = (int)cf->conn->http_proxy.port;
+    *((const char **)pres2) = cf->conn->http_proxy.host.name;
+    return CURLE_OK;
+  default:
+    break;
   }
-  else {
-    cf->next->cft->get_host(cf->next, data, phost, pdisplay_host, pport);
-  }
+  return cf->next ?
+    cf->next->cft->query(cf->next, data, query, pres1, pres2) :
+    CURLE_UNKNOWN_OPTION;
 }
 
 static void http_proxy_cf_destroy(struct Curl_cfilter *cf,
@@ -444,7 +442,6 @@ struct Curl_cftype Curl_cft_http_proxy = {
   http_proxy_cf_connect,
   http_proxy_cf_close,
   Curl_cf_def_shutdown,
-  Curl_cf_http_proxy_get_host,
   Curl_cf_def_adjust_pollset,
   Curl_cf_def_data_pending,
   Curl_cf_def_send,
@@ -452,7 +449,7 @@ struct Curl_cftype Curl_cft_http_proxy = {
   Curl_cf_def_cntrl,
   Curl_cf_def_conn_is_alive,
   Curl_cf_def_conn_keep_alive,
-  Curl_cf_def_query,
+  Curl_cf_http_proxy_query,
 };
 
 CURLcode Curl_cf_http_proxy_insert_after(struct Curl_cfilter *cf_at,

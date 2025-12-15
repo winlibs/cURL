@@ -38,6 +38,8 @@ use strict;
 use warnings;
 use 5.006;
 
+use File::Basename;
+
 BEGIN {
     use base qw(Exporter);
 
@@ -47,7 +49,6 @@ BEGIN {
         readtestkeywords
         restore_test_env
         runner_init
-        runnerac_clearlocks
         runnerac_shutdown
         runnerac_stopservers
         runnerac_test_preprocess
@@ -88,7 +89,6 @@ use processhelp qw(
     );
 use servers qw(
     checkcmd
-    clearlocks
     initserverconfig
     serverfortest
     stopserver
@@ -101,6 +101,7 @@ use testutil qw(
     clearlogs
     logmsg
     runclient
+    exerunner
     shell_quote
     subbase64
     subsha256base64file
@@ -126,8 +127,7 @@ our $tortalloc;
 
 # local variables
 my %oldenv;       # environment variables before test is started
-my $UNITDIR="./unit";
-my $CURLLOG="$LOGDIR/commands.log"; # all command lines run
+my $CURLLOG = "commands.log"; # all command lines run
 my $defserverlogslocktimeout = 5; # timeout to await server logs lock removal
 my $defpostcommanddelay = 0; # delay between command and postcheck sections
 my $multiprocess;   # nonzero with a separate test runner process
@@ -251,7 +251,7 @@ sub runner_init {
 #######################################################################
 # Loop to execute incoming IPC calls until the shutdown call
 sub event_loop {
-    while () {
+    while() {
         if(ipcrecv()) {
             last;
         }
@@ -263,7 +263,7 @@ sub event_loop {
 #
 sub checktestcmd {
     my ($cmd)=@_;
-    my @testpaths=("$LIBDIR/.libs", "$LIBDIR");
+    my @testpaths=($LIBDIR . ".libs", "$LIBDIR");
     return checkcmd($cmd, @testpaths);
 }
 
@@ -504,19 +504,6 @@ sub torture {
         unlink("$LOGDIR/$MEMDUMP");
 
         my $cmd = $testcmd;
-        if($valgrind && !$gdbthis) {
-            my @valgrindoption = getpart("verify", "valgrind");
-            if((!@valgrindoption) || ($valgrindoption[0] !~ /disable/)) {
-                my $valgrindcmd = shell_quote($valgrind) . " ";
-                $valgrindcmd .= "$valgrind_tool " if($valgrind_tool);
-                $valgrindcmd .= "--quiet --leak-check=yes ";
-                $valgrindcmd .= "--suppressions=$srcdir/valgrind.supp ";
-                # $valgrindcmd .= "--gen-suppressions=all ";
-                $valgrindcmd .= "--num-callers=16 ";
-                $valgrindcmd .= "${valgrind_logfile}=$LOGDIR/valgrind$testnum";
-                $cmd = "$valgrindcmd $testcmd";
-            }
-        }
         logmsg "*** Function number $limit is now set to fail ***\n" if($gdbthis);
 
         my $ret = 0;
@@ -622,7 +609,7 @@ sub singletest_startservers {
 
     my $why;
     my $error;
-    if (!$listonly) {
+    if(!$listonly) {
         my @what = getpart("client", "server");
         if(!$what[0]) {
             warn "Test case $testnum has no server(s) specified";
@@ -685,17 +672,6 @@ sub singletest_setenv {
             if($content =~ /^=(.*)/) {
                 # assign it
                 $content = $1;
-
-                if($var =~ /^LD_PRELOAD/) {
-                    if(exe_ext('TOOL') && (exe_ext('TOOL') eq '.exe')) {
-                        logmsg "Skipping LD_PRELOAD due to lack of OS support\n" if($verbose);
-                        next;
-                    }
-                    if($feature{"Debug"} || !$has_shared) {
-                        logmsg "Skipping LD_PRELOAD due to no release shared build\n" if($verbose);
-                        next;
-                    }
-                }
                 $ENV{$var} = "$content";
                 logmsg "setenv $var = $content\n" if($verbose);
             }
@@ -703,7 +679,6 @@ sub singletest_setenv {
                 # remove it
                 delete $ENV{$var} if($ENV{$var});
             }
-
         }
     }
     if($proxy_address) {
@@ -765,11 +740,19 @@ sub singletest_prepare {
     unlink("$LOGDIR/$SERVERIN");
     unlink("$LOGDIR/$PROXYIN");
 
-    # if this section exists, it might be FTP server instructions:
-    my @ftpservercmd = getpart("reply", "servercmd");
-    push @ftpservercmd, "Testnum $testnum\n";
+    # if this section exists, it might be server instructions:
+    my @servercmd = getpart("reply", "servercmd");
+    push @servercmd, "Testnum $testnum\n";
     # write the instructions to file
-    writearray("$LOGDIR/$SERVERCMD", \@ftpservercmd);
+    writearray("$LOGDIR/$SERVERCMD", \@servercmd);
+
+    # if this section exists, it might be DNS instructions:
+    my @dnscmd = getpart("reply", "dns");
+    # write the instructions to file
+    writearray("$LOGDIR/$DNSCMD", \@dnscmd);
+
+    # provide an environment variable
+    $ENV{'CURL_TESTNUM'} = $testnum;
 
     # create (possibly-empty) files before starting the test
     for my $partsuffix (('', '1', '2', '3', '4')) {
@@ -784,9 +767,7 @@ sub singletest_prepare {
             my $fileContent = join('', @inputfile);
 
             # make directories if needed
-            my $path = $filename;
-            # cut off the file name part
-            $path =~ s/^(.*)\/[^\/]*/$1/;
+            my $path = dirname($filename);
             my @ldparts = split(/\//, $LOGDIR);
             my $nparts = @ldparts;
             my @parts = split(/\//, $path);
@@ -798,7 +779,7 @@ sub singletest_prepare {
                     mkdir $d; # 0777
                 }
             }
-            if (open(my $outfile, ">", "$filename")) {
+            if(open(my $outfile, ">", "$filename")) {
                 binmode $outfile; # for crapage systems, use binary
                 if($fileattr{'nonewline'}) {
                     # cut off the final newline
@@ -839,7 +820,7 @@ sub singletest_run {
     my %cmdhash = getpartattr("client", "command");
     if((!$cmdhash{'option'}) || ($cmdhash{'option'} !~ /no-output/)) {
         #We may slap on --output!
-        if (!partexists("verify", "stdout") ||
+        if(!partexists("verify", "stdout") ||
                 ($cmdhash{'option'} && $cmdhash{'option'} =~ /force-output/)) {
             $out=" --output $CURLOUT ";
         }
@@ -906,7 +887,7 @@ sub singletest_run {
             }
         }
         $cmdargs .= $cmd;
-        if ($proxy_address) {
+        if($proxy_address) {
             $cmdargs .= " --proxy $proxy_address ";
         }
     }
@@ -917,24 +898,20 @@ sub singletest_run {
         # Default the tool to a unit test with the same name as the test spec
         if($keywords{"unittest"} && !$tool) {
             $tool_name="unit$testnum";
-            $tool = $tool_name;
+            $tool = $tool_name . exe_ext('TOOL');
         }
 
         if($tool =~ /^lib/) {
-            if($bundle) {
-                $CMDLINE="$LIBDIR/libtests";
-            }
-            else {
-                $CMDLINE="$LIBDIR/$tool";
-            }
+            $tool = "libtests" . exe_ext('TOOL');
+            $CMDLINE=$LIBDIR . $tool;
+        }
+        elsif($tool =~ /^tool/) {
+            $tool = "tunits" . exe_ext('TOOL');
+            $CMDLINE=$TUNITDIR . $tool;
         }
         elsif($tool =~ /^unit/) {
-            if($bundle) {
-                $CMDLINE="$UNITDIR/units";
-            }
-            else {
-                $CMDLINE="$UNITDIR/$tool";
-            }
+            $tool = "units" . exe_ext('TOOL');
+            $CMDLINE=$UNITDIR . $tool;
         }
 
         if(! -f $CMDLINE) {
@@ -942,7 +919,12 @@ sub singletest_run {
             return (-1, 0, 0, "", "", 0);
         }
 
-        if($bundle) {
+        $CMDLINE=exerunner() . $CMDLINE;
+
+        if($gdbthis) {
+            $cmdargs =" $tool_name$cmdargs";
+        }
+        else {
             $CMDLINE.=" $tool_name";
         }
 
@@ -978,7 +960,7 @@ sub singletest_run {
     }
 
     if(!$tool) {
-        $CMDLINE=shell_quote($CURL);
+        $CMDLINE=exerunner() . shell_quote($CURL);
         if((!$cmdhash{'option'}) || ($cmdhash{'option'} !~ /no-q/)) {
             $CMDLINE .= " -q";
         }
@@ -1002,7 +984,8 @@ sub singletest_run {
         logmsg "$CMDLINE\n";
     }
 
-    open(my $cmdlog, ">", $CURLLOG) || die "Failure writing log file";
+    open(my $cmdlog, ">", "$LOGDIR/$CURLLOG") ||
+        die "Failure writing log file";
     print $cmdlog "$CMDLINE\n";
     close($cmdlog) || die "Failure writing log file";
 
@@ -1032,7 +1015,7 @@ sub singletest_run {
     $$testtimings{"timetoolini"} = Time::HiRes::time();
 
     # run the command line we built
-    if ($torture) {
+    if($torture) {
         $cmdres = torture($CMDLINE,
                           $testnum,
                           "$gdb --directory $LIBDIR " . shell_quote($DBGCURL) . " -x $LOGDIR/gdbcmd");
@@ -1214,7 +1197,7 @@ sub runner_test_preprocess {
 
         ###############################################################
         # Check that the test environment is fine to run this test case
-        if (!$listonly) {
+        if(!$listonly) {
             $why = singletest_precheck($testnum);
             $error = -1;
         }
@@ -1274,12 +1257,6 @@ sub runner_test_run {
     restore_test_env(0);
 
     return (0, clearlogs(), \%testtimings, $cmdres, $CURLOUT, $tool, $usedvalgrind);
-}
-
-# Async call runner_clearlocks
-# Called by controller
-sub runnerac_clearlocks {
-    return controlleripccall(\&runner_clearlocks, @_);
 }
 
 # Async call runner_shutdown
@@ -1345,8 +1322,8 @@ sub controlleripccall {
     if(!$multiprocess) {
         # Call the remote function here in single process mode
         ipcrecv();
-     }
-     return 0;
+    }
+    return 0;
 }
 
 ###################################################################
@@ -1475,10 +1452,7 @@ sub ipcrecv {
     # print "ipcrecv $funcname\n";
     # Synchronously call the desired function
     my @res;
-    if($funcname eq "runner_clearlocks") {
-        @res = runner_clearlocks(@$argsarrayref);
-    }
-    elsif($funcname eq "runner_shutdown") {
+    if($funcname eq "runner_shutdown") {
         runner_shutdown(@$argsarrayref);
         # Special case: no response will be forthcoming
         return 1;
@@ -1511,18 +1485,6 @@ sub ipcrecv {
 
     return 0;
 }
-
-###################################################################
-# Kill the server processes that still have lock files in a directory
-sub runner_clearlocks {
-    my ($lockdir)=@_;
-    if(clearlogs()) {
-        logmsg "Warning: log messages were lost\n";
-    }
-    clearlocks($lockdir);
-    return clearlogs();
-}
-
 
 ###################################################################
 # Kill all server processes

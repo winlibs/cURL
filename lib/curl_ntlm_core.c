@@ -40,9 +40,8 @@
    3. USE_GNUTLS
    4. -
    5. USE_MBEDTLS
-   6. USE_SECTRANSP
-   7. USE_OS400CRYPTO
-   8. USE_WIN32_CRYPTO
+   6. USE_OS400CRYPTO
+   7. USE_WIN32_CRYPTO
 
    This ensures that:
    - the same SSL branch gets activated throughout this source
@@ -71,16 +70,7 @@
 #  include <openssl/md5.h>
 #  include <openssl/ssl.h>
 #  include <openssl/rand.h>
-#  if (defined(OPENSSL_VERSION_NUMBER) && \
-       (OPENSSL_VERSION_NUMBER < 0x00907001L)) && !defined(USE_WOLFSSL)
-#    define DES_key_schedule des_key_schedule
-#    define DES_cblock des_cblock
-#    define DES_set_odd_parity des_set_odd_parity
-#    define DES_set_key des_set_key
-#    define DES_ecb_encrypt des_ecb_encrypt
-#    define DESKEY(x) x
-#    define DESKEYARG(x) x
-#  elif defined(OPENSSL_IS_AWSLC)
+#  if defined(OPENSSL_IS_AWSLC)
 #    define DES_set_key_unchecked (void)DES_set_key
 #    define DESKEYARG(x) *x
 #    define DESKEY(x) &x
@@ -116,11 +106,6 @@
 
 #  include <mbedtls/des.h>
 
-#elif defined(USE_SECTRANSP)
-
-#  include <CommonCrypto/CommonCryptor.h>
-#  include <CommonCrypto/CommonDigest.h>
-
 #elif defined(USE_OS400CRYPTO)
 #  include "cipher.mih"  /* mih/cipher */
 #elif defined(USE_WIN32_CRYPTO)
@@ -135,7 +120,7 @@
 #include "curl_ntlm_core.h"
 #include "curl_md5.h"
 #include "curl_hmac.h"
-#include "warnless.h"
+#include "curlx/warnless.h"
 #include "curl_endian.h"
 #include "curl_des.h"
 #include "curl_md4.h"
@@ -143,9 +128,6 @@
 #include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
-
-#define NTLMv2_BLOB_SIGNATURE "\x01\x01\x00\x00"
-#define NTLMv2_BLOB_LEN       (44 -16 + ntlm->target_info_len + 4)
 
 #if !defined(CURL_NTLM_NOT_SUPPORTED)
 /*
@@ -219,29 +201,6 @@ static bool encrypt_des(const unsigned char *in, unsigned char *out,
   mbedtls_des_init(&ctx);
   mbedtls_des_setkey_enc(&ctx, (unsigned char *) key);
   return mbedtls_des_crypt_ecb(&ctx, in, out) == 0;
-}
-
-#elif defined(USE_SECTRANSP)
-
-static bool encrypt_des(const unsigned char *in, unsigned char *out,
-                        const unsigned char *key_56)
-{
-  char key[8];
-  size_t out_len;
-  CCCryptorStatus err;
-
-  /* Expand the 56-bit key to 64 bits */
-  extend_key_56_to_64(key_56, key);
-
-  /* Set the key parity to odd */
-  Curl_des_set_odd_parity((unsigned char *) key, sizeof(key));
-
-  /* Perform the encryption */
-  err = CCCrypt(kCCEncrypt, kCCAlgorithmDES, kCCOptionECBMode, key,
-                kCCKeySizeDES, NULL, in, 8 /* inbuflen */, out,
-                8 /* outbuflen */, &out_len);
-
-  return err == kCCSuccess;
 }
 
 #elif defined(USE_OS400CRYPTO)
@@ -333,16 +292,16 @@ void Curl_ntlm_core_lm_resp(const unsigned char *keys,
   DES_key_schedule ks;
 
   setup_des_key(keys, DESKEY(ks));
-  DES_ecb_encrypt((DES_cblock*) plaintext, (DES_cblock*) results,
-                  DESKEY(ks), DES_ENCRYPT);
+  DES_ecb_encrypt((DES_cblock*)CURL_UNCONST(plaintext),
+                  (DES_cblock*)results, DESKEY(ks), DES_ENCRYPT);
 
   setup_des_key(keys + 7, DESKEY(ks));
-  DES_ecb_encrypt((DES_cblock*) plaintext, (DES_cblock*) (results + 8),
-                  DESKEY(ks), DES_ENCRYPT);
+  DES_ecb_encrypt((DES_cblock*)CURL_UNCONST(plaintext),
+                  (DES_cblock*)(results + 8), DESKEY(ks), DES_ENCRYPT);
 
   setup_des_key(keys + 14, DESKEY(ks));
-  DES_ecb_encrypt((DES_cblock*) plaintext, (DES_cblock*) (results + 16),
-                  DESKEY(ks), DES_ENCRYPT);
+  DES_ecb_encrypt((DES_cblock*)CURL_UNCONST(plaintext),
+                  (DES_cblock*)(results + 16), DESKEY(ks), DES_ENCRYPT);
 #elif defined(USE_GNUTLS)
   struct des_ctx des;
   setup_des_key(keys, &des);
@@ -351,8 +310,8 @@ void Curl_ntlm_core_lm_resp(const unsigned char *keys,
   des_encrypt(&des, 8, results + 8, plaintext);
   setup_des_key(keys + 14, &des);
   des_encrypt(&des, 8, results + 16, plaintext);
-#elif defined(USE_MBEDTLS) || defined(USE_SECTRANSP)            \
-  || defined(USE_OS400CRYPTO) || defined(USE_WIN32_CRYPTO)
+#elif defined(USE_MBEDTLS) || defined(USE_OS400CRYPTO) ||       \
+  defined(USE_WIN32_CRYPTO)
   encrypt_des(plaintext, results, keys);
   encrypt_des(plaintext, results + 8, keys + 7);
   encrypt_des(plaintext, results + 16, keys + 14);
@@ -387,20 +346,20 @@ CURLcode Curl_ntlm_core_mk_lm_hash(const char *password,
     DES_key_schedule ks;
 
     setup_des_key(pw, DESKEY(ks));
-    DES_ecb_encrypt((DES_cblock *)magic, (DES_cblock *)lmbuffer,
-                    DESKEY(ks), DES_ENCRYPT);
+    DES_ecb_encrypt((DES_cblock *)CURL_UNCONST(magic),
+                    (DES_cblock *)lmbuffer, DESKEY(ks), DES_ENCRYPT);
 
     setup_des_key(pw + 7, DESKEY(ks));
-    DES_ecb_encrypt((DES_cblock *)magic, (DES_cblock *)(lmbuffer + 8),
-                    DESKEY(ks), DES_ENCRYPT);
+    DES_ecb_encrypt((DES_cblock *)CURL_UNCONST(magic),
+                    (DES_cblock *)(lmbuffer + 8), DESKEY(ks), DES_ENCRYPT);
 #elif defined(USE_GNUTLS)
     struct des_ctx des;
     setup_des_key(pw, &des);
     des_encrypt(&des, 8, lmbuffer, magic);
     setup_des_key(pw + 7, &des);
     des_encrypt(&des, 8, lmbuffer + 8, magic);
-#elif defined(USE_MBEDTLS) || defined(USE_SECTRANSP)            \
-  || defined(USE_OS400CRYPTO) || defined(USE_WIN32_CRYPTO)
+#elif defined(USE_MBEDTLS) || defined(USE_OS400CRYPTO) ||       \
+  defined(USE_WIN32_CRYPTO)
     encrypt_des(magic, lmbuffer, pw);
     encrypt_des(magic, lmbuffer + 8, pw + 7);
 #endif
@@ -465,6 +424,9 @@ CURLcode Curl_ntlm_core_mk_nt_hash(const char *password,
 
 #if !defined(USE_WINDOWS_SSPI)
 
+#define NTLMv2_BLOB_SIGNATURE "\x01\x01\x00\x00"
+#define NTLMv2_BLOB_LEN       (44 -16 + ntlm->target_info_len + 4)
+
 /* Timestamp in tenths of a microsecond since January 1, 1601 00:00:00 UTC. */
 struct ms_filetime {
   unsigned int dwLowDateTime;
@@ -475,7 +437,7 @@ struct ms_filetime {
 static void time2filetime(struct ms_filetime *ft, time_t t)
 {
 #if SIZEOF_TIME_T > 4
-  t = (t + CURL_OFF_T_C(11644473600)) * 10000000;
+  t = (t + (curl_off_t)11644473600) * 10000000;
   ft->dwLowDateTime = (unsigned int) (t & 0xFFFFFFFF);
   ft->dwHighDateTime = (unsigned int) (t >> 32);
 #else
@@ -626,7 +588,7 @@ CURLcode Curl_ntlm_core_mk_ntlmv2_resp(unsigned char *ntlmv2hash,
   /* Concatenate the Type 2 challenge with the BLOB and do HMAC MD5 */
   memcpy(ptr + 8, &ntlm->nonce[0], 8);
   result = Curl_hmacit(&Curl_HMAC_MD5, ntlmv2hash, HMAC_MD5_LENGTH, ptr + 8,
-                    NTLMv2_BLOB_LEN + 8, hmac_output);
+                       NTLMv2_BLOB_LEN + 8, hmac_output);
   if(result) {
     free(ptr);
     return result;

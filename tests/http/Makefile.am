@@ -22,8 +22,6 @@
 #
 ###########################################################################
 
-SUBDIRS = clients
-
 TESTENV =                             \
 testenv/__init__.py                   \
 testenv/caddy.py                      \
@@ -65,6 +63,7 @@ test_19_shutdown.py    \
 test_20_websockets.py  \
 test_30_vsftpd.py      \
 test_31_vsftpds.py     \
+test_32_ftps_vsftpd.py \
 $(TESTENV)
 
 clean-local:
@@ -74,7 +73,4 @@ clean-local:
 check: clients
 
 clients:
-	@(cd clients; $(MAKE) check)
-
-checksrc:
-	cd clients && $(MAKE) checksrc
+	@(cd ../client; $(MAKE) check)
