@@ -12,6 +12,7 @@ Protocol:
   - FTP
   - SFTP
   - FILE
+  - SMB
 Added-in: 7.5
 ---
 

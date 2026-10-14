@@ -66,12 +66,14 @@ EXTRA_DIST =         \
   nghttpx.conf       \
   pathhelp.pm        \
   processhelp.pm     \
+  requirements.txt   \
   rtspserver.pl      \
   runner.pm          \
   runtests.pl        \
   secureserver.pl    \
   serverhelp.pm      \
   servers.pm         \
+  smbserver.py       \
   sshhelp.pm         \
   sshserver.pl       \
   test-linter.pl     \
